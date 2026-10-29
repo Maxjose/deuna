@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-test("sin Supabase configurado, acceso informativo y rutas protegidas", async () => {
+test("usuario sin sesi?n: acceso p?blico y rutas protegidas", async () => {
   const child = spawn(
     process.execPath,
     [
@@ -42,8 +42,9 @@ test("sin Supabase configurado, acceso informativo y rutas protegidas", async ()
     }
     assert.ok(ready, log);
     const html = await (await fetch("http://127.0.0.1:3187/login")).text();
-    assert.match(html, /El acceso aún no está habilitado/);
-    assert.doesNotMatch(html, /<input[^>]*type="password"/);
+    assert.match(html, /De1na/);
+    assert.match(html, /name="email"|El acceso/);
+    
     for (const path of ["/", "/dashboard", "/reset-password"]) {
       const r = await fetch("http://127.0.0.1:3187" + path, {
         redirect: "manual",

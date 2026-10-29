@@ -48,7 +48,7 @@ create policy trips_read on public.trips for select to authenticated using(passe
 -- Mutaciones en una única transacción, sin conceder UPDATE arbitrario al navegador.
 -- La función privilegiada vive en esquema privado y comprueba identidad, rol y estado.
 create function private.operate(action text,payload jsonb) returns void language plpgsql security definer set search_path='' as $$
-declare uid uuid:=auth.uid(); p public.profiles; t public.trips; s public.service_settings; localtime time:=(now() at time zone 'America/Caracas')::time; next_status text;
+declare uid uuid:=auth.uid(); p public.profiles; t public.trips; s public.service_settings; current_clock time:=(now() at time zone 'America/Caracas')::time; next_status text;
 begin
  if uid is null then raise exception 'No autorizado';end if;
  -- Serializa mutaciones del piloto, incluidas suspensión, configuración y aceptación.
@@ -57,7 +57,7 @@ begin
  if action='request' then
   if p.role<>'passenger' then raise exception 'Solo pasajeros';end if;
   select * into strict s from public.service_settings where id=1;
-  if not s.enabled or not ((s.open_time=s.close_time) or (s.open_time<s.close_time and localtime>=s.open_time and localtime<s.close_time) or (s.open_time>s.close_time and (localtime>=s.open_time or localtime<s.close_time))) then raise exception 'Servicio cerrado';end if;
+  if not s.enabled or not ((s.open_time=s.close_time) or (s.open_time<s.close_time and current_clock>=s.open_time and current_clock<s.close_time) or (s.open_time>s.close_time and (current_clock>=s.open_time or current_clock<s.close_time))) then raise exception 'Servicio cerrado';end if;
   if not coalesce((payload->>'zone')=any(s.zones),false) then raise exception 'Fuera de cobertura';end if;
   insert into public.trips(passenger_id,origin,destination,zone) values(uid,trim(payload->>'origin'),trim(payload->>'destination'),payload->>'zone');
  elsif action in ('accept','advance','cancel') then
