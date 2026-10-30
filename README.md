@@ -53,3 +53,18 @@ La referencia visual entregada por el usuario define el icono verde: fondo lima,
 Exportaciones en public/icons: favicon PNG de 16/32 px, iconos de 192/512 px, versión adaptable de Android y apple-touch-icon de 180 px sin transparencia. public/favicon.ico cubre el favicon del sitio. Regenerar con node scripts/generate-icons.mjs (usa sharp incluido en la instalación de Next.js).
 
 PWA: manifiesto standalone, recursos para Android/iOS, registro de service worker y pantalla pública sin conexión. Solo se guarda offline.html; las páginas autenticadas y los datos de viajes no se almacenan en esa caché. En iOS usar Compartir → Agregar a pantalla de inicio; en Android usar Instalar De1na cuando el navegador lo ofrezca o el menú del navegador. La instalación en dispositivos físicos sigue pendiente de verificación.
+
+## Acceso rápido con passkeys
+
+Implementado en Cuenta → Seguridad y acceso rápido: registro, listado y revocación de passkeys. El acceso muestra Entrar con passkey solo si el navegador soporta WebAuthn en contexto seguro y Supabase informa passkeys_enabled=true. El correo y contraseña se conservan. No hay redirección si el SDK no devuelve una sesión verificada.
+
+Activación pendiente en Supabase → Authentication → Passkeys, proyecto yykdfvnihsmwhnpjmdpp:
+
+- Enable Passkey authentication: activado
+- Relying Party Display Name: De1na
+- Relying Party ID: deuna-five.vercel.app
+- Relying Party Origins: https://deuna-five.vercel.app
+
+No usar vercel.app como RP ID ni incluir dominios de previews. Cambiar el RP ID en el futuro requerirá volver a registrar las passkeys. La API de Supabase es experimental. El conector no permite modificar la configuración Auth y el navegador de revisión no tiene sesión del panel de Supabase, por lo que esta activación debe hacerla el propietario.
+
+El frontend detectará la activación al recargar o pulsar Comprobar disponibilidad. Registrar una credencial requiere usuario autenticado y correo confirmado. La biometría/PIN se gestiona en el dispositivo. La aplicación no almacena datos biométricos ni implementa un desbloqueo ficticio con localStorage. Probar registro, salida, entrada, cancelación y revocación en Android/iOS antes de habilitarlo al público.

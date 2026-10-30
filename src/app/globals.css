@@ -1152,3 +1152,56 @@ main {
     animation: none;
   }
 }
+.passkey-login {
+  margin-top: 22px;
+}
+.passkey-login > p {
+  font-size: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+.security-card > p {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.passkey-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+.passkey-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+.passkey-list small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.passkey-list strong {
+  font-size: 13px;
+}
+.security-card > .text {
+  width: 100%;
+  text-align: center;
+}

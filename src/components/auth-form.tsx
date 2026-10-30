@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
+import { PasskeyLogin } from "./passkey-login";
 export function AuthForm({
   configured,
   reset = false,
@@ -15,6 +16,7 @@ export function AuthForm({
     [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setMessage("");
     const f = new FormData(e.currentTarget);
@@ -157,6 +159,9 @@ export function AuthForm({
               ↗
             </button>
           </form>
+        )}
+        {configured && !reset && mode === "login" && (
+          <PasskeyLogin disabled={busy} onBusyChange={setBusy} />
         )}
         {message && <p role="status">{message}</p>}
         {!reset && (

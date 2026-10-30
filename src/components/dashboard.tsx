@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
 import { InstallApp } from "./install-app";
+import { PasskeySecurity } from "./passkey-security";
 import { useRouter } from "next/navigation";
 
 type Profile = {
@@ -397,6 +398,7 @@ export function Dashboard({
                       : "Pasajero"}
                 </span>
               </article>
+              <PasskeySecurity />
               <article className="trip-card">
                 <InstallApp />
               </article>
