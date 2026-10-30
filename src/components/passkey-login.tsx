@@ -57,7 +57,7 @@ export function PasskeyLogin({
         disabled={busy || disabled}
         onClick={() => void signIn()}
       >
-        <AppIcon name="fingerprint" />
+        <AppIcon name="key" />
       </button>
       <Toast message={message} />
     </>
