@@ -38,6 +38,18 @@ Definir tarifa, moneda, soporte, incorporación de conductores, identidad visibl
 
 Referencia funcional: PLAN_DE_DESARROLLO.md y De1na_Manual_de_Marca.md.
 
+## Notificaciones Web Push
+
+Cuenta → Notificaciones registra este dispositivo al pulsar Activar y conceder el permiso del navegador. En iPhone requiere la PWA agregada a inicio (iOS 16.4+). La opción de promociones es independiente y comienza desactivada. Cerrar sesión cancela la suscripción de este dispositivo y cierra sus avisos visibles. No se envían direcciones precisas en avisos de viajes.
+
+Administración → Avisos permite redactar título/mensaje, elegir clientes, motorizados o todos los suscritos y revisar la vista previa con número de usuarios/dispositivos. El envío ocurre solo al pulsar Enviar publicidad. El historial distingue pendientes, aceptadas por proveedor, fallidas y omitidas; no mide lectura ni garantiza entrega en el teléfono. Reintentar la misma confirmación no duplica la campaña. Retención: 30 días.
+
+Los cambios de viajes generan trabajos dentro de la misma transacción: nueva solicitud a conductores aprobados/disponibles sin viaje activo; aceptación/llegada al pasajero; cancelación a la contraparte. Una cola privada comprueba otra vez consentimiento, usuario del dispositivo, estado del viaje y vencimiento antes de reclamar el envío. Hay hasta tres intentos, bloqueo de dos minutos y reintento por cron cada minuto. Los endpoints 404/410 se eliminan; los errores transitorios se reintentan. Pg_net despierta /api/push/dispatch; la cola durable permite recuperarse si la llamada HTTP falla. El service worker abre Inicio al tocar el aviso y el servidor limita endpoints a proveedores conocidos.
+
+Configuración de producción: VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY se generan una sola vez; PUSH_WORKER_KEY debe coincidir con private.push_config.worker_key. Las claves privadas van como secretos exclusivos del servidor en Vercel, sin prefijo NEXT_PUBLIC_ ni copias en previews. El emisor comienza desactivado en private.push_config.enabled hasta provisionar las claves y verificar el despliegue. /api/push/config solo publica la clave VAPID pública. No se usa una clave administrativa de Supabase para enviar.
+
+Pruebas: npm run build, npm test y supabase/tests/web_push.sql (rollback, sin mensajes reales: permisos, endpoint inválido, consentimiento, idempotencia, cambios de viaje, reintentos y suscripciones vencidas). La entrega real requiere una prueba autorizada desde Cuenta en Android/iPhone; no se enviaron promociones reales durante el desarrollo.
+
 Los avisos de acciones se muestran flotantes durante tres segundos y pertenecen a la pantalla que los generó. Se descartan al navegar, incluidas respuestas tardías. Comprobado en navegador con un receptor aislado (ruta temporal eliminada). Servicio ya no solicita ni modifica zonas; conserva los valores históricos de la base sin usarlos como cobertura.
 
 ## Experiencia móvil y PWA

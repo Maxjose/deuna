@@ -1,5 +1,6 @@
 export function AppIcon({ name }: { name: string }) {
   const paths: Record<string, string> = {
+    notifications: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4",
     key: "M15 3a6 6 0 0 0-5.7 7.9L3 17.2V21h4v-3h3v-3l1.1-1.1A6 6 0 1 0 15 3ZM17 7h.01",
     fingerprint: "M8 5a7 7 0 0 1 11 6v3M5 8a7 7 0 0 0 0 6M8 20c2-3 1-5 1-8a3 3 0 0 1 6 0c0 4 0 7-2 10M5 18c1-2 1-4 1-6a6 6 0 0 1 12 0c0 3 0 5-1 7M12 11c0 4 1 6-1 9M3 5a11 11 0 0 1 19 6",
     package: "m12 3 9 5v8l-9 5-9-5V8ZM3 8l9 5 9-5M12 13v8M7.5 5.5l9 5",

@@ -6,6 +6,9 @@ import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
+import { PushPreferences } from "./push-preferences";
+import { PushCampaigns } from "./push-campaigns";
+import { disconnectPushDevice } from "@/lib/push-device";
 import { Toast, useNotice } from "./toast";
 import { serviceIsOpen } from "@/lib/service-hours";
 import { parseStoredPlace } from "@/lib/journey";
@@ -186,7 +189,7 @@ export function Dashboard({
       const value = window.location.hash.slice(1);
       const allowed =
         profile?.role === "admin"
-          ? ["home", "history", "settings", "drivers", "account"]
+          ? ["home", "history", "settings", "drivers", "notifications", "account"]
           : ["home", "history", "account"];
       setPage(allowed.includes(value) ? value : "home");
     };
@@ -236,6 +239,7 @@ export function Dashboard({
             ? [
                 ["drivers", "Equipo"],
                 ["settings", "Servicio"],
+                ["notifications", "Avisos"],
               ]
             : []),
           ["account", "Cuenta"],
@@ -249,6 +253,8 @@ export function Dashboard({
         (profile?.approved && profile.available && t.status === "searching"),
   );
   async function signOut() {
+    try { await disconnectPushDevice(); }
+    catch { setMessage("No pudimos desconectar las notificaciones del dispositivo. Inténtalo de nuevo."); return; }
     const { error } = await client.auth.signOut();
     if (error) setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo.");
     else {
@@ -417,6 +423,8 @@ export function Dashboard({
           <h1>
             {page === "account"
               ? "Tu espacio."
+              : page === "notifications"
+                ? "Comunica de una."
               : page === "settings"
                 ? "Cerca, a tu manera."
                 : page === "drivers"
@@ -463,6 +471,7 @@ export function Dashboard({
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>
               <PasskeySecurity />
+              <PushPreferences />
               <InstallApp />
               <button
                 className="secondary signout"
@@ -471,6 +480,8 @@ export function Dashboard({
                 Cerrar sesión
               </button>
             </div>
+          ) : page === "notifications" && role === "admin" ? (
+            <PushCampaigns />
           ) : page === "settings" && settings ? (
             <div className="account-stack">
             <FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />

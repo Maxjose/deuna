@@ -55,6 +55,7 @@ test("usuario sin sesi?n: acceso p?blico y rutas protegidas", async () => {
       200,
     );
     assert.equal((await fetch("http://127.0.0.1:3187/sw.js")).status, 200);
+    assert.equal((await fetch("http://127.0.0.1:3187/api/push/dispatch", { method: "POST" })).status, 401);
     assert.match(
       await (await fetch("http://127.0.0.1:3187/offline.html")).text(),
       /Volver a intentar/,
