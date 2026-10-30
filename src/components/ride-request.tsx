@@ -25,42 +25,44 @@ export function RideRequest({
     [origin, setOrigin] = useState<Place>({ label: "", point: null }),
     [destination, setDestination] = useState<Place>({ label: "", point: null }),
     [results, setResults] = useState<Place[]>([]),
-    [picking, setPicking] = useState(false),
+    [locating, setLocating] = useState(false),
     [loading, setLoading] = useState(false),
     [message, setMessage] = useState(""),
     [moto, setMoto] = useState(false),
     [routeReady, setRouteReady] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null),
-    destinationInput = useRef<HTMLInputElement>(null),
+    locationVersion = useRef(0),
     searchController = useRef<AbortController | null>(null),
     searchVersion = useRef(0);
   const update = active === "origin" ? setOrigin : setDestination;
   useEffect(() => {
     if (step !== "home" && !dialog.current?.open) {
       dialog.current?.showModal();
-      if (step === "search" && !picking) destinationInput.current?.focus();
     }
     if (step === "home") dialog.current?.close();
-  }, [step, picking]);
-  useEffect(() => () => searchController.current?.abort(), []);
+  }, [step]);
+  useEffect(() => () => { searchController.current?.abort(); locationVersion.current++; }, []);
   function open() {
     setStep("search");
     setActive("destination");
     setMessage("");
+    if (!origin.point) locate();
   }
   function back() {
+    locationVersion.current++;
+    setLocating(false);
     setMessage("");
     setStep(
       step === "confirm" ? "choose" : step === "choose" ? "search" : "home",
     );
   }
   function edit(kind: "origin" | "destination") {
+    if (kind === "origin") { locationVersion.current++; setLocating(false); }
     searchVersion.current++;
     searchController.current?.abort();
     setLoading(false);
     setActive(kind);
     setResults([]);
-    setPicking(false);
     setMessage("");
   }
   async function search(e: React.FormEvent) {
@@ -107,33 +109,24 @@ export function RideRequest({
     }
   }
   function locate() {
-    const version = ++searchVersion.current;
-    searchController.current?.abort();
+    const version = ++locationVersion.current;
     if (!navigator.geolocation) {
       setMessage("Puedes elegir tu recogida en el mapa.");
       setActive("origin");
-      setPicking(true);
       return;
     }
-    setLoading(true);
+    setLocating(true);
     setMessage("");
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        if (version !== searchVersion.current) return;
-        setOrigin({
-          label: "Mi ubicación actual",
-          point: { lat: p.coords.latitude, lng: p.coords.longitude },
-        });
-        setLoading(false);
+        if (version !== locationVersion.current) return;
+        setOrigin({ label: "Mi ubicación actual", point: { lat: p.coords.latitude, lng: p.coords.longitude } });
+        setLocating(false);
       },
       () => {
-        if (version !== searchVersion.current) return;
-        setLoading(false);
-        setMessage(
-          "No pudimos obtener tu ubicación. Elige la recogida en el mapa.",
-        );
-        setActive("origin");
-        setPicking(true);
+        if (version !== locationVersion.current) return;
+        setLocating(false);
+        setMessage("No pudimos obtener tu ubicación. Escribe la recogida o selecciónala en el mapa.");
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
     );
@@ -156,7 +149,6 @@ export function RideRequest({
       setMessage("La recogida y el destino deben ser diferentes.");
       return;
     }
-    setPicking(false);
     setMessage("");
     setStep("choose");
   }
@@ -168,24 +160,6 @@ export function RideRequest({
         <span>¿A dónde quieres ir?</span>
         <AppIcon name="arrow" />
       </button>
-      <button
-        className="ride-map-entry"
-        onClick={() => {
-          open();
-          setPicking(true);
-        }}
-      >
-        <AppIcon name="ride" />
-        Elegir destino en el mapa
-      </button>
-      <div className="ride-entry-note">
-        <AppIcon name="moto" />
-        <p>
-          Tu próxima vuelta,
-          <br />
-          <strong>de una.</strong>
-        </p>
-      </div>
       <dialog
         ref={dialog}
         className="journey-flow-screen"
@@ -198,7 +172,7 @@ export function RideRequest({
         {step !== "home" &&
           (step === "search" ? (
             <>
-              <div className="journey-search-header">
+              <header className="journey-search-nav">
                 <button
                   type="button"
                   className="icon-button"
@@ -207,8 +181,11 @@ export function RideRequest({
                 >
                   ←
                 </button>
+                <strong>Tu recorrido</strong>
+              </header>
+              <div className="journey-search-header">
                 <form onSubmit={search} className="journey-addresses">
-                  <label>
+                  <label className="pickup-address">
                     <span className="address-dot" />
                     Recogida
                     <input
@@ -221,14 +198,16 @@ export function RideRequest({
                         setResults([]);
                       }}
                       maxLength={110}
-                      placeholder="¿Dónde te buscamos?"
+                      placeholder={locating ? "Buscando tu ubicación…" : "¿Dónde te buscamos?"}
                     />
+                    <button type="button" className="locate-button" onClick={locate} disabled={locating} aria-label="Usar mi ubicación actual" title="Usar mi ubicación actual">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg>
+                    </button>
                   </label>
                   <label>
                     <span className="address-dot destination" />
                     Destino
                     <input
-                      ref={destinationInput}
                       aria-label="Destino"
                       value={destination.label}
                       onFocus={() => edit("destination")}
@@ -247,58 +226,11 @@ export function RideRequest({
                 </form>
               </div>
               <div className="journey-search-body">
-                <div className="journey-search-tools">
-                  <button type="button" onClick={locate} disabled={loading}>
-                    <AppIcon name="ride" />
-                    Usar mi ubicación
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPicking(!picking);
-                      setResults([]);
-                    }}
-                  >
-                    <AppIcon name="ride" />
-                    {picking ? "Ocultar mapa" : "Elegir en mapa"}
-                  </button>
-                </div>
                 {message && (
                   <p className="notice" role="status">
                     {message}
                   </p>
                 )}
-                {picking ? (
-                  <>
-                    <div className="point-picker-label">
-                      Toca el mapa para fijar{" "}
-                      {active === "origin" ? "la recogida" : "el destino"}
-                    </div>
-                    <div className="journey-picker-map">
-                      <JourneyMap
-                        origin={origin.point}
-                        destination={destination.point}
-                        picking
-                        onPick={(point) =>
-                          update({
-                            label:
-                              current.label ||
-                              (active === "origin"
-                                ? "Punto de recogida"
-                                : "Destino seleccionado"),
-                            point,
-                          })
-                        }
-                      />
-                    </div>
-                    {current.point && (
-                      <p className="point-fixed" role="status">
-                        ✓ {active === "origin" ? "Recogida" : "Destino"} fijado
-                        en el mapa
-                      </p>
-                    )}
-                  </>
-                ) : (
                   <div className="place-results">
                     {results.map((place, i) => (
                       <button
@@ -318,15 +250,31 @@ export function RideRequest({
                         </span>
                       </button>
                     ))}
-                    {!results.length && !message && (
-                      <p className="address-hint">
-                        Busca tu destino o márcalo en el mapa.
-                        <br />
-                        Confirma también dónde te buscamos.
-                      </p>
-                    )}
                   </div>
-                )}
+                    <div className="point-picker-label">
+                      Toca el mapa para fijar{" "}
+                      {active === "origin" ? "la recogida" : "el destino"}
+                    </div>
+                    <div className="journey-picker-map">
+                      <JourneyMap
+                        origin={origin.point}
+                        destination={destination.point}
+                        picking
+                        onPick={(point) => {
+                          if (active === "origin") { locationVersion.current++; setLocating(false); }
+                          setResults([]);
+                          update({
+                            label:
+                              current.label ||
+                              (active === "origin"
+                                ? "Punto de recogida"
+                                : "Destino seleccionado"),
+                            point,
+                          });
+                        }}
+                      />
+                    </div>
+
               </div>
               <div className="journey-bottom-action">
                 <button className="primary" onClick={next} disabled={loading}>

@@ -1242,42 +1242,6 @@ main {
   font-weight: 650;
   letter-spacing: -0.6px;
 }
-.ride-map-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 52px;
-  border-radius: 14px;
-  background: white;
-  padding: 14px 18px;
-  color: var(--ink);
-  font-size: 13px;
-}
-.ride-map-entry > svg {
-  height: 19px;
-}
-.ride-entry-note {
-  margin: auto 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  color: #8a9781;
-}
-.ride-entry-note > svg {
-  width: 55px;
-  height: 55px;
-  stroke-width: 1.2;
-}
-.ride-entry-note p {
-  font-size: 14px;
-  line-height: 1.5;
-}
-.ride-entry-note strong {
-  font-size: 23px;
-  color: var(--ink);
-  letter-spacing: -0.5px;
-}
 .journey-flow-screen {
   position: fixed;
   inset: 0;
@@ -1304,19 +1268,53 @@ main {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: calc(18px + env(safe-area-inset-top)) 20px 18px;
+  padding: 0 20px 14px;
   background: white;
   flex-shrink: 0;
   box-shadow: 0 3px 10px #12203308;
   z-index: 2;
 }
-.journey-search-header > .icon-button {
-  height: 38px;
-  width: 38px;
+.journey-search-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: calc(12px + env(safe-area-inset-top)) 20px 12px;
+  background: white;
   flex-shrink: 0;
-  font-size: 27px;
-  background: transparent;
+}
+.journey-search-nav .icon-button {
+  background: #f2f4f5;
+  width: 42px;
+  height: 42px;
+  font-size: 26px;
   box-shadow: none;
+}
+.pickup-address input { padding-right: 52px; }
+.locate-button {
+  position: absolute;
+  right: 0;
+  top: 19px;
+  width: 44px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink);
+}
+.locate-button svg { width: 23px; height: 23px; }
+.journey-search-body {
+  display: flex;
+  flex-direction: column;
+}
+.journey-search-body .place-results {
+  overflow-y: auto;
+  max-height: 32%;
+  flex-shrink: 0;
+}
+.journey-search-body .journey-picker-map {
+  flex: 1;
+  min-height: 160px;
+  height: auto;
 }
 .journey-addresses {
   flex: 1;
@@ -1377,29 +1375,6 @@ main {
   flex: 1;
   min-height: 0;
 }
-.journey-search-tools {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-.journey-search-tools button {
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 10px;
-  min-height: 46px;
-  font-size: 11px;
-  flex: 1;
-  color: var(--ink);
-}
-.journey-search-tools svg {
-  width: 18px;
-  height: 18px;
-}
 .place-results button {
   display: flex;
   gap: 14px;
@@ -1434,13 +1409,6 @@ main {
   font-size: 11px;
   color: var(--muted);
   margin-top: 4px;
-}
-.address-hint {
-  text-align: center;
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.9;
-  padding: 28px 0;
 }
 .journey-bottom-action {
   padding: 15px 20px calc(20px + env(safe-area-inset-bottom));
@@ -1613,14 +1581,6 @@ main {
   font-size: 13px;
   font-weight: 600;
   display: block;
-}
-.confirmation-zone {
-  font-size: 11px;
-}
-.confirmation-zone select {
-  margin: 6px 0 10px;
-  min-height: 44px;
-  padding: 10px 12px;
 }
 .journey-bottom-sheet .service-closed {
   font-size: 11px;

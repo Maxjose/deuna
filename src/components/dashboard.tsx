@@ -354,6 +354,7 @@ export function Dashboard({
           </div>
         )}
         <section className="content" key={page} aria-busy={busy}>
+          {!(page === "home" && role === "passenger") && <>
           <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
           <h1>
             {page === "account"
@@ -368,6 +369,7 @@ export function Dashboard({
                       ? "¿Pa’ dónde vamos?"
                       : "Vamos de una."}
           </h1>
+          </>}
           {message && (
             <p className="notice" role="status">
               {message}
