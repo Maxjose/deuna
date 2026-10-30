@@ -2048,3 +2048,19 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
  .driver-history .cards { grid-template-columns: minmax(0,1fr); gap: 16px; }
  .driver-history .cards .trip-card { padding: 22px; }
 }
+
+.shell > main > .content:has(.account-overview), .shell > main > .content:has(.account-subsection) { width: 100%; min-width: 0; }
+.account-overview, .account-subsection { width: 100%; min-width: 0; }
+.account-menu { display: grid; gap: 10px; width: 100%; min-width: 0; }
+.account-menu-item.secondary { display: flex; align-items: center; gap: 14px; text-align: left; padding: 17px 18px; border-radius: 18px; background: var(--surface); margin: 0; }
+.account-menu-item > svg:first-child { width: 24px; height: 24px; flex-shrink: 0; }
+.account-menu-item > span { flex: 1; font-size: 14px; }
+.account-menu-item > svg:last-child { width: 18px; height: 18px; color: var(--muted); }
+.account-back { width: fit-content; padding: 8px 0; text-align: left; font-size: 13px; }
+.account-overview .account-card { padding: 22px; }
+.account-overview .account-card .avatar { width: 56px; height: 56px; font-size: 24px; }
+.account-overview .account-card h2 { margin: 10px 0 4px; }
+.account-overview .account-email, .account-overview .reputation { margin: 5px 0; }
+.admin-shell .admin-page-account > .account-overview, .admin-shell .admin-page-account > .account-subsection { grid-template-columns: minmax(0,1fr); max-width: 760px; }
+.admin-shell .account-overview .account-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.admin-shell .account-overview .account-menu { grid-column: 1 / -1; }

@@ -69,6 +69,8 @@ export function Dashboard({
   const router = useRouter();
   const savedPlaces=useFavoritePlaces(userId);
   const [setupHome,setSetupHome]=useState(false);
+  const [accountSection,setAccountSection]=useState("overview");
+  useEffect(()=>{if(setupHome)setAccountSection("favorites");},[setupHome]);
   const {theme:adminTheme,toggleTheme}=useAdminTheme(userId);
   const client = useMemo(() => browserClient(), []),
     [profile, setProfile] = useState<Profile | null>(null),
@@ -88,7 +90,7 @@ export function Dashboard({
   useEffect(()=>{if(acceptTrip)acceptDialog.current?.showModal();},[acceptTrip]);
   const signOutDialog = useRef<HTMLDialogElement>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const { message, notify: setMessage } = useNotice(page);
+  const { message, notify: setMessage } = useNotice(page === "account" ? `account-${accountSection}` : page);
   const load = useCallback(async () => {
     const [p, t, s] = await Promise.all([
       client.from("profiles").select("id,role,approved,available,suspended"),
@@ -234,6 +236,7 @@ export function Dashboard({
     if (cancelId) cancelDialog.current?.showModal();
   }, [cancelId]);
   const navigate = (value: string) => {
+    if(value!=="account")setAccountSection("overview");
     window.location.hash = value;
     setPage(value);
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -407,7 +410,7 @@ export function Dashboard({
                 (page === p ? "selected " : "")
               }
               aria-current={page === p ? "page" : undefined}
-              onClick={() => navigate(p)}
+              onClick={() => {if(p==="account")setAccountSection("overview");navigate(p);}}
             >
               <AppIcon name={p} />
               <span>{label}</span>
@@ -455,7 +458,7 @@ export function Dashboard({
           <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
           <h1>
             {page === "account"
-              ? "Tu espacio."
+              ? ({overview:"Tu espacio.",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",preferences:"Configuración"}[accountSection] || "Tu espacio.")
               : page === "places"
                 ? "Lugares que nos conectan."
               : page === "notifications"
@@ -490,7 +493,9 @@ export function Dashboard({
           ) : page === "messages" && role !== "admin" ? (
             <TripChat userId={userId} refresh={trips} offline={offline}/>
           ) : page === "account" ? (
-            <div className="account-stack">
+            <div className={"account-stack " + (accountSection === "overview" ? "account-overview" : "account-subsection")}>
+              {accountSection!=="overview"&&<button className="account-back text" onClick={()=>setAccountSection("overview")}>← Volver a Cuenta</button>}
+              {accountSection==="overview"&&<>
               <article className="trip-card account-card">
                 <div className="avatar">{(displayName || email)[0]?.toUpperCase()}</div>
                 <h2>{displayName || "Tu cuenta"}</h2>
@@ -504,6 +509,12 @@ export function Dashboard({
                       : "Pasajero"}
                 </span>
               </article>
+              <div className="account-menu">
+                {[["info","Tu información","account"],["security","Seguridad","key"],["favorites","Lugares favoritos","places"],["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>setAccountSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+              </div>
+              <button className="secondary signout" onClick={()=>signOutDialog.current?.showModal()}>Cerrar sesión</button>
+              </>}
+              {accountSection==="info"&&
               <form className="trip-card" onSubmit={saveProfile}>
                 <h2>Tus datos</h2>
                 <label>Nombre
@@ -513,17 +524,10 @@ export function Dashboard({
                   <input name="phone" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
                 </label>
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
-              </form>
-              <PasskeySecurity />
-              <FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>
-              <PushPreferences />
-              <InstallApp />
-              <button
-                className="secondary signout"
-                onClick={() => signOutDialog.current?.showModal()}
-              >
-                Cerrar sesión
-              </button>
+              </form>}
+              {accountSection==="security"&&<PasskeySecurity />}
+              {accountSection==="favorites"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
+              {accountSection==="preferences"&&<><PushPreferences /><InstallApp /></>}
             </div>
           ) : page === "places" && role === "admin" ? (
             <PlacesCatalog />
