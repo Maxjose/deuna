@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
+import { TripChat } from "./trip-chat";
 import { DriverNavigation } from "./driver-navigation";
 import { AdminRecords } from "./admin-records";
 import { NotificationInbox } from "./notification-inbox";
@@ -204,7 +205,7 @@ export function Dashboard({
       const allowed =
         profile?.role === "admin"
           ? ["home", "history", "settings", "places", "drivers", "users", "notifications", "account"]
-          : ["home", "history", "account"];
+          : ["home", "history", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
     };
     syncPage();
@@ -258,7 +259,7 @@ export function Dashboard({
                 ["places", "Lugares"],
                 ["notifications", "Avisos"],
               ]
-            : []),
+            : [["messages", "Mensajes"]]),
           ["account", "Cuenta"],
         ];
   const visibleTrips = trips.filter((t) =>
@@ -396,8 +397,6 @@ export function Dashboard({
               }
               aria-current={page === p ? "page" : undefined}
               onClick={() => navigate(p)}
-              disabled={p === "messages"}
-              title={p === "messages" ? "Mensajes: próximamente" : undefined}
             >
               <AppIcon name={p} />
               <span>{label}</span>
@@ -451,6 +450,8 @@ export function Dashboard({
                 ? "Comunica de una."
               : page === "settings"
                 ? "Cerca, a tu manera."
+                : page === "messages"
+                  ? "Mensajes"
                 : page === "users"
                   ? "Nuestros usuarios."
                 : page === "drivers"
@@ -474,6 +475,8 @@ export function Dashboard({
             </div>
           ) : profile.suspended ? (
             <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={()=>signOutDialog.current?.showModal()}>Cerrar sesión</button></article>
+          ) : page === "messages" && role !== "admin" ? (
+            <TripChat userId={userId} refresh={trips} offline={offline}/>
           ) : page === "account" ? (
             <div className="account-stack">
               <article className="trip-card account-card">
