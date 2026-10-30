@@ -162,24 +162,31 @@ export function Dashboard({
     setPage(value);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
-  const tabs = [
-    [
-      "home",
-      role === "admin"
-        ? "Inicio"
-        : role === "driver"
-          ? "Solicitudes"
-          : "Viajar",
-    ],
-    ["history", "Viajes"],
-    ...(role === "admin"
+  const tabs =
+    role === "passenger"
       ? [
-          ["drivers", "Equipo"],
-          ["settings", "Servicio"],
+          ["history", "Viajes"],
+          ["home", "Viajar"],
+          ["account", "Cuenta"],
         ]
-      : []),
-    ["account", "Cuenta"],
-  ];
+      : [
+          [
+            "home",
+            role === "admin"
+              ? "Inicio"
+              : role === "driver"
+                ? "Solicitudes"
+                : "Viajar",
+          ],
+          ["history", "Viajes"],
+          ...(role === "admin"
+            ? [
+                ["drivers", "Equipo"],
+                ["settings", "Servicio"],
+              ]
+            : []),
+          ["account", "Cuenta"],
+        ];
   const visibleTrips = trips.filter((t) =>
     page === "history"
       ? role === "admin" || t.passenger_id === userId || t.driver_id === userId
@@ -267,7 +274,12 @@ export function Dashboard({
     );
   }
   return (
-    <div className="shell">
+    <div
+      className={
+        "shell " +
+        (page === "home" && role === "passenger" ? "ride-screen" : "")
+      }
+    >
       <aside className="sidebar">
         <a className="brand" href="/dashboard">
           <img
@@ -290,11 +302,17 @@ export function Dashboard({
           {tabs.map(([p, label]) => (
             <button
               key={p}
-              className={"nav-item " + (page === p ? "selected" : "")}
+              className={
+                "nav-item " +
+                (page === p ? "selected " : "") +
+                (p === "home" && role === "passenger" ? "nav-ride" : "")
+              }
               aria-current={page === p ? "page" : undefined}
               onClick={() => navigate(p)}
             >
-              <AppIcon name={p} />
+              <AppIcon
+                name={p === "home" && role === "passenger" ? "ride" : p}
+              />
               <span>{label}</span>
             </button>
           ))}
@@ -306,17 +324,16 @@ export function Dashboard({
       </aside>
       <main>
         <header className="app-header">
-          <div>
-            <span className="header-kicker">
-              DE1NA ·{" "}
-              {role === "admin"
-                ? "ADMINISTRACIÓN"
-                : role === "driver"
-                  ? "MOTORIZADO"
-                  : "MARA, ZULIA"}
+          <a
+            className="header-brand"
+            href="/dashboard"
+            aria-label="De1na, inicio"
+          >
+            <img src="/icons/icon-192.png" width="46" height="46" alt="" />
+            <span className="header-wordmark">
+              De<span>1</span>na
             </span>
-            <strong>{tabs.find(([p]) => p === page)?.[1]}</strong>
-          </div>
+          </a>
           <button
             className={"icon-button " + (refreshing ? "refreshing" : "")}
             aria-label="Actualizar datos"
@@ -331,10 +348,6 @@ export function Dashboard({
             Sin conexión. Reconéctate para consultar o actualizar viajes.
           </div>
         )}
-        <div className="pilot-label">
-          <span />
-          Piloto de prueba · Sin transporte real
-        </div>
         <section className="content" key={page} aria-busy={busy}>
           <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
           <h1>
@@ -477,7 +490,7 @@ export function Dashboard({
               card(mine)
             ) : (
               <form
-                className="trip-card"
+                className="trip-card ride-request"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget);
@@ -495,43 +508,46 @@ export function Dashboard({
                     <small>Un viaje para ti</small>
                   </div>
                 </div>
-                <label>
-                  Punto de recogida
-                  <input
-                    name="origin"
-                    required
-                    maxLength={150}
-                    placeholder="¿Dónde te buscamos?"
-                  />
-                </label>
-                <label>
-                  Destino
-                  <input
-                    name="destination"
-                    required
-                    maxLength={150}
-                    placeholder="¿A dónde quieres ir?"
-                  />
-                </label>
-                <label>
-                  Zona
-                  <select name="zone" required>
-                    <option value="">Selecciona una zona</option>
-                    {settings?.zones.map((z) => (
-                      <option key={z}>{z}</option>
-                    ))}
-                  </select>
-                </label>
-                <p className="price-note">
-                  Prueba técnica. Aún no existe una tarifa ni se solicita
-                  transporte real. La cobertura se valida por zona declarada.
-                </p>
-                <button
-                  className="primary"
-                  disabled={busy || offline || !settings?.enabled}
-                >
-                  Solicitar viaje de prueba ↗
-                </button>
+                <div className="ride-fields">
+                  <label>
+                    Punto de recogida
+                    <input
+                      name="origin"
+                      required
+                      maxLength={150}
+                      placeholder="¿Dónde te buscamos?"
+                    />
+                  </label>
+                  <label>
+                    Destino
+                    <input
+                      name="destination"
+                      required
+                      maxLength={150}
+                      placeholder="¿A dónde quieres ir?"
+                    />
+                  </label>
+                  <label>
+                    Zona
+                    <select name="zone" required>
+                      <option value="">Selecciona una zona</option>
+                      {settings?.zones.map((z) => (
+                        <option key={z}>{z}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="ride-actions">
+                  <p className="price-note">
+                    Tarifa pendiente de definición · Pago directo al motorizado.
+                  </p>
+                  <button
+                    className="primary"
+                    disabled={busy || offline || !settings?.enabled}
+                  >
+                    Solicitar viaje de prueba ↗
+                  </button>
+                </div>
               </form>
             )
           ) : (
