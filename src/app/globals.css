@@ -2080,3 +2080,5 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .completion-screen .text { margin-top:14px; }
 .map-reference { display:block; padding:12px 18px; font-size:12px; }
 @media(max-height:550px) { .completion-screen[open] { justify-content:flex-start; } }
+
+.map-center-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 22px; height: 22px; color: #122033; opacity: .8; z-index: 450; pointer-events: none; }
