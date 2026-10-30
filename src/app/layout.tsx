@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PwaRegistration } from "@/components/pwa-registration";
+import { LaunchScreen } from "@/components/launch-screen";
 export const metadata: Metadata = {
   title: "De1na · Movilidad sin complicaciones",
   description: "Tu viaje en moto en Mara, Zulia.",
@@ -29,7 +30,7 @@ export default function RootLayout({
     <html lang="es">
       <body>
         <PwaRegistration />
-        {children}
+        <LaunchScreen>{children}</LaunchScreen>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
 import { InstallApp } from "./install-app";
+import { useRouter } from "next/navigation";
 
 type Profile = {
   id: string;
@@ -41,6 +42,7 @@ export function Dashboard({
   email: string;
   userId: string;
 }) {
+  const router = useRouter();
   const client = useMemo(() => browserClient(), []),
     [profile, setProfile] = useState<Profile | null>(null),
     [profiles, setProfiles] = useState<Profile[]>([]),
@@ -198,7 +200,10 @@ export function Dashboard({
   async function signOut() {
     const { error } = await client.auth.signOut();
     if (error) setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo.");
-    else window.location.assign("/login");
+    else {
+      router.replace("/login");
+      router.refresh();
+    }
   }
   function card(t: Trip) {
     return (

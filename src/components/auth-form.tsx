@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 export function AuthForm({
   configured,
@@ -8,6 +9,7 @@ export function AuthForm({
   configured: boolean;
   reset?: boolean;
 }) {
+  const router = useRouter();
   const [mode, setMode] = useState<"login" | "register" | "recover">("login"),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
@@ -23,14 +25,16 @@ export function AuthForm({
       if (reset) {
         const { error } = await client.auth.updateUser({ password });
         if (error) throw error;
-        window.location.assign("/dashboard");
+        router.replace("/dashboard");
+        router.refresh();
       } else if (mode === "login") {
         const { error } = await client.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        window.location.assign("/dashboard");
+        router.replace("/dashboard");
+        router.refresh();
       } else if (mode === "register") {
         const { error } = await client.auth.signUp({
           email,
