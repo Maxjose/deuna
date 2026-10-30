@@ -4,6 +4,7 @@ import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
+import { RideRequest } from "./ride-request";
 import { useRouter } from "next/navigation";
 
 type Profile = {
@@ -207,6 +208,38 @@ export function Dashboard({
     }
   }
   function card(t: Trip) {
+    if (role === "passenger" && page === "home" && t.status === "searching")
+      return (
+        <section
+          className="searching-ride"
+          key={t.id}
+          aria-label="Buscando motorizado"
+        >
+          <div className="search-visual" aria-hidden="true">
+            <span />
+            <span />
+            <div>
+              <AppIcon name="moto" />
+            </div>
+          </div>
+          <h2>Buscando tu motorizado</h2>
+          <p role="status">Estamos buscando quién te lleve.</p>
+          <article className="trip-card search-route">
+            <small>RECOGIDA</small>
+            <strong>{t.origin}</strong>
+            <span className="route-dots">↓</span>
+            <small>DESTINO</small>
+            <strong>{t.destination}</strong>
+          </article>
+          <button
+            className="secondary"
+            disabled={busy || offline}
+            onClick={() => setCancelId(t.id)}
+          >
+            Cancelar solicitud
+          </button>
+        </section>
+      );
     return (
       <article className="trip-card" key={t.id}>
         <div className="row">
@@ -230,9 +263,6 @@ export function Dashboard({
           </div>
         </div>
         <p className="muted">{t.zone}</p>
-        <p className="price-note">
-          Piloto técnico · Tarifa pendiente · Pago directo al motorizado
-        </p>
         {t.driver_id && <p>Motorizado #{t.driver_id.slice(0, 8)}</p>}
         {role === "driver" && t.status === "searching" && (
           <button
@@ -250,7 +280,7 @@ export function Dashboard({
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
             <button
               className="primary"
-              disabled={busy || offline || offline}
+              disabled={busy || offline}
               onClick={() => void act("advance", { id: t.id })}
             >
               {
@@ -268,7 +298,7 @@ export function Dashboard({
           ["searching", "assigned", "arrived"].includes(t.status) && (
             <button
               className="secondary"
-              disabled={busy || offline || offline}
+              disabled={busy || offline}
               onClick={() => {
                 setCancelId(t.id);
               }}
@@ -466,7 +496,7 @@ export function Dashboard({
                   defaultValue={settings.zones.join("\n")}
                 />
               </label>
-              <button className="primary" disabled={busy || offline || offline}>
+              <button className="primary" disabled={busy || offline}>
                 Guardar configuración
               </button>
             </form>
@@ -481,7 +511,7 @@ export function Dashboard({
                   {p.role !== "admin" && (
                     <button
                       className="secondary"
-                      disabled={busy || offline || offline}
+                      disabled={busy || offline}
                       onClick={() =>
                         void act("driver", { id: p.id, approved: !p.approved })
                       }
@@ -496,66 +526,13 @@ export function Dashboard({
             mine ? (
               card(mine)
             ) : (
-              <form
-                className="trip-card ride-request"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const f = new FormData(e.currentTarget);
-                  void act("request", {
-                    origin: f.get("origin"),
-                    destination: f.get("destination"),
-                    zone: f.get("zone"),
-                  });
-                }}
-              >
-                <div className="service">
-                  <span className="service-icon">↗</span>
-                  <div>
-                    <strong>De1na Moto</strong>
-                    <small>Un viaje para ti</small>
-                  </div>
-                </div>
-                <div className="ride-fields">
-                  <label>
-                    Punto de recogida
-                    <input
-                      name="origin"
-                      required
-                      maxLength={150}
-                      placeholder="¿Dónde te buscamos?"
-                    />
-                  </label>
-                  <label>
-                    Destino
-                    <input
-                      name="destination"
-                      required
-                      maxLength={150}
-                      placeholder="¿A dónde quieres ir?"
-                    />
-                  </label>
-                  <label>
-                    Zona
-                    <select name="zone" required>
-                      <option value="">Selecciona una zona</option>
-                      {settings?.zones.map((z) => (
-                        <option key={z}>{z}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="ride-actions">
-                  <p className="price-note">
-                    Tarifa pendiente de definición · Pago directo al motorizado.
-                  </p>
-                  <button
-                    className="primary"
-                    disabled={busy || offline || !settings?.enabled}
-                  >
-                    Solicitar viaje de prueba ↗
-                  </button>
-                </div>
-              </form>
+              <RideRequest
+                zones={settings?.zones || []}
+                enabled={settings?.enabled || false}
+                busy={busy}
+                offline={offline}
+                onRequest={(payload) => act("request", payload)}
+              />
             )
           ) : (
             <>

@@ -68,3 +68,13 @@ Activación pendiente en Supabase → Authentication → Passkeys, proyecto yykd
 No usar vercel.app como RP ID ni incluir dominios de previews. Cambiar el RP ID en el futuro requerirá volver a registrar las passkeys. La API de Supabase es experimental. El conector no permite modificar la configuración Auth y el navegador de revisión no tiene sesión del panel de Supabase, por lo que esta activación debe hacerla el propietario.
 
 El frontend detectará la activación al recargar o pulsar Comprobar disponibilidad. Registrar una credencial requiere usuario autenticado y correo confirmado. La biometría/PIN se gestiona en el dispositivo. La aplicación no almacena datos biométricos ni implementa un desbloqueo ficticio con localStorage. Probar registro, salida, entrada, cancelación y revocación en Android/iOS antes de habilitarlo al público.
+
+## Flujo de solicitud por etapas
+
+Viajar ahora presenta: destino (escrito o punto en mapa con referencia), selección explícita de Moto y datos de recogida/zona, solicitud y espera de motorizado. La espera se muestra solo tras guardar la solicitud en Supabase; no es un temporizador simulado. Los pasos posteriores existentes no se amplían en esta entrega.
+
+El mapa Leaflet se carga bajo demanda con mosaicos de OpenStreetMap y atribución visible. No hay autocompletado ni geocodificación inversa: el usuario fija un punto y escribe su dirección o referencia. La referencia y las coordenadas confirmadas se guardan juntas en el campo destino dentro del límite actual de 150 caracteres. La cobertura continúa validándose por zona declarada, no por coordenadas.
+
+Para el piloto se usa el servicio público de mapas; antes de operar con mayor carga debe elegirse un proveedor adecuado. No se precargan mapas ni se ofrecen mapas offline. NEXT_PUBLIC_MAP_TILES_URL permite cambiar la URL de mosaicos (revisar también atribución/licencia al cambiar de proveedor).
+
+Verificación: cinco pruebas automatizadas y comprobación en navegador de elección en mapa, confirmación, selección de moto y envío a un receptor aislado sin crear viajes reales. La ruta temporal de revisión fue eliminada antes de publicar.
