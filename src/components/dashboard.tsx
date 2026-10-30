@@ -661,6 +661,7 @@ export function Dashboard({
         {acceptTrip&&<><p><strong>Recogida:</strong> {parseStoredPlace(acceptTrip.origin).label}</p><p><strong>Destino:</strong> {parseStoredPlace(acceptTrip.destination).label}</p>{acceptTrip.fare_cents!=null&&<p><strong>{usd(acceptTrip.fare_cents)}</strong></p>}</>}
         <button className="primary" disabled={busy||offline} onClick={async()=>{if(acceptTrip){const accepted=await act('accept',{id:acceptTrip.id});if(accepted)acceptDialog.current?.close();}}}>{busy?'Aceptando…':'Sí, aceptar viaje'}</button>
         <button className="secondary" disabled={busy} onClick={()=>acceptDialog.current?.close()}>Volver a solicitudes</button>
+        <Toast message={message}/>
       </dialog>
       <dialog ref={signOutDialog} className="action-sheet" aria-labelledby="signout-title" onCancel={e => { if (signingOut) e.preventDefault(); }}>
         <div className="sheet-handle" />
