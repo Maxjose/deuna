@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
+import {loadReputation,loadTripContact} from "@/lib/participant-data";
+import {clearParticipantCache} from "@/lib/participant-cache";
 import { AppIcon } from "./app-icon";
 import { TripChat } from "./trip-chat";
 import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
@@ -107,6 +109,10 @@ export function Dashboard({
       );
       return;
     }
+    const own=p.data.find(person=>person.id===userId);
+    const occupied=t.data.some(trip=>trip.driver_id===userId&&['assigned','arrived','ongoing'].includes(trip.status));
+    const contacts=own?.suspended?[]:t.data.filter(trip=>own?.role!=='admin'&&(trip.passenger_id===userId&&trip.driver_id||trip.driver_id===userId||own?.role==='driver'&&own.approved&&own.available&&!occupied&&trip.status==='searching'));
+    await Promise.allSettled([loadReputation(client,userId,userId),...contacts.map(trip=>loadTripContact(client,userId,trip.id))]);
     setProfiles(p.data);
     setProfile(p.data.find((p) => p.id === userId) || null);
     setTrips(t.data);
@@ -288,6 +294,7 @@ export function Dashboard({
     const { error } = await client.auth.signOut();
     if (error) setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo.");
     else {
+      clearParticipantCache(userId);
       router.replace("/login");
       router.refresh();
     }
@@ -336,8 +343,8 @@ export function Dashboard({
         {page !== "history" && t.zone && <p className="muted">{t.zone}</p>}
         {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{page !== "history" && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
         {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
-        {role==='driver'&&<TripPerson tripId={t.id} label="Pasajero"/>}
-        {role==='passenger'&&t.driver_id&&<TripPerson tripId={t.id} label="Motorizado"/>}
+        {role==='driver'&&<TripPerson viewerId={userId} tripId={t.id} label="Pasajero"/>}
+        {role==='passenger'&&t.driver_id&&<TripPerson viewerId={userId} tripId={t.id} label="Motorizado"/>}
         {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="secondary" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Hablar con mi motorizado</button>}
         {t.driver_id && role==='admin' && <p className="trip-person"><small>Motorizado</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
         {role === "driver" && t.status === "searching" && (
@@ -499,7 +506,7 @@ export function Dashboard({
               <article className="trip-card account-card">
                 <div className="avatar">{(displayName || email)[0]?.toUpperCase()}</div>
                 <h2>{displayName || "Tu cuenta"}</h2>
-                <DriverReputation personId={userId}/>
+                <DriverReputation viewerId={userId} personId={userId}/>
                 <p className="account-email">{email}</p>
                 <span className="pill green">
                   {role === "admin"
@@ -586,7 +593,7 @@ export function Dashboard({
             </form>
             </div>
           ) : role === "admin" && (page === "drivers" || page === "users" || page === "history") ? (
-            <AdminRecords key={page} section={page === "drivers" ? "team" : page === "users" ? "users" : "trips"} busy={busy || offline} refresh={profiles} onDriver={(id,approved)=>act("driver",{id,approved})} renderTrip={card}/>
+            <AdminRecords viewerId={userId} key={page} section={page === "drivers" ? "team" : page === "users" ? "users" : "trips"} busy={busy || offline} refresh={profiles} onDriver={(id,approved)=>act("driver",{id,approved})} renderTrip={card}/>
           ) : page === "home" && role === "passenger" ? (
             mine ? (
               card(mine)

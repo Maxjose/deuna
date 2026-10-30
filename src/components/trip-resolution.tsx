@@ -1,21 +1,25 @@
 "use client";
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState,useSyncExternalStore,useCallback} from 'react';
 import {browserClient} from '@/lib/supabase/client';
 import {parseStoredPlace} from '@/lib/journey';
+import {participantKey,readParticipant,subscribeParticipant} from '@/lib/participant-cache';
+import {loadReputation,loadTripContact,type Reputation,type TripContact} from '@/lib/participant-data';
 export function TripCancellation({pending,passenger,busy,onAction}:{pending:boolean;passenger:boolean;busy:boolean;onAction:(action:string,approved?:boolean)=>Promise<boolean>}){
  const [confirm,setConfirm]=useState(false);
  return <div className="trip-cancellation">{pending?<><p>{passenger?'Tu motorizado solicita cancelar este viaje.':'Cancelación solicitada. El viaje continúa activo hasta que el cliente autorice.'}</p>{passenger&&(confirm?<><p>¿Confirmas cancelar el viaje?</p><button className="secondary danger" disabled={busy} onClick={()=>void onAction('respond_cancel',true)}>Sí, autorizar cancelación</button><button className="text" onClick={()=>setConfirm(false)}>Volver</button></>:<><button className="secondary" disabled={busy} onClick={()=>setConfirm(true)}>Autorizar cancelación</button><button className="secondary" disabled={busy} onClick={()=>void onAction('respond_cancel',false)}>Continuar con el viaje</button></>)}</>:!passenger&&(confirm?<><p>Se pedirá autorización al pasajero. El viaje seguirá activo mientras responde.</p><button className="secondary danger" disabled={busy} onClick={async()=>{if(await onAction('request_cancel'))setConfirm(false);}}>Confirmar solicitud</button><button className="text" onClick={()=>setConfirm(false)}>Volver</button></>:<button className="text" disabled={busy} onClick={()=>setConfirm(true)}>Solicitar cancelar viaje</button>)}</div>;
 }
-export function DriverReputation({personId}:{personId:string}){
- const [rating,setRating]=useState<{average:number|null;count:number}|null>(null);
- useEffect(()=>{let alive=true;void browserClient().rpc('user_reputation',{person_id:personId}).then(({data,error})=>{if(alive&&!error)setRating(data);});return()=>{alive=false;};},[personId]);
- return rating?<p className="reputation">★ {rating.count?`${Number(rating.average).toFixed(1)} / 5 · ${rating.count} valoraciones`:'Sin valoraciones todavía'}</p>:null;
+export function DriverReputation({personId,viewerId}:{personId:string;viewerId:string}){
+ const key=participantKey(viewerId,'rating',personId);
+ const rating=useSyncExternalStore(useCallback(listener=>subscribeParticipant(key,listener),[key]),useCallback(()=>readParticipant<Reputation>(key),[key]),()=>null);
+ useEffect(()=>{void loadReputation(browserClient(),viewerId,personId).catch(()=>{});},[viewerId,personId]);
+ return <p className="reputation">★ {rating?(rating.count?`${Number(rating.average).toFixed(1)} / 5 · ${rating.count} valoraciones`:'Sin valoraciones todavía'):'—'}</p>;
 }
 type Completed={id:string;driver_name:string;destination:string};
-export function TripPerson({tripId,label}:{tripId:string;label:string}){
- const [person,setPerson]=useState<{name:string;rating:{average:number|null;count:number}}|null>(null);
- useEffect(()=>{let alive=true;void browserClient().rpc('trip_person',{trip_id:tripId}).then(({data,error})=>{if(alive&&!error)setPerson(data);});return()=>{alive=false;};},[tripId]);
- return person?<div className="trip-person"><small>{label}</small><strong>{person.name}</strong><p className="reputation">★ {person.rating.count?`${Number(person.rating.average).toFixed(1)} / 5 · ${person.rating.count} valoraciones`:'Sin valoraciones todavía'}</p></div>:null;
+export function TripPerson({tripId,label,viewerId}:{tripId:string;label:string;viewerId:string}){
+ const key=participantKey(viewerId,'trip',tripId);
+ const person=useSyncExternalStore(useCallback(listener=>subscribeParticipant(key,listener),[key]),useCallback(()=>readParticipant<TripContact>(key),[key]),()=>null);
+ useEffect(()=>{void loadTripContact(browserClient(),viewerId,tripId).catch(()=>{});},[viewerId,tripId]);
+ return <div className="trip-person"><small>{label}</small><strong>{person?.name||'—'}</strong><p className="reputation">★ {person?(person.rating.count?`${Number(person.rating.average).toFixed(1)} / 5 · ${person.rating.count} valoraciones`:'Sin valoraciones todavía'):'—'}</p></div>;
 }
 export function TripCompletion({refresh,onDone}:{refresh:unknown;onDone:()=>void}){
  const client=useMemo(()=>browserClient(),[]),dialog=useRef<HTMLDialogElement>(null);

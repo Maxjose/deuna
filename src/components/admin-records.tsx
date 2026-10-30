@@ -4,7 +4,7 @@ import { browserClient } from '@/lib/supabase/client';
 import { DriverReputation } from './trip-resolution';
 type Person={id:string;name:string;email:string;phone:string;role:string;approved:boolean;available:boolean;suspended:boolean};
 export type AdminTrip={id:string;origin:string;destination:string;zone:string|null;fare_cents:number|null;distance_meters:number|null;status:string;passenger_id:string;driver_id:string|null;passenger_name?:string;driver_name?:string};
-export function AdminRecords({section,busy,refresh,onDriver,renderTrip}:{section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
+export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
   const detail=useRef<HTMLDialogElement>(null);
   const [person,setPerson]=useState<Person|null>(null),[operation,setOperation]=useState(''),[saving,setSaving]=useState(false),[actionError,setActionError]=useState('');
   useEffect(()=>{if(person)detail.current?.showModal();},[person]);
@@ -33,14 +33,14 @@ export function AdminRecords({section,busy,refresh,onDriver,renderTrip}:{section
     {isPeople&&<dialog ref={detail} className="action-sheet member-sheet" aria-label="Gestionar cuenta" onCancel={e=>{if(saving)e.preventDefault();}} onClose={()=>{setPerson(null);setOperation('');}}>
       {person&&<><div className="row"><h2>{person.name||person.email||'Usuario sin nombre'}</h2><button className="icon-button" disabled={saving} aria-label="Cerrar ficha" onClick={()=>detail.current?.close()}>×</button></div>
       <p className="team-email">{person.email}</p>{person.phone&&<p>{person.phone}</p>}
-      <DriverReputation personId={person.id}/>
+      <DriverReputation viewerId={viewerId} personId={person.id}/>
       <p>{person.role==='driver'?'Motorizado · Moto':'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
       {person.role==='driver'&&<p className="muted">{person.available?'Disponible para viajes':'Desconectado'}</p>}
       {operation?<div className="member-confirm"><p>¿Confirmar: {operationLabel(operation)}?</p><p className="muted">La cuenta no debe tener viajes activos.</p><button className="primary" disabled={saving||busy} onClick={()=>void manage()}>{saving?'Guardando…':'Confirmar cambio'}</button><button className="secondary" disabled={saving} onClick={()=>setOperation('')}>Cancelar</button></div>:<div className="member-actions">
         {person.role==='driver'?<button className="secondary" disabled={busy} onClick={()=>setOperation(person.approved?'suspend_driver':'approve_driver')}>{person.approved?'Suspender motorizado':'Aprobar motorizado'}</button>:<><button className="secondary" disabled={busy} onClick={()=>setOperation(person.suspended?'restore_account':'suspend_account')}>{person.suspended?'Reactivar cuenta':'Suspender cuenta'}</button><button className="secondary" disabled={busy||person.suspended} onClick={()=>setOperation('assign_driver')}>Asignar como motorizado</button></>}
       </div>}
       {actionError&&<p role="alert">{actionError}</p>}
-      <h3>Historial de viajes</h3><AdminRecords key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/>
+      <h3>Historial de viajes</h3><AdminRecords viewerId={viewerId} key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/>
       </>}
     </dialog>}
   </div>;
