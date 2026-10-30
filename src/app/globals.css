@@ -2038,3 +2038,13 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .chat-person strong, .chat-person small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .driver-chat-button.secondary { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 0 0 12px; }
+
+.shell.driver-history > main > .content { width: 100%; min-width: 0; max-width: none; margin: 0; padding-inline: clamp(20px,3vw,40px); }
+.driver-history .content > h1 { text-align: left; margin: 0 0 24px; }
+.driver-history .cards { width: 100%; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,340px),1fr)); gap: 20px; align-items: start; }
+.driver-history .cards .trip-card { width: 100%; min-width: 0; max-width: none; padding: 26px; }
+@media(max-width:760px) {
+ .shell.driver-history > main > .content { padding: 20px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left)); }
+ .driver-history .cards { grid-template-columns: minmax(0,1fr); gap: 16px; }
+ .driver-history .cards .trip-card { padding: 22px; }
+}
