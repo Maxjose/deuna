@@ -6,7 +6,7 @@ import { refreshNavigationRoute, usableFix, type NavigationFix } from '@/lib/nav
 import type { MapPoint } from '@/lib/destination';
 import { AppIcon } from './app-icon';
 const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
-export function DriverNavigation({origin,destination,status,busy,onAdvance,children}:{origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void;children?:ReactNode}){
+export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpenChat,children}:{origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void;onOpenChat:()=>void;children?:ReactNode}){
  const pickup=useMemo(()=>parseStoredPlace(origin),[origin]),dropoff=useMemo(()=>parseStoredPlace(destination),[destination]);
  const target=status==='ongoing'?dropoff:pickup;
  const dialog=useRef<HTMLDialogElement>(null),lastRoute=useRef<{point:MapPoint;at:number}|null>(null);
@@ -52,6 +52,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,child
    <header className="driver-nav-header"><button className="icon-button" aria-label="Cerrar navegación" onClick={()=>dialog.current?.close()}>←</button><div><small>{status==='ongoing'?'LLEVAR AL PASAJERO':'RECOGER AL PASAJERO'}</small><strong>{target.label}</strong></div></header>
    <div className="driver-nav-map">{opened&&<JourneyMap navigation origin={routeOrigin} destination={target.point} livePosition={fix} follow={follow}/>}<button className="driver-follow secondary" aria-pressed={follow} onClick={()=>setFollow(value=>!value)}>{follow?'Explorar mapa':'Seguir mi ubicación'}</button></div>
    <footer className="driver-nav-footer">
+    <button type="button" className="secondary driver-chat-button" onClick={()=>{dialog.current?.close();onOpenChat();}}><AppIcon name="messages"/>Abrir chat del viaje</button>
     <p className="driver-gps" role="status">{offline?'Sin conexión: la ruta no puede actualizarse.':gpsError||(!fix?'Buscando tu ubicación…':!fresh?'GPS sin actualizar. Esperando señal…':`GPS activo · precisión ${Math.round(fix.accuracy)} m`)}</p>
     {gpsError&&<button className="text" onClick={()=>setRetry(n=>n+1)}>Reintentar GPS</button>}
     {!target.point&&<p role="alert">Este viaje no tiene un punto guardado. Consulta la dirección con el pasajero.</p>}

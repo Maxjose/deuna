@@ -2037,3 +2037,5 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .chat-compose .primary { flex: 0 0 48px; max-width: 48px; }
 .messages-screen .chat-empty { min-height: 0; }
 .chat-person strong, .chat-person small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.driver-chat-button.secondary { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 0 0 12px; }
