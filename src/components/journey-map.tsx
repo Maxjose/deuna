@@ -178,7 +178,7 @@ export default function JourneyMap({
         }
       />
       {picking && (
-        <svg className="map-center-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+        <svg className="map-center-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       )}
       {picking && (
         <button
