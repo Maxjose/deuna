@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AppIcon } from "./app-icon";
+import { PromoBanners } from "./promo-banners";
+import type { Favorite } from './favorite-places';
 import { Toast, useNotice } from "./toast";
 import { usd, type FareQuote } from "@/lib/fare";
 import { type Place, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
@@ -17,11 +19,16 @@ export function RideRequest({
   busy,
   offline,
   onRequest,
+  home, homeLoading, homeError, onSetupHome,
 }: {
   enabled: boolean;
   busy: boolean;
   offline: boolean;
   onRequest: (payload: Record<string, unknown>) => Promise<void>;
+  home?: Favorite;
+  homeLoading: boolean;
+  homeError: string;
+  onSetupHome: () => void;
 }) {
   const [step, setStep] = useState<Step>("home"),
     [active, setActive] = useState<"origin" | "destination">("destination"),
@@ -45,6 +52,7 @@ export function RideRequest({
     return () => clearTimeout(timer);
   }, [quote]);
   const dialog = useRef<HTMLDialogElement>(null),
+    quickHome = useRef(false),
     locationVersion = useRef(0),
     searchController = useRef<AbortController | null>(null),
     searchVersion = useRef(0);
@@ -127,7 +135,7 @@ export function RideRequest({
       if (version === searchVersion.current) setLoading(false);
     }
   }
-  function locate() {
+  function locate(goHome = false) {
     const version = ++locationVersion.current;
     if (!navigator.geolocation) {
       setMessage("Puedes elegir tu recogida en el mapa.");
@@ -141,6 +149,10 @@ export function RideRequest({
         if (version !== locationVersion.current) return;
         setOrigin({ label: "Mi ubicación actual", point: { lat: p.coords.latitude, lng: p.coords.longitude } });
         setLocating(false);
+        if(goHome) {
+          if(home && p.coords.latitude===home.latitude && p.coords.longitude===home.longitude){setMessage('La recogida y el destino deben ser diferentes.');return;}
+          setStep('choose');
+        }
       },
       () => {
         if (version !== locationVersion.current) return;
@@ -151,7 +163,7 @@ export function RideRequest({
     );
   }
   useEffect(() => {
-    if (step === "search" && !origin.point) locate();
+    if (step === "search" && !origin.point) { const goHome=quickHome.current;quickHome.current=false;locate(goHome); }
   }, [step]);
   function next() {
     if (!destination.point) {
@@ -199,8 +211,14 @@ export function RideRequest({
             <strong>Programar</strong>
             <small>Próximamente</small>
           </button>
+          <button className="home-service" disabled={homeLoading} onClick={()=>{
+            if(homeError){setMessage(homeError);return;}
+            if(!home){onSetupHome();return;}
+            setOrigin({label:'',point:null});setDestination({label:home.label,point:{lat:home.latitude,lng:home.longitude}});setMoto(false);setQuote(null);setRouteReady(false);quickHome.current=true;open();
+          }}><span className="home-service-icon"><AppIcon name="home"/></span><strong>Ir a casa</strong></button>
         </div>
       </section>
+      <PromoBanners hidden={step !== "home"} />
       <dialog
         ref={dialog}
         tabIndex={-1}
@@ -242,7 +260,7 @@ export function RideRequest({
                       maxLength={110}
                       placeholder={locating ? "Buscando tu ubicación…" : "¿Dónde te buscamos?"}
                     />
-                    <button type="button" className="locate-button" onClick={locate} disabled={locating} aria-label="Usar mi ubicación actual" title="Usar mi ubicación actual">
+                    <button type="button" className="locate-button" onClick={()=>locate()} disabled={locating} aria-label="Usar mi ubicación actual" title="Usar mi ubicación actual">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg>
                     </button>
                   </label>

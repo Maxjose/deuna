@@ -1,5 +1,6 @@
 export function AppIcon({ name }: { name: string }) {
   const paths: Record<string, string> = {
+    work: "M9 7V4h6v3M3 7h18v14H3ZM3 12l9 4 9-4M10 13h4v4h-4Z",
     sun: "M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5",
     moon: "M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z",
     notifications: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4",

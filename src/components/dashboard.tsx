@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
+import { NotificationInbox } from "./notification-inbox";
+import { FavoritePlaces, useFavoritePlaces } from "./favorite-places";
 import { AdminThemeToggle, useAdminTheme } from "./admin-theme-toggle";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
@@ -57,6 +59,8 @@ export function Dashboard({
   userId: string;
 }) {
   const router = useRouter();
+  const savedPlaces=useFavoritePlaces(userId);
+  const [setupHome,setSetupHome]=useState(false);
   const {theme:adminTheme,toggleTheme}=useAdminTheme(userId);
   const client = useMemo(() => browserClient(), []),
     [profile, setProfile] = useState<Profile | null>(null),
@@ -427,6 +431,7 @@ export function Dashboard({
             </span>
           </a>
           {role === "admin" && <AdminThemeToggle theme={adminTheme} onToggle={toggleTheme} />}
+          <NotificationInbox userId={userId} />
         </header>
         {offline && (
           <div className="connection-banner" role="status">
@@ -492,6 +497,7 @@ export function Dashboard({
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>
               <PasskeySecurity />
+              <FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>
               <PushPreferences />
               <InstallApp />
               <button
@@ -584,6 +590,10 @@ export function Dashboard({
               card(mine)
             ) : (
               <RideRequest
+                home={savedPlaces.favorites.find(place=>place.kind==='home')}
+                homeLoading={savedPlaces.loading}
+                homeError={savedPlaces.error}
+                onSetupHome={()=>{setSetupHome(true);navigate('account');}}
                 enabled={serviceIsOpen(settings)}
                 busy={busy}
                 offline={offline}
