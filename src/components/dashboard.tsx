@@ -170,7 +170,7 @@ export function Dashboard({
     role === "passenger"
       ? [
           ["history", "Viajes"],
-          ["home", "Viajar"],
+          ["home", "Inicio"],
           ["account", "Cuenta"],
         ]
       : [
@@ -323,9 +323,7 @@ export function Dashboard({
               aria-current={page === p ? "page" : undefined}
               onClick={() => navigate(p)}
             >
-              <AppIcon
-                name={p === "home" && role === "passenger" ? "ride" : p}
-              />
+              <AppIcon name={p} />
               <span>{label}</span>
             </button>
           ))}

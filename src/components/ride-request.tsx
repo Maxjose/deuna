@@ -160,6 +160,25 @@ export function RideRequest({
         <span>¿A dónde quieres ir?</span>
         <AppIcon name="arrow" />
       </button>
+      <section className="home-services" aria-labelledby="services-title">
+        <h2 id="services-title">Nuestros Servicios</h2>
+        <div className="home-services-grid">
+          <button className="home-service" onClick={open}>
+            <span className="home-service-icon"><AppIcon name="moto" /></span>
+            <strong>Moto</strong>
+          </button>
+          <button className="home-service" disabled>
+            <span className="home-service-icon"><AppIcon name="package" /></span>
+            <strong>Envíos</strong>
+            <small>Próximamente</small>
+          </button>
+          <button className="home-service" disabled>
+            <span className="home-service-icon"><AppIcon name="calendar" /></span>
+            <strong>Programar</strong>
+            <small>Próximamente</small>
+          </button>
+        </div>
+      </section>
       <dialog
         ref={dialog}
         className="journey-flow-screen"

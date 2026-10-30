@@ -1242,6 +1242,38 @@ main {
   font-weight: 650;
   letter-spacing: -0.6px;
 }
+.home-services { margin-top: 14px; }
+.home-services h2 {
+  font-size: 19px;
+  letter-spacing: -0.5px;
+  margin: 0 0 16px;
+}
+.home-services-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.home-service {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 5px 14px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  min-width: 0;
+}
+.home-service:disabled { opacity: 1; cursor: default; }
+.home-service-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 17px;
+  background: #eaf0e3;
+}
+.home-service:first-child .home-service-icon { background: var(--lime); }
+.home-service-icon svg { width: 30px; height: 30px; }
+.home-service strong { font-size: 13px; }
+.home-service small { font-size: 9px; color: var(--muted); }
 .journey-flow-screen {
   position: fixed;
   inset: 0;
