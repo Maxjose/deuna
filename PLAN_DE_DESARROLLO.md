@@ -174,3 +174,7 @@ Documentación de referencia:
 ## Migración a Next.js y limpieza
 
 La implementación activa está en src/ con Next.js 16, React 19 y TypeScript. Se eliminaron app.js, domain.js, domain.test.js, index.html, server.mjs, styles.css y la copia temporal prototype/. El README actual sustituye las instrucciones del servidor 4173. La configuración propuesta de Supabase está en supabase/schema.sql, pendiente de ejecución y pruebas en la otra cuenta indicada por el usuario. No hay base Supabase creada ni datos de otras aplicaciones modificados. Proyecto Vercel deuna creado en la cuenta conectada, todavía sin despliegue.
+
+## Requisito de experiencia móvil
+
+La WebApp debe sentirse como una app nativa tanto en aspecto como en interacción. Se implementó navegación inferior en teléfonos, cabecera compacta, pantallas por tarea, cuenta, confirmaciones en hoja modal, controles táctiles, soporte de áreas seguras y PWA con manifiesto e iconos. Las capacidades de instalación y ejecución en segundo plano dependen del navegador; esta entrega no incluye operaciones sin conexión ni seguimiento con la aplicación cerrada.

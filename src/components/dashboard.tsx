@@ -1,6 +1,9 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
+import { AppIcon } from "./app-icon";
+import { InstallApp } from "./install-app";
+
 type Profile = {
   id: string;
   role: "passenger" | "driver" | "admin";
@@ -45,8 +48,13 @@ export function Dashboard({
     [settings, setSettings] = useState<Settings | null>(null),
     [page, setPage] = useState("home"),
     [message, setMessage] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [refreshing, setRefreshing] = useState(false),
+    [offline, setOffline] = useState(false),
+    [cancelId, setCancelId] = useState<string | null>(null);
+  const cancelDialog = useRef<HTMLDialogElement>(null);
   const load = useCallback(async () => {
+    setRefreshing(true);
     const [p, t, s] = await Promise.all([
       client.from("profiles").select("id,role,approved,available"),
       client
@@ -56,6 +64,7 @@ export function Dashboard({
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
     ]);
+    setRefreshing(false);
     if (p.error || t.error || s.error) {
       setMessage(
         "No se pudo cargar la operación. Comprueba la conexión y la configuración del servicio.",
@@ -119,6 +128,71 @@ export function Dashboard({
         t.passenger_id === userId &&
         !["finished", "cancelled"].includes(t.status),
     );
+  useEffect(() => {
+    const syncPage = () => {
+      const value = window.location.hash.slice(1);
+      const allowed =
+        profile?.role === "admin"
+          ? ["home", "history", "settings", "drivers", "account"]
+          : ["home", "history", "account"];
+      setPage(allowed.includes(value) ? value : "home");
+    };
+    syncPage();
+    window.addEventListener("hashchange", syncPage);
+    return () => window.removeEventListener("hashchange", syncPage);
+  }, [profile?.role]);
+  useEffect(() => {
+    const sync = () => {
+      setOffline(!navigator.onLine);
+      if (navigator.onLine) void load();
+    };
+    setOffline(!navigator.onLine);
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, [load]);
+  useEffect(() => {
+    if (cancelId) cancelDialog.current?.showModal();
+  }, [cancelId]);
+  const navigate = (value: string) => {
+    window.location.hash = value;
+    setPage(value);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+  const tabs = [
+    [
+      "home",
+      role === "admin"
+        ? "Inicio"
+        : role === "driver"
+          ? "Solicitudes"
+          : "Viajar",
+    ],
+    ["history", "Viajes"],
+    ...(role === "admin"
+      ? [
+          ["drivers", "Equipo"],
+          ["settings", "Servicio"],
+        ]
+      : []),
+    ["account", "Cuenta"],
+  ];
+  const visibleTrips = trips.filter((t) =>
+    page === "history"
+      ? role === "admin" || t.passenger_id === userId || t.driver_id === userId
+      : role === "admin" ||
+        (t.driver_id === userId &&
+          !["finished", "cancelled"].includes(t.status)) ||
+        (profile?.approved && profile.available && t.status === "searching"),
+  );
+  async function signOut() {
+    const { error } = await client.auth.signOut();
+    if (error) setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo.");
+    else window.location.assign("/login");
+  }
   function card(t: Trip) {
     return (
       <article className="trip-card" key={t.id}>
@@ -150,7 +224,9 @@ export function Dashboard({
         {role === "driver" && t.status === "searching" && (
           <button
             className="primary"
-            disabled={busy || !profile?.available || !profile?.approved}
+            disabled={
+              busy || offline || !profile?.available || !profile?.approved
+            }
             onClick={() => void act("accept", { id: t.id })}
           >
             Aceptar viaje ↗
@@ -161,7 +237,7 @@ export function Dashboard({
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
             <button
               className="primary"
-              disabled={busy}
+              disabled={busy || offline || offline}
               onClick={() => void act("advance", { id: t.id })}
             >
               {
@@ -179,10 +255,9 @@ export function Dashboard({
           ["searching", "assigned", "arrived"].includes(t.status) && (
             <button
               className="secondary"
-              disabled={busy}
+              disabled={busy || offline || offline}
               onClick={() => {
-                if (confirm("¿Cancelar este viaje de prueba?"))
-                  void act("cancel", { id: t.id });
+                setCancelId(t.id);
               }}
             >
               Cancelar solicitud
@@ -194,82 +269,79 @@ export function Dashboard({
   return (
     <div className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/">
+        <a className="brand" href="/dashboard">
           De<span>1</span>na
         </a>
         <span className="workspace">
           {role === "admin"
-            ? "CENTRO DE OPERACIÓN"
+            ? "TU CENTRO DE OPERACIÓN"
             : role === "driver"
-              ? "ESPACIO DEL MOTORIZADO"
-              : "TU COMPAÑERO DE CAMINO"}
+              ? "TU DÍA EN MOVIMIENTO"
+              : "MOVERTE SIN COMPLICARTE"}
         </span>
-        <nav>
-          {[
-            [
-              "home",
-              role === "admin"
-                ? "Operación"
-                : role === "driver"
-                  ? "Solicitudes"
-                  : "Pedir un viaje",
-            ],
-            ["history", "Historial"],
-            ...(role === "admin"
-              ? [
-                  ["settings", "Cobertura y horarios"],
-                  ["drivers", "Conductores"],
-                ]
-              : []),
-          ].map(([p, label]) => (
+        <nav aria-label="Navegación principal">
+          {tabs.map(([p, label]) => (
             <button
               key={p}
               className={"nav-item " + (page === p ? "selected" : "")}
-              onClick={() => setPage(p)}
+              aria-current={page === p ? "page" : undefined}
+              onClick={() => navigate(p)}
             >
-              {label}
+              <AppIcon name={p} />
+              <span>{label}</span>
             </button>
           ))}
         </nav>
         <div className="sidebar-bottom">
           <span className="live-dot" />
-          Nacimos en Mara
-          <button
-            className="text"
-            onClick={async () => {
-              const { error } = await client.auth.signOut();
-              if (error)
-                setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo.");
-              else window.location.assign("/login");
-            }}
-          >
-            Cerrar sesión ↗
-          </button>
+          Mara, Zulia
         </div>
       </aside>
       <main>
-        <header>
-          <span>Mara, Zulia / Venezuela</span>
-          <span className="muted">{email}</span>
-        </header>
-        <div className="demo-bar">
-          PILOTO TÉCNICO · No habilitado para transporte real{" "}
-          <button className="text" onClick={() => void load()}>
-            Actualizar ↻
+        <header className="app-header">
+          <div>
+            <span className="header-kicker">
+              DE1NA ·{" "}
+              {role === "admin"
+                ? "ADMINISTRACIÓN"
+                : role === "driver"
+                  ? "MOTORIZADO"
+                  : "MARA, ZULIA"}
+            </span>
+            <strong>{tabs.find(([p]) => p === page)?.[1]}</strong>
+          </div>
+          <button
+            className={"icon-button " + (refreshing ? "refreshing" : "")}
+            aria-label="Actualizar datos"
+            disabled={refreshing}
+            onClick={() => void load()}
+          >
+            <AppIcon name="refresh" />
           </button>
+        </header>
+        {offline && (
+          <div className="connection-banner" role="status">
+            Sin conexión. Reconéctate para consultar o actualizar viajes.
+          </div>
+        )}
+        <div className="pilot-label">
+          <span />
+          Piloto de prueba · Sin transporte real
         </div>
-        <section className="content">
+        <section className="content" key={page} aria-busy={busy}>
           <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
           <h1>
-            {page === "settings"
-              ? "Cerca, a tu manera."
-              : page === "drivers"
-                ? "Personas que nos mueven."
-                : page === "history"
-                  ? "Cada vuelta cuenta."
-                  : role === "passenger"
-                    ? "¿Pa’ dónde vamos?"
-                    : "Vamos de una."}
+            {page === "account"
+              ? "Tu espacio."
+              : page === "settings"
+                ? "Cerca, a tu manera."
+                : page === "drivers"
+                  ? "Personas que nos mueven."
+                  : page === "history"
+                    ? "Cada vuelta cuenta."
+                    : role === "passenger"
+                      ? "¿Pa’ dónde vamos?"
+                      : "Vamos de una."}
           </h1>
           {message && (
             <p className="notice" role="status">
@@ -277,7 +349,39 @@ export function Dashboard({
             </p>
           )}
           {!profile ? (
-            <p className="muted">Preparando tu espacio…</p>
+            <div
+              className="skeleton-group"
+              role="status"
+              aria-label="Cargando tu espacio"
+            >
+              <div className="skeleton" />
+              <div className="skeleton" />
+              <div className="skeleton" />
+            </div>
+          ) : page === "account" ? (
+            <div className="account-stack">
+              <article className="trip-card account-card">
+                <div className="avatar">{email[0]?.toUpperCase()}</div>
+                <h2>Tu cuenta De1na</h2>
+                <p className="account-email">{email}</p>
+                <span className="pill green">
+                  {role === "admin"
+                    ? "Administrador"
+                    : role === "driver"
+                      ? "Motorizado"
+                      : "Pasajero"}
+                </span>
+              </article>
+              <article className="trip-card">
+                <InstallApp />
+              </article>
+              <button
+                className="secondary signout"
+                onClick={() => void signOut()}
+              >
+                Cerrar sesión
+              </button>
+            </div>
           ) : page === "settings" && settings ? (
             <form
               className="trip-card"
@@ -335,7 +439,7 @@ export function Dashboard({
                   defaultValue={settings.zones.join("\n")}
                 />
               </label>
-              <button className="primary" disabled={busy}>
+              <button className="primary" disabled={busy || offline || offline}>
                 Guardar configuración
               </button>
             </form>
@@ -350,7 +454,7 @@ export function Dashboard({
                   {p.role !== "admin" && (
                     <button
                       className="secondary"
-                      disabled={busy}
+                      disabled={busy || offline || offline}
                       onClick={() =>
                         void act("driver", { id: p.id, approved: !p.approved })
                       }
@@ -417,7 +521,7 @@ export function Dashboard({
                 </p>
                 <button
                   className="primary"
-                  disabled={busy || !settings?.enabled}
+                  disabled={busy || offline || !settings?.enabled}
                 >
                   Solicitar viaje de prueba ↗
                 </button>
@@ -434,7 +538,7 @@ export function Dashboard({
                   </p>
                   <button
                     className="primary"
-                    disabled={busy || !profile.approved}
+                    disabled={busy || offline || !profile.approved}
                     onClick={() =>
                       void act("available", { available: !profile.available })
                     }
@@ -443,29 +547,76 @@ export function Dashboard({
                   </button>
                 </>
               )}
+              {role === "admin" && page === "home" && (
+                <div className="stats-grid">
+                  {[
+                    [
+                      trips.filter(
+                        (t) => !["finished", "cancelled"].includes(t.status),
+                      ).length,
+                      "Viajes activos",
+                    ],
+                    [
+                      profiles.filter(
+                        (p) => p.role === "driver" && p.approved && p.available,
+                      ).length,
+                      "Disponibles",
+                    ],
+                    [
+                      trips.filter((t) => t.status === "finished").length,
+                      "Completados",
+                    ],
+                  ].map(([n, label]) => (
+                    <article key={label}>
+                      <strong>{n}</strong>
+                      <span>{label}</span>
+                    </article>
+                  ))}
+                </div>
+              )}
               <div className="cards">
-                {trips
-                  .filter(
-                    (t) =>
-                      page === "history" ||
-                      role === "admin" ||
-                      t.driver_id === userId ||
-                      (profile.approved &&
-                        profile.available &&
-                        t.status === "searching"),
-                  )
-                  .map(card)}
-                {trips.length === 0 && (
-                  <p className="empty">Aún no hay viajes para mostrar.</p>
+                {visibleTrips.map(card)}
+                {visibleTrips.length === 0 && (
+                  <div className="empty">
+                    <span className="empty-icon">
+                      <AppIcon name="history" />
+                    </span>
+                    <h2>Todo tranquilo por aquí</h2>
+                    <p>Los viajes aparecerán en este espacio.</p>
+                  </div>
                 )}
               </div>
             </>
           )}
         </section>
-        <footer>
-          De1na · ¿Vamos? ¡De una!<span>Piloto técnico</span>
-        </footer>
       </main>
+      <dialog
+        ref={cancelDialog}
+        className="action-sheet"
+        aria-label="Confirmar cancelación del viaje"
+        onClose={() => setCancelId(null)}
+      >
+        <div className="sheet-handle" />
+        <h2>¿Cancelar este viaje?</h2>
+        <p className="muted">
+          Tu solicitud dejará de estar disponible para los motorizados.
+        </p>
+        <button
+          className="primary"
+          onClick={() => cancelDialog.current?.close()}
+        >
+          Seguir con el viaje
+        </button>
+        <button
+          className="secondary danger"
+          onClick={() => {
+            if (cancelId) void act("cancel", { id: cancelId });
+            cancelDialog.current?.close();
+          }}
+        >
+          Sí, cancelar solicitud
+        </button>
+      </dialog>
     </div>
   );
 }

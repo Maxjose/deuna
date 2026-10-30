@@ -44,6 +44,18 @@ test("usuario sin sesi?n: acceso p?blico y rutas protegidas", async () => {
     const html = await (await fetch("http://127.0.0.1:3187/login")).text();
     assert.match(html, /De1na/);
     assert.match(html, /name="email"|El acceso/);
+    const manifest = await (await fetch("http://127.0.0.1:3187/manifest.webmanifest")).json();
+    assert.equal(manifest.display, "standalone");
+    assert.equal(manifest.start_url, "/dashboard");
+    for (const icon of manifest.icons) {
+      const response = await fetch("http://127.0.0.1:3187" + icon.src);
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get("content-type"), /image\/png/);
+      const bytes = Buffer.from(await response.arrayBuffer());
+      const dimension = Number(icon.sizes.split("x")[0]);
+      assert.equal(bytes.readUInt32BE(16), dimension);
+      assert.equal(bytes.readUInt32BE(20), dimension);
+    }
     
     for (const path of ["/", "/dashboard", "/reset-password"]) {
       const r = await fetch("http://127.0.0.1:3187" + path, {

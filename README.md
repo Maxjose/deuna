@@ -37,3 +37,11 @@ La prueba de arranque verifica acceso público, redirecciones sin sesión y 404.
 Definir tarifa, moneda, soporte, incorporación de conductores, identidad visible del conductor, cobertura geográfica real, auditoría, retención de datos y notificaciones en segundo plano. El horario es diario en America/Caracas. La operación usa un bloqueo transaccional global para el piloto; medir carga antes de ampliarlo.
 
 Referencia funcional: PLAN_DE_DESARROLLO.md y De1na_Manual_de_Marca.md.
+
+## Experiencia móvil y PWA
+
+Navegación inferior fija en teléfonos, cabecera compacta, áreas táctiles de 54 px, pantalla de cuenta, confirmación de cancelación en hoja modal, navegación compatible con Atrás y estados de carga/conexión. El historial del motorizado muestra únicamente sus viajes asignados.
+
+El manifiesto y los iconos PNG de 192/512 px permiten instalación en navegadores compatibles; en iPhone usar Compartir → Agregar a inicio. La instalación depende del navegador. No se ofrece funcionamiento de viajes sin conexión ni seguimiento en segundo plano. No hay caché de páginas autenticadas en un service worker.
+
+Verificación: build y TypeScript, prueba HTTP del manifiesto/iconos y rutas protegidas; revisión visual del acceso a 390 px. La revisión de todas las pantallas autenticadas y de instalación en dispositivos físicos queda pendiente.
