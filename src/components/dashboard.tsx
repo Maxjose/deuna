@@ -454,7 +454,7 @@ export function Dashboard({
           {page === "home" && role === "passenger" && (
             <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}` : "Hola"}</h1>
           )}
-          {!(page === "home" && role === "passenger") && <>
+          {!(page === "home" && role === "passenger") && page !== "messages" && <>
           <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
           <h1>
             {page === "account"
