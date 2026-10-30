@@ -54,12 +54,10 @@ export function Dashboard({
     [page, setPage] = useState("home"),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
-    [refreshing, setRefreshing] = useState(false),
     [offline, setOffline] = useState(false),
     [cancelId, setCancelId] = useState<string | null>(null);
   const cancelDialog = useRef<HTMLDialogElement>(null);
   const load = useCallback(async () => {
-    setRefreshing(true);
     const [p, t, s] = await Promise.all([
       client.from("profiles").select("id,role,approved,available"),
       client
@@ -69,7 +67,6 @@ export function Dashboard({
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
     ]);
-    setRefreshing(false);
     if (p.error || t.error || s.error) {
       setMessage(
         "No se pudo cargar la operación. Comprueba la conexión y la configuración del servicio.",
@@ -350,14 +347,6 @@ export function Dashboard({
               De<span>1</span>na
             </span>
           </a>
-          <button
-            className={"icon-button " + (refreshing ? "refreshing" : "")}
-            aria-label="Actualizar datos"
-            disabled={refreshing}
-            onClick={() => void load()}
-          >
-            <AppIcon name="refresh" />
-          </button>
         </header>
         {offline && (
           <div className="connection-banner" role="status">
