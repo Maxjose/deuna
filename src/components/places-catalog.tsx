@@ -79,10 +79,10 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
     }catch(error){setErrors([error instanceof Error?error.message:'No pudimos completar el lote.','Los bloques confirmados se conservaron. Reintentar continúa desde el bloque pendiente sin duplicar registros.']);await load();}
     finally{setBusy(false);}
   }
-  return <div className="account-stack">
+  return <div className="account-stack catalog-workspace">
     <button className="text catalog-back" onClick={onBack} disabled={busy}>← Volver a Servicio</button>
-    <section className="trip-card"><h2>Catálogo de lugares</h2><p className="muted">Agrega referencias locales para encontrarlas al pedir un viaje.</p><button className="primary" disabled={busy} onClick={()=>edit()}>Agregar lugar</button></section>
-    <section className="trip-card">
+    <section className="trip-card catalog-intro"><h2>Catálogo de lugares</h2><p className="muted">Agrega referencias locales para encontrarlas al pedir un viaje.</p><button className="primary" disabled={busy} onClick={()=>edit()}>Agregar lugar</button></section>
+    <section className="trip-card catalog-import">
       <h2>Importar por lotes</h2><p className="muted">JSON UTF-8 · hasta 1.000 lugares y 5 MB por archivo. Se validará antes de guardar.</p>
       <div className="catalog-downloads"><a href="/catalog/places.example.json" download>Descargar ejemplo</a><a href="/catalog/places.schema.json" download>Descargar esquema JSON</a><a href="/catalog/import-guide.md" download>Guía para tu script</a></div>
       <label>Archivo JSON<input type="file" accept=".json,application/json" disabled={busy} onChange={e=>void readFile(e.target.files?.[0])}/></label>
@@ -97,7 +97,7 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
         {plan.completed<plan.places.length&&<button className="primary" disabled={busy} onClick={()=>void importPlaces()}>{busy?'Importando…':plan.completed?'Continuar importación':`Importar ${plan.places.length} lugares`}</button>}
       </div>}
     </section>
-    <section className="trip-card"><h2>Lugares registrados</h2>
+    <section className="trip-card catalog-results"><h2>Lugares registrados</h2>
       <form className="catalog-filter" onSubmit={e=>{e.preventDefault();setPage(0);setFilter(query);}}><label>Buscar en el catálogo<input value={query} maxLength={120} onChange={e=>setQuery(e.target.value)} placeholder="Nombre, alias o municipio"/></label><button className="secondary" disabled={busy}>Buscar</button></form>
       <p className="muted">{total} resultados · {active} activos</p>
       {loading?<p role="status">Cargando lugares…</p>:!items.length?<p className="muted">No hay lugares para esta búsqueda.</p>:items.map(place=><article className="catalog-item" key={place.id}>

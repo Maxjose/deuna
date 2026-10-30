@@ -37,15 +37,15 @@ export function PushCampaigns() {
     }catch{notify('No pudimos confirmar el envío. Espera unos segundos y reintenta con esta misma vista previa.');}
     finally{setBusy(false);}
   }
-  return <div className="account-stack">
-    <form className="trip-card" onSubmit={preview}>
+  return <div className="account-stack campaign-workspace">
+    <form className="trip-card campaign-composer" onSubmit={preview}>
       <h2>Enviar promoción</h2><p className="muted">Solo reciben publicidad quienes la hayan activado en sus preferencias.</p>
       <label>Título<input required maxLength={80} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Una nueva vuelta te espera"/></label>
       <label>Mensaje<textarea required maxLength={240} rows={3} value={body} onChange={e=>setBody(e.target.value)} placeholder="Escribe tu promoción…"/></label>
       <label>Público<select value={audience} onChange={e=>setAudience(e.target.value)}>{Object.entries(audiences).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
       <button className="primary" disabled={busy||!title.trim()||!body.trim()}>{busy?'Preparando…':'Revisar notificación'}</button>
     </form>
-    <section className="trip-card"><h2>Historial de promociones</h2><p className="muted">«Enviadas» indica aceptación por el proveedor; no confirma lectura. El historial se conserva 30 días.</p>
+    <section className="trip-card campaign-history"><h2>Historial de promociones</h2><p className="muted">«Enviadas» indica aceptación por el proveedor; no confirma lectura. El historial se conserva 30 días.</p>
       {!campaigns.length?<p className="muted">Aún no has enviado promociones.</p>:campaigns.map(c=><article className="campaign-summary" key={c.id}>
         <strong>{c.title}</strong><p>{c.body}</p><small>{new Date(c.created_at).toLocaleString('es-VE',{timeZone:'America/Caracas'})} · {audiences[c.audience]}</small>
         <p className="campaign-counts">Enviadas: {c.sent} · Pendientes: {c.pending} · Fallidas: {c.failed} · Omitidas: {c.skipped}</p>

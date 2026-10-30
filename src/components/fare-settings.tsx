@@ -1,7 +1,7 @@
 "use client";
 import type { FareSettings as Settings } from '@/lib/fare';
 export function FareSettings({ settings, busy, onSave }: { settings: Settings; busy: boolean; onSave: (payload: Record<string, unknown>) => void }) {
-  return <form className="trip-card" onSubmit={e => {
+  return <form className="trip-card fare-settings" onSubmit={e => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     onSave({ base_cents: Math.round(Number(form.get('base')) * 100), per_km_cents: Math.round(Number(form.get('km')) * 100), minimum_cents: Math.round(Number(form.get('minimum')) * 100) });

@@ -353,7 +353,7 @@ export function Dashboard({
   return (
     <div
       className={
-        "shell " +
+        "shell " + (role === "admin" ? "admin-shell " : "") +
         (page === "home" && role === "passenger" ? "ride-screen" : "")
       }
     >
@@ -399,6 +399,13 @@ export function Dashboard({
       </aside>
       <main>
         <header className="app-header">
+          {role === "admin" && <div className="admin-desktop-header">
+            <div className="admin-header-title"><span>DE1NA / OPERACIONES</span><strong>Panel de administración</strong></div>
+            <div className="admin-header-actions">
+              <span className={"admin-service-status " + (serviceIsOpen(settings) ? "is-open" : "")}><i />{!settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceIsOpen(settings) ? "Servicio abierto" : "Fuera de horario"}</span>
+              <button className="admin-user-button" onClick={()=>navigate('account')} aria-label="Abrir mi cuenta"><span className="admin-user-avatar">{(displayName || email)[0]?.toUpperCase()}</span><span>{displayName || email}</span><AppIcon name="account" /></button>
+            </div>
+          </div>}
           <a
             className="header-brand"
             href="/dashboard"
@@ -415,7 +422,7 @@ export function Dashboard({
             Sin conexión. Reconéctate para consultar o actualizar viajes.
           </div>
         )}
-        <section className="content" key={page} aria-busy={busy}>
+        <section className={"content" + (role === "admin" ? ` admin-page-${page}` : "")} key={page} aria-busy={busy}>
           {page === "home" && role === "passenger" && (
             <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}` : "Hola"}</h1>
           )}
