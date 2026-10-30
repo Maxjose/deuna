@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "places": [
+    {
+      "source": "propio",
+      "external_id": "ejemplo-001",
+      "name": "Comercio de ejemplo - reemplazar",
+      "latitude": 11.087,
+      "longitude": -71.603,
+      "aliases": ["Otro nombre del comercio"],
+      "address": "Dirección de ejemplo",
+      "municipality": "Mara",
+      "category": "comercio",
+      "reference": "Reemplazar por una referencia real de acceso",
+      "source_url": "",
+      "active": false
+    }
+  ]
+}

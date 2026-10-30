@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "De1na - Importación de lugares v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "places"],
+  "properties": {
+    "version": { "const": 1 },
+    "places": {
+      "type": "array", "minItems": 1, "maxItems": 1000,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["source", "external_id", "name", "latitude", "longitude"],
+        "properties": {
+          "source": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,39}$" },
+          "external_id": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 110 },
+          "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+          "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+          "aliases": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1, "maxLength": 80 } },
+          "address": { "type": "string", "maxLength": 200 },
+          "municipality": { "type": "string", "maxLength": 100 },
+          "category": { "type": "string", "maxLength": 60 },
+          "reference": { "type": "string", "maxLength": 240 },
+          "source_url": { "type": "string", "maxLength": 2048, "pattern": "^(https?://[^\\s]+)?$" },
+          "active": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

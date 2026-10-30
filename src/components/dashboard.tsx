@@ -8,6 +8,7 @@ import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { PushPreferences } from "./push-preferences";
 import { PushCampaigns } from "./push-campaigns";
+import { PlacesCatalog } from "./places-catalog";
 import { disconnectPushDevice } from "@/lib/push-device";
 import { Toast, useNotice } from "./toast";
 import { serviceIsOpen } from "@/lib/service-hours";
@@ -189,7 +190,7 @@ export function Dashboard({
       const value = window.location.hash.slice(1);
       const allowed =
         profile?.role === "admin"
-          ? ["home", "history", "settings", "drivers", "notifications", "account"]
+          ? ["home", "history", "settings", "places", "drivers", "notifications", "account"]
           : ["home", "history", "account"];
       setPage(allowed.includes(value) ? value : "home");
     };
@@ -380,10 +381,10 @@ export function Dashboard({
               key={p}
               className={
                 "nav-item " +
-                (page === p ? "selected " : "") +
+                (page === p || (p === "settings" && page === "places") ? "selected " : "") +
                 (p === "home" && role === "passenger" ? "nav-ride" : "")
               }
-              aria-current={page === p ? "page" : undefined}
+              aria-current={page === p || (p === "settings" && page === "places") ? "page" : undefined}
               onClick={() => navigate(p)}
             >
               <AppIcon name={p} />
@@ -423,6 +424,8 @@ export function Dashboard({
           <h1>
             {page === "account"
               ? "Tu espacio."
+              : page === "places"
+                ? "Lugares que nos conectan."
               : page === "notifications"
                 ? "Comunica de una."
               : page === "settings"
@@ -480,10 +483,13 @@ export function Dashboard({
                 Cerrar sesión
               </button>
             </div>
+          ) : page === "places" && role === "admin" ? (
+            <PlacesCatalog onBack={()=>navigate('settings')} />
           ) : page === "notifications" && role === "admin" ? (
             <PushCampaigns />
           ) : page === "settings" && settings ? (
             <div className="account-stack">
+            <button className="secondary" onClick={()=>navigate('places')}><AppIcon name="ride" />Catálogo de lugares<AppIcon name="arrow" /></button>
             <FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />
             <form
               className="trip-card"

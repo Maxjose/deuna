@@ -87,6 +87,25 @@ textarea,
 .campaign-summary { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 18px; min-width: 0; overflow-wrap: anywhere; }
 .campaign-summary small, .campaign-counts { font-size: 11px; color: var(--muted); }
 .campaign-summary p { font-size: 13px; }
+.catalog-downloads { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; font-size: 12px; }
+.catalog-downloads a { color: var(--ink); }
+.catalog-report { border: 1px solid #ecc7cd; background: #fff2f4; border-radius: 14px; padding: 14px; margin: 14px 0; font-size: 12px; overflow-wrap: anywhere; }
+.catalog-import-preview { border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; }
+.catalog-preview-list { padding-left: 18px; overflow-wrap: anywhere; }
+.catalog-preview-list li { margin: 10px 0; }
+.catalog-preview-list small { display: block; color: var(--muted); font-size: 11px; }
+.catalog-filter .secondary { margin-bottom: 18px; }
+.catalog-item { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 18px; overflow-wrap: anywhere; min-width: 0; }
+.catalog-item .row > strong { min-width: 0; }
+.catalog-item .pill { flex-shrink: 0; }
+.catalog-item > small { font-size: 11px; color: var(--muted); }
+.catalog-item-actions { display: flex; gap: 14px; align-items: center; margin-top: 12px; }
+.catalog-item-actions .secondary { width: auto; min-height: 42px; padding: 8px 18px; }
+.catalog-pages { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 20px; font-size: 12px; }
+.catalog-back { text-align: left; }
+.catalog-editor { max-height: 90dvh; overflow-y: auto; overscroll-behavior: none; }
+.catalog-editor-map { height: 280px; overflow: hidden; border-radius: 16px; margin: 14px 0; }
+.catalog-editor:focus { outline: none; }
 .journey-flow-screen:focus { outline: none; }
 .fare-summary { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
 .fare-summary strong { font-size: 26px; letter-spacing: -0.8px; }

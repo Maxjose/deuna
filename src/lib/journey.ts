@@ -1,5 +1,16 @@
 import type { MapPoint } from "./destination";
 export type Place = { label: string; point: MapPoint | null };
+export function mergeSearchPlaces(catalog:Place[],external:Place[]) {
+  const merged:Place[]=[];
+  const key=(label:string)=>label.split(',')[0].normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+  for(const place of [...catalog,...external]){
+    if(!place.point||!validPoint(place.point))continue;
+    if(merged.some(existing=>existing.point&&key(existing.label)===key(place.label)&&
+      Math.hypot((existing.point.lat-place.point!.lat)*111320,(existing.point.lng-place.point!.lng)*111320*Math.cos(place.point!.lat*Math.PI/180))<100))continue;
+    merged.push(place);if(merged.length===8)break;
+  }
+  return merged;
+}
 export function validPoint(p: MapPoint) {
   return (
     Number.isFinite(p.lat) &&

@@ -38,6 +38,14 @@ Definir tarifa, moneda, soporte, incorporación de conductores, identidad visibl
 
 Referencia funcional: PLAN_DE_DESARROLLO.md y De1na_Manual_de_Marca.md.
 
+## Catálogo propio de lugares
+
+Administración → Servicio → Catálogo de lugares permite agregar o editar una ficha, fijar su punto en mapa, desactivarla e importar JSON. La búsqueda de viajes combina primero el catálogo activo con Photon, elimina duplicados cercanos del mismo nombre y permite elegir los resultados locales mientras termina la consulta externa. Si falla una fuente, la otra sigue disponible. Los lugares no modifican la red vial ni el cálculo firmado de tarifas.
+
+El contrato está en public/catalog/places.schema.json; ejemplo en public/catalog/places.example.json y guía completa para el script en public/catalog/import-guide.md. No se cargan ejemplos en la base. Archivos de hasta 1.000 lugares/5 MB, bloques atómicos de 100 y reintentos idempotentes. Identidad estable: source + external_id. Los textos opcionales omitidos se vacían; active omitido conserva el estado existente. El panel permite continuar un fallo en el mismo archivo; tras recargar, reimportar con identificadores estables evita duplicados. Validar antes con npm run catalog:validate -- archivo.json (Node 24).
+
+Los datos viven en tablas privadas sin acceso directo del navegador. catalog_admin comprueba el rol real de administrador; catalog_search requiere sesión y devuelve solo fichas activas del área de búsqueda del Zulia. Hay índices trigram para nombres, aliases y direcciones. Verificación transaccional: supabase/tests/catalog.sql; validación, combinación de resultados y CLI: tests/catalog.test.mjs.
+
 ## Notificaciones Web Push
 
 Cuenta → Notificaciones registra este dispositivo al pulsar Activar y conceder el permiso del navegador. En iPhone requiere la PWA agregada a inicio (iOS 16.4+). La opción de promociones es independiente y comienza desactivada. Cerrar sesión cancela la suscripción de este dispositivo y cierra sus avisos visibles. No se envían direcciones precisas en avisos de viajes.

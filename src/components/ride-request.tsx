@@ -4,7 +4,9 @@ import dynamic from "next/dynamic";
 import { AppIcon } from "./app-icon";
 import { Toast, useNotice } from "./toast";
 import { usd, type FareQuote } from "@/lib/fare";
-import { type Place, placeSearchUrl, localPlaces } from "@/lib/journey";
+import { type Place, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
+import { decodeCatalogPlaces } from "@/lib/catalog";
+import { browserClient } from "@/lib/supabase/client";
 const JourneyMap = dynamic(() => import("./journey-map"), {
   ssr: false,
   loading: () => <div className="journey-map-placeholder">Abriendo mapa…</div>,
@@ -100,11 +102,19 @@ export function RideRequest({
           "https://photon.komoot.io/api/",
         query, origin.point,
       );
-      const r = await fetch(endpoint, { signal: controller.signal });
-      if (!r.ok) throw Error();
-      const places = localPlaces(await r.json(), origin.point);
+      let catalog:Place[]=[],external:Place[]=[];
+      const publish=()=>{if(version===searchVersion.current)setResults(mergeSearchPlaces(catalog,external));};
+      const center=searchCenter(origin.point);
+      const sources=await Promise.allSettled([
+        browserClient().rpc('catalog_search',{search_query:query,center_lat:center.lat,center_lng:center.lng}).abortSignal(controller.signal).then(({data,error})=>{
+          if(error)throw error;catalog=decodeCatalogPlaces(data);publish();
+        }),
+        fetch(endpoint,{signal:controller.signal}).then(async r=>{if(!r.ok)throw Error();external=localPlaces(await r.json(),origin.point);publish();})
+      ]);
       if (version !== searchVersion.current) return;
-      setResults(places);
+      const places=mergeSearchPlaces(catalog,external);
+      if(sources.every(source=>source.status==='rejected'))throw Error();
+      if(!places.length&&sources.some(source=>source.status==='rejected'))throw Error();
       if (!places.length)
         setMessage("No encontramos ese lugar en el Zulia. Puedes fijarlo en el mapa.");
     } catch {
@@ -263,6 +273,9 @@ export function RideRequest({
                       <button
                         key={i}
                         onClick={() => {
+                          searchVersion.current++;
+                          searchController.current?.abort();
+                          setLoading(false);
                           update(place);
                           setResults([]);
                           setMessage("");
@@ -288,6 +301,9 @@ export function RideRequest({
                         destination={destination.point}
                         picking
                         onPick={(point) => {
+                          searchVersion.current++;
+                          searchController.current?.abort();
+                          setLoading(false);
                           if (active === "origin") { locationVersion.current++; setLocating(false); }
                           setResults([]);
                           update({
