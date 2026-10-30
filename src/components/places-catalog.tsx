@@ -7,10 +7,13 @@ import { Toast, useNotice } from './toast';
 const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
 type ImportPlan={places:CatalogPlace[];warnings:string[];batches:string[];completed:number;inserted:number;updated:number};
 type Editor={source:string;external_id:string;name:string;latitude:string;longitude:string;aliases:string;address:string;municipality:string;category:string;reference:string;source_url:string;active:boolean;editing:boolean};
-export function PlacesCatalog({onBack}:{onBack:()=>void}) {
+export function PlacesCatalog() {
   const [query,setQuery]=useState(''),[filter,setFilter]=useState(''),[page,setPage]=useState(0),[items,setItems]=useState<CatalogRecord[]>([]),
     [total,setTotal]=useState(0),[active,setActive]=useState(0),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),
     [errors,setErrors]=useState<string[]>([]),[plan,setPlan]=useState<ImportPlan|null>(null),[editor,setEditor]=useState<Editor|null>(null),[map,setMap]=useState(false);
+  const [loadedPage,setLoadedPage]=useState(0),[listHeight,setListHeight]=useState(0);
+  const list=useRef<HTMLDivElement>(null);
+  function turn(next:number){setListHeight(Math.max(listHeight,list.current?.getBoundingClientRect().height||0));setPage(next);}
   const dialog=useRef<HTMLDialogElement>(null),loadVersion=useRef(0),mounted=useRef(true);
   const {message,notify}=useNotice('catalog');
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
@@ -19,7 +22,7 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
     const {data,error}=await browserClient().rpc('catalog_admin',{action:'list',payload:{query:filter,page:Math.floor(page/5)}});
     if(version!==loadVersion.current)return;
     if(error)notify('No pudimos cargar el catálogo.');
-    else{setItems(data.items);setTotal(data.total);setActive(data.active);}
+    else{setLoadedPage(page);setItems(data.items);setTotal(data.total);setActive(data.active);}
     setLoading(false);
   },[filter,page,notify]);
   useEffect(()=>{void load();return()=>{loadVersion.current++;};},[load]);
@@ -75,7 +78,7 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
     finally{setBusy(false);}
   }
   return <div className="account-stack catalog-workspace">
-    <button className="text catalog-back" onClick={onBack} disabled={busy}>← Volver a Servicio</button>
+
     <div className="catalog-sidebar">
     <section className="trip-card catalog-intro"><h2>Catálogo de lugares</h2><p className="muted">Agrega referencias locales para encontrarlas al pedir un viaje.</p><button className="primary" disabled={busy} onClick={()=>edit()}>Agregar lugar</button></section>
     <section className="trip-card catalog-import">
@@ -95,14 +98,16 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
     </section>
     </div>
     <section className="trip-card catalog-results"><h2>Lugares registrados</h2>
-      <form className="catalog-filter" onSubmit={e=>{e.preventDefault();setPage(0);setFilter(query);}}><label>Buscar en el catálogo<input value={query} maxLength={120} onChange={e=>setQuery(e.target.value)} placeholder="Nombre, alias o municipio"/></label><button className="secondary" disabled={busy}>Buscar</button></form>
+      <form className="catalog-filter" onSubmit={e=>{e.preventDefault();setListHeight(0);setPage(0);setFilter(query);}}><label>Buscar en el catálogo<input value={query} maxLength={120} onChange={e=>setQuery(e.target.value)} placeholder="Nombre, alias o municipio"/></label><button className="secondary" disabled={busy}>Buscar</button></form>
       <p className="muted">{total} resultados · {active} activos</p>
-      {loading?<p role="status">Cargando lugares…</p>:!items.length?<p className="muted">No hay lugares para esta búsqueda.</p>:items.slice((page%5)*5,(page%5)*5+5).map(place=><article className="catalog-item" key={place.id}>
+      <div ref={list} style={{minHeight:listHeight||undefined}} aria-busy={loading}>
+      {loading&&!items.length?<p role="status">Cargando lugares…</p>:!items.length?<p className="muted">No hay lugares para esta búsqueda.</p>:items.slice((loadedPage%5)*5,(loadedPage%5)*5+5).map(place=><article className="catalog-item" key={place.id}>
         <div className="row"><strong>{place.name}</strong><span className={'pill '+(place.active?'green':'')}>{place.active?'Activo':'Inactivo'}</span></div>
         <p className="muted">{[place.address,place.municipality].filter(Boolean).join(', ')||'Sin dirección adicional'}</p><small>{place.source} / {place.external_id}</small>
-        <div className="catalog-item-actions"><button className="secondary" disabled={busy} onClick={()=>edit(place)}>Editar</button></div>
+        <div className="catalog-item-actions"><button className="secondary" disabled={busy||loading} onClick={()=>edit(place)}>Editar</button></div>
       </article>)}
-      <div className="catalog-pages"><button className="secondary" disabled={!page||busy||loading} onClick={()=>setPage(p=>p-1)}>Anterior</button><span>Página {page+1} de {Math.max(1,Math.ceil(total/5))}</span><button className="secondary" disabled={(page+1)*5>=total||busy||loading} onClick={()=>setPage(p=>p+1)}>Siguiente</button></div>
+      </div>
+      <div className="catalog-pages"><button className="secondary" disabled={!page||busy||loading} onClick={()=>turn(page-1)}>Anterior</button><span>Página {page+1} de {Math.max(1,Math.ceil(total/5))}</span><button className="secondary" disabled={(page+1)*5>=total||busy||loading} onClick={()=>turn(page+1)}>Siguiente</button></div>
     </section>
     <Toast message={message}/>
     <dialog ref={dialog} tabIndex={-1} className="action-sheet catalog-editor" aria-label="Editar lugar" onClose={()=>setEditor(null)} onCancel={e=>{if(busy)e.preventDefault();}}>

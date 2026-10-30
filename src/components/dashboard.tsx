@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
+import { AdminRecords } from "./admin-records";
 import { NotificationInbox } from "./notification-inbox";
 import { FavoritePlaces, useFavoritePlaces } from "./favorite-places";
 import { AdminThemeToggle, useAdminTheme } from "./admin-theme-toggle";
@@ -36,6 +37,8 @@ type Trip = {
   status: string;
   passenger_id: string;
   driver_id: string | null;
+  passenger_name?: string;
+  driver_name?: string;
 };
 type Settings = FareConfig & {
   id: number;
@@ -248,6 +251,7 @@ export function Dashboard({
             ? [
                 ["drivers", "Equipo"],
                 ["settings", "Servicio"],
+                ["places", "Lugares"],
                 ["notifications", "Avisos"],
               ]
             : []),
@@ -317,7 +321,8 @@ export function Dashboard({
         </div>}
         {page !== "history" && t.zone && <p className="muted">{t.zone}</p>}
         {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{page !== "history" && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
-        {t.driver_id && <p>Motorizado #{t.driver_id.slice(0, 8)}</p>}
+        {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
+        {t.driver_id && <p className="trip-person"><small>Motorizado</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
         {role === "driver" && t.status === "searching" && (
           <button
             className="primary"
@@ -395,10 +400,10 @@ export function Dashboard({
               key={p}
               className={
                 "nav-item " +
-                (page === p || (p === "settings" && page === "places") ? "selected " : "") +
+                (page === p ? "selected " : "") +
                 (p === "home" && role === "passenger" ? "nav-ride" : "")
               }
-              aria-current={page === p || (p === "settings" && page === "places") ? "page" : undefined}
+              aria-current={page === p ? "page" : undefined}
               onClick={() => navigate(p)}
             >
               <AppIcon name={p} />
@@ -508,12 +513,12 @@ export function Dashboard({
               </button>
             </div>
           ) : page === "places" && role === "admin" ? (
-            <PlacesCatalog onBack={()=>navigate('settings')} />
+            <PlacesCatalog />
           ) : page === "notifications" && role === "admin" ? (
             <PushCampaigns />
           ) : page === "settings" && settings ? (
             <div className="account-stack">
-            <button className="secondary" onClick={()=>navigate('places')}><AppIcon name="ride" />Catálogo de lugares<AppIcon name="arrow" /></button>
+
             <FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />
             <form
               className="trip-card"
@@ -563,28 +568,8 @@ export function Dashboard({
               </button>
             </form>
             </div>
-          ) : page === "drivers" ? (
-            <div className="cards">
-              {profiles.map((p) => (
-                <article className="trip-card" key={p.id}>
-                  <h2>Usuario #{p.id.slice(0, 8)}</h2>
-                  <p>
-                    {p.role} · {p.approved ? "Aprobado" : "Sin aprobar"}
-                  </p>
-                  {p.role !== "admin" && (
-                    <button
-                      className="secondary"
-                      disabled={busy || offline}
-                      onClick={() =>
-                        void act("driver", { id: p.id, approved: !p.approved })
-                      }
-                    >
-                      {p.approved ? "Suspender" : "Aprobar como motorizado"}
-                    </button>
-                  )}
-                </article>
-              ))}
-            </div>
+          ) : role === "admin" && (page === "drivers" || page === "history") ? (
+            <AdminRecords key={page} section={page === "drivers" ? "team" : "trips"} busy={busy || offline} refresh={trips} onDriver={(id,approved)=>act("driver",{id,approved})} renderTrip={card}/>
           ) : page === "home" && role === "passenger" ? (
             mine ? (
               card(mine)
