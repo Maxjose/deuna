@@ -26,7 +26,7 @@ export function InstallApp() {
     };
   }, []);
   if (installed)
-    return <p className="muted">De1na ya está abierta como aplicación.</p>;
+    return null;
   return (
     <div className="install-panel">
       <strong>Lleva De1na contigo</strong>
