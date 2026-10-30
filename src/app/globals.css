@@ -836,3 +836,12 @@ main {
     scroll-behavior: auto !important;
   }
 }
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-icon {
+  border-radius: 10px;
+  flex-shrink: 0;
+}

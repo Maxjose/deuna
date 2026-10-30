@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">De1na: camino y ubicación</title>
+  <defs>
+    <linearGradient id="lime" x1="0" y1="0" x2=".75" y2="1"><stop stop-color="#e4ff40"/><stop offset=".5" stop-color="#c4ff32"/><stop offset="1" stop-color="#a8ef24"/></linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#102332"/><stop offset="1" stop-color="#06121b"/></linearGradient>
+    <linearGradient id="road" x1="0" y1="1" x2=".8" y2="0"><stop stop-color="#0b1c25"/><stop offset="1" stop-color="#39741d"/></linearGradient>
+    <linearGradient id="inner" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#7ebd20"/><stop offset="1" stop-color="#d4ff39"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#lime)"/>
+  <g>
+    <path d="M174 125H275C356 125 401 169 401 236C401 321 346 385 266 385H231C228 361 237 335 255 309C289 306 319 279 323 246C328 211 310 191 276 191H224C218 158 202 137 174 134C167 133 168 125 174 125Z" fill="url(#navy)"/>
+    <path d="M208 198C253 201 279 218 268 243C254 278 193 292 162 329C147 347 138 368 132 385H199C197 353 218 322 242 293C273 255 289 230 260 211C246 202 225 199 208 198Z" fill="url(#road)"/>
+    <path d="M211 201C245 207 257 222 246 241C225 273 175 288 150 325C179 293 225 279 251 251C276 224 251 205 211 201Z" fill="url(#inner)"/>
+    <path d="M166 365L174 343L188 341L181 365Z M184 326L195 309L207 305L196 323Z M210 291L226 278L235 274L220 288Z" fill="#caff34"/>
+    <path d="M159 146C127 146 105 169 105 199C105 227 130 259 151 286C154 290 159 290 162 286C183 259 209 227 209 199C209 169 188 146 159 146Z" fill="url(#navy)" stroke="#c9ff34" stroke-width="7"/>
+    <circle cx="157" cy="197" r="21" fill="url(#lime)"/>
+  </g>
+</svg>

@@ -45,3 +45,11 @@ Navegación inferior fija en teléfonos, cabecera compacta, áreas táctiles de 
 El manifiesto y los iconos PNG de 192/512 px permiten instalación en navegadores compatibles; en iPhone usar Compartir → Agregar a inicio. La instalación depende del navegador. No se ofrece funcionamiento de viajes sin conexión ni seguimiento en segundo plano. No hay caché de páginas autenticadas en un service worker.
 
 Verificación: build y TypeScript, prueba HTTP del manifiesto/iconos y rutas protegidas; revisión visual del acceso a 390 px. La revisión de todas las pantallas autenticadas y de instalación en dispositivos físicos queda pendiente.
+
+## Identidad del icono
+
+La referencia visual entregada por el usuario define el icono verde: fondo lima, D oscura, carretera curva y marcador de ubicación. La recreación vectorial editable está en public/brand/de1na-icon.svg; es una reconstrucción de la referencia, no el archivo maestro original.
+
+Exportaciones en public/icons: favicon PNG de 16/32 px, iconos de 192/512 px, versión adaptable de Android y apple-touch-icon de 180 px sin transparencia. public/favicon.ico cubre el favicon del sitio. Regenerar con node scripts/generate-icons.mjs (usa sharp incluido en la instalación de Next.js).
+
+PWA: manifiesto standalone, recursos para Android/iOS, registro de service worker y pantalla pública sin conexión. Solo se guarda offline.html; las páginas autenticadas y los datos de viajes no se almacenan en esa caché. En iOS usar Compartir → Agregar a pantalla de inicio; en Android usar Instalar De1na cuando el navegador lo ofrezca o el menú del navegador. La instalación en dispositivos físicos sigue pendiente de verificación.

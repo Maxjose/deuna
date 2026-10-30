@@ -65,6 +65,13 @@ export function AuthForm({
     <div className="auth-layout">
       <section className="auth-story">
         <a className="brand" href="/">
+          <img
+            className="brand-icon"
+            src="/icons/icon-192.png"
+            width="40"
+            height="40"
+            alt=""
+          />
           De<span>1</span>na
         </a>
         <div>

@@ -270,6 +270,13 @@ export function Dashboard({
     <div className="shell">
       <aside className="sidebar">
         <a className="brand" href="/dashboard">
+          <img
+            className="brand-icon"
+            src="/icons/icon-192.png"
+            width="40"
+            height="40"
+            alt=""
+          />
           De<span>1</span>na
         </a>
         <span className="workspace">

@@ -56,7 +56,12 @@ export function InstallApp() {
           navegador → Instalar aplicación o Agregar a pantalla de inicio.
         </p>
       )}
-      {error && <p role="status">No se pudo abrir la instalación. Usa la opción Agregar a pantalla de inicio del navegador.</p>}
+      {error && (
+        <p role="status">
+          No se pudo abrir la instalación. Usa la opción Agregar a pantalla de
+          inicio del navegador.
+        </p>
+      )}
     </div>
   );
 }
