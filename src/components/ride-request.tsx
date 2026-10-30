@@ -246,7 +246,7 @@ export function RideRequest({
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg>
                     </button>
                   </label>
-                  <label>
+                  <label className="pickup-address">
                     <span className="address-dot destination" />
                     Destino
                     <input
@@ -261,6 +261,9 @@ export function RideRequest({
                       maxLength={110}
                       placeholder="¿A dónde quieres ir?"
                     />
+                    {destination.label && <button type="button" className="locate-button" aria-label="Limpiar destino" title="Limpiar destino" onClick={() => { edit("destination"); setDestination({label:"",point:null}); }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                    </button>}
                   </label>
                   <button className="address-search-button" disabled={loading}>
                     {loading ? "Buscando…" : "Buscar dirección"}

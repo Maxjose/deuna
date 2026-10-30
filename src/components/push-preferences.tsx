@@ -62,17 +62,11 @@ export function PushPreferences() {
     catch{notify('No pudimos desactivarlas. Inténtalo de nuevo.');}
     finally{setBusy(false);}
   }
-  async function test() {
-    setBusy(true);
-    const {error}=await browserClient().rpc('push_manage',{action:'test',payload:{endpoint}});
-    notify(error?'No pudimos enviar la prueba. Espera unos segundos y vuelve a intentar.':'Prueba en cola. Deberías recibir una notificación del sistema.');
-    setBusy(false);
-  }
   return <article className="trip-card"><h2>Notificaciones</h2>
     {loading?<p role="status">Comprobando este dispositivo…</p>:!supported?<p className="muted">Este navegador no permite activar notificaciones. En iPhone, agrega De1na a la pantalla de inicio y ábrela desde allí (iOS 16.4 o posterior).</p>:!configured?<p className="muted">Estamos preparando las notificaciones. Vuelve a comprobarlo más tarde.</p>:endpoint?<>
       <p className="muted">Avisos de tus viajes activos en este dispositivo.</p>
       <label className="check"><input type="checkbox" checked={promotions} disabled={busy} onChange={e=>void changePromotions(e.target.checked)}/>Recibir promociones y novedades de De1na</label>
-      <button className="secondary" disabled={busy} onClick={()=>void test()}>Enviar notificación de prueba</button>
+      <button className="secondary" disabled title="Prueba deshabilitada">Enviar notificación de prueba</button>
       <button className="text" disabled={busy} onClick={()=>void disable()}>Desactivar en este dispositivo</button>
     </>:<><p className="muted">Recibe avisos de tus viajes aunque De1na no esté en pantalla.</p>{blocked?<p className="muted">Las notificaciones están bloqueadas. Habilítalas en los ajustes del navegador o del sistema.</p>:<button className="primary" disabled={busy} onClick={()=>void enable()}>{busy?'Activando…':'Activar notificaciones'}</button>}</>}
     <Toast message={message}/>

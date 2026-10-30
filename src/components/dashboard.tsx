@@ -71,6 +71,8 @@ export function Dashboard({
     [offline, setOffline] = useState(false),
     [cancelId, setCancelId] = useState<string | null>(null);
   const cancelDialog = useRef<HTMLDialogElement>(null);
+  const signOutDialog = useRef<HTMLDialogElement>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const { message, notify: setMessage } = useNotice(page);
   const load = useCallback(async () => {
     const [p, t, s] = await Promise.all([
@@ -256,6 +258,9 @@ export function Dashboard({
         (profile?.approved && profile.available && t.status === "searching"),
   );
   async function signOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
     try { await disconnectPushDevice(); }
     catch { setMessage("No pudimos desconectar las notificaciones del dispositivo. Inténtalo de nuevo."); return; }
     const { error } = await client.auth.signOut();
@@ -264,6 +269,8 @@ export function Dashboard({
       router.replace("/login");
       router.refresh();
     }
+    } catch { setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo."); }
+    finally { setSigningOut(false); signOutDialog.current?.close(); }
   }
   function card(t: Trip) {
     const destinationName = parseStoredPlace(t.destination).label;
@@ -489,7 +496,7 @@ export function Dashboard({
               <InstallApp />
               <button
                 className="secondary signout"
-                onClick={() => void signOut()}
+                onClick={() => signOutDialog.current?.showModal()}
               >
                 Cerrar sesión
               </button>
@@ -650,6 +657,13 @@ export function Dashboard({
         </section>
       </main>
       <Toast message={message} />
+      <dialog ref={signOutDialog} className="action-sheet" aria-labelledby="signout-title" onCancel={e => { if (signingOut) e.preventDefault(); }}>
+        <div className="sheet-handle" />
+        <h2 id="signout-title">¿Cerrar sesión?</h2>
+        <p className="muted">Tendrás que iniciar sesión de nuevo para usar tu cuenta.</p>
+        <button className="primary" disabled={signingOut} autoFocus onClick={() => signOutDialog.current?.close()}>Seguir en mi cuenta</button>
+        <button className="secondary danger" disabled={signingOut} onClick={() => void signOut()}>{signingOut ? "Cerrando sesión…" : "Sí, cerrar sesión"}</button>
+      </dialog>
       <dialog
         ref={cancelDialog}
         className="action-sheet"

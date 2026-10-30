@@ -74,17 +74,19 @@ export default function JourneyMap({
     callbacks.current.onRoute?.(false);
     callbacks.current.onQuote?.(null);
     setMessage("");
-    const mark = (p: MapPoint, text: string) =>
+    const mark = (p: MapPoint, kind: "origin" | "destination") =>
       L.marker([p.lat, p.lng], {
         icon: L.divIcon({
           className: "journey-marker",
-          html: `<span>${text}</span>`,
+          html: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">${kind === "origin" ? '<circle cx="12" cy="8" r="3"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>' : '<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>'}</svg>`,
           iconSize: [32, 32],
           iconAnchor: [16, 16],
         }),
+        title: kind === "origin" ? "Tu punto de recogida" : "Destino del viaje",
+        alt: kind === "origin" ? "Tu punto de recogida" : "Destino del viaje",
       }).addTo(layer);
-    if (origin) mark(origin, "A");
-    if (destination) mark(destination, "B");
+    if (origin) mark(origin, "origin");
+    if (destination) mark(destination, "destination");
     const points = [origin, destination].filter(Boolean) as MapPoint[];
     if (points.length === 1) map.setView([points[0].lat, points[0].lng], 15);
     else if (points.length === 2)
