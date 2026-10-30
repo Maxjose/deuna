@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
+import { AdminThemeToggle, useAdminTheme } from "./admin-theme-toggle";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { RideWaiting } from "./ride-waiting";
@@ -56,6 +57,7 @@ export function Dashboard({
   userId: string;
 }) {
   const router = useRouter();
+  const {theme:adminTheme,toggleTheme}=useAdminTheme(userId);
   const client = useMemo(() => browserClient(), []),
     [profile, setProfile] = useState<Profile | null>(null),
     [profiles, setProfiles] = useState<Profile[]>([]),
@@ -352,6 +354,7 @@ export function Dashboard({
   }
   return (
     <div
+      data-admin-theme={role === "admin" ? adminTheme : undefined}
       className={
         "shell " + (role === "admin" ? "admin-shell " : "") +
         (page === "home" && role === "passenger" ? "ride-screen" : "")
@@ -416,6 +419,7 @@ export function Dashboard({
               De<span>1</span>na
             </span>
           </a>
+          {role === "admin" && <AdminThemeToggle theme={adminTheme} onToggle={toggleTheme} />}
         </header>
         {offline && (
           <div className="connection-banner" role="status">

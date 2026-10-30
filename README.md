@@ -38,6 +38,8 @@ Definir tarifa, moneda, soporte, incorporación de conductores, identidad visibl
 
 Referencia funcional: PLAN_DE_DESARROLLO.md y De1na_Manual_de_Marca.md.
 
+El administrador dispone de un control claro/oscuro en la cabecera, tanto en escritorio como en móvil. La preferencia se guarda localmente por usuario y navegador; no cambia el tema del acceso ni el de pasajeros o motorizados. Revisado en navegador: contraste de controles, recarga conservando la elección y retorno al modo claro.
+
 ## Catálogo propio de lugares
 
 Administración → Servicio → Catálogo de lugares permite agregar o editar una ficha, fijar su punto en mapa, desactivarla e importar JSON. La búsqueda de viajes combina primero el catálogo activo con Photon, elimina duplicados cercanos del mismo nombre y permite elegir los resultados locales mientras termina la consulta externa. Si falla una fuente, la otra sigue disponible. Los lugares no modifican la red vial ni el cálculo firmado de tarifas.

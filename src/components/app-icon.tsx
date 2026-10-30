@@ -1,5 +1,7 @@
 export function AppIcon({ name }: { name: string }) {
   const paths: Record<string, string> = {
+    sun: "M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5",
+    moon: "M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10Z",
     notifications: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4",
     key: "M15 3a6 6 0 0 0-5.7 7.9L3 17.2V21h4v-3h3v-3l1.1-1.1A6 6 0 1 0 15 3ZM17 7h.01",
     fingerprint: "M8 5a7 7 0 0 1 11 6v3M5 8a7 7 0 0 0 0 6M8 20c2-3 1-5 1-8a3 3 0 0 1 6 0c0 4 0 7-2 10M5 18c1-2 1-4 1-6a6 6 0 0 1 12 0c0 3 0 5-1 7M12 11c0 4 1 6-1 9M3 5a11 11 0 0 1 19 6",
