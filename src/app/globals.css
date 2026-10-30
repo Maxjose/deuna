@@ -79,6 +79,10 @@ textarea,
   box-shadow: 0 8px 30px #12203330;
 }
 .journey-flow-screen:focus { outline: none; }
+.fare-summary { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+.fare-summary strong { font-size: 26px; letter-spacing: -0.8px; }
+.fare-summary span { font-size: 12px; color: var(--muted); }
+.fare-summary small { font-size: 10px; color: var(--muted); }
 button,
 input,
 select,

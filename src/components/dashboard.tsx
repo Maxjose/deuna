@@ -6,6 +6,8 @@ import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
+import { FareSettings } from "./fare-settings";
+import { usd, type FareSettings as FareConfig } from "@/lib/fare";
 import { useRouter } from "next/navigation";
 
 type Profile = {
@@ -19,11 +21,13 @@ type Trip = {
   origin: string;
   destination: string;
   zone: string | null;
+  fare_cents: number | null;
+  distance_meters: number | null;
   status: string;
   passenger_id: string;
   driver_id: string | null;
 };
-type Settings = {
+type Settings = FareConfig & {
   id: number;
   enabled: boolean;
   open_time: string;
@@ -66,7 +70,7 @@ export function Dashboard({
       client.from("profiles").select("id,role,approved,available"),
       client
         .from("trips")
-        .select("id,origin,destination,zone,status,passenger_id,driver_id")
+        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters")
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
@@ -249,6 +253,7 @@ export function Dashboard({
     if (role === "passenger" && page === "home" && t.status === "searching")
       return (
         <RideWaiting
+            fareCents={t.fare_cents}
           origin={t.origin}
           destination={t.destination}
           busy={busy || offline}
@@ -278,6 +283,7 @@ export function Dashboard({
           </div>
         </div>
         {t.zone && <p className="muted">{t.zone}</p>}
+        {t.fare_cents != null && <p><strong>{usd(t.fare_cents)}</strong> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</p>}
         {t.driver_id && <p>Motorizado #{t.driver_id.slice(0, 8)}</p>}
         {role === "driver" && t.status === "searching" && (
           <button
@@ -458,6 +464,8 @@ export function Dashboard({
               </button>
             </div>
           ) : page === "settings" && settings ? (
+            <div className="account-stack">
+            <FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />
             <form
               className="trip-card"
               onSubmit={(e) => {
@@ -518,6 +526,7 @@ export function Dashboard({
                 Guardar configuración
               </button>
             </form>
+            </div>
           ) : page === "drivers" ? (
             <div className="cards">
               {profiles.map((p) => (

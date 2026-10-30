@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AppIcon } from "./app-icon";
-import { destinationLabel } from "@/lib/destination";
+import { usd, type FareQuote } from "@/lib/fare";
 import { decodePlaces, type Place } from "@/lib/journey";
 const JourneyMap = dynamic(() => import("./journey-map"), {
   ssr: false,
@@ -30,6 +30,14 @@ export function RideRequest({
     [message, setMessage] = useState(""),
     [moto, setMoto] = useState(false),
     [routeReady, setRouteReady] = useState(false);
+  const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
+  const quotePlaces = useMemo(() => ({ origin, destination }), [origin, destination]);
+  useEffect(() => {
+    setExpired(false);
+    if (!quote) return;
+    const timer = setTimeout(() => setExpired(true), Math.max(0, quote.expires_at * 1000 - Date.now()));
+    return () => clearTimeout(timer);
+  }, [quote]);
   const dialog = useRef<HTMLDialogElement>(null),
     locationVersion = useRef(0),
     searchController = useRef<AbortController | null>(null),
@@ -317,9 +325,12 @@ export function RideRequest({
                 <span>{destination.label}</span>
               </div>
               <JourneyMap
+                key={quoteRevision}
                 origin={origin.point}
                 destination={destination.point}
                 onRoute={setRouteReady}
+                quotePlaces={quotePlaces}
+                onQuote={setQuote}
               />
               <section className="journey-bottom-sheet">
                 <div className="sheet-handle" />
@@ -328,6 +339,12 @@ export function RideRequest({
                     ? "Elige cómo ir"
                     : "Confirma tu recorrido"}
                 </h2>
+                {quote && <div className="fare-summary" aria-live="polite">
+                  <strong>{usd(quote.fare_cents)}</strong>
+                  <span>{(quote.distance_meters / 1000).toLocaleString('es-VE', { maximumFractionDigits: 2 })} km · {Math.max(1, Math.round(quote.duration_seconds / 60))} min aprox.</span>
+                  <small>Pago directo al motorizado · USD</small>
+                </div>}
+                {expired && <button className="secondary" onClick={() => { setQuote(null); setQuoteRevision(n => n + 1); }}>Actualizar precio</button>}
                 {step === "choose" ? (
                   <>
                     <button
@@ -374,20 +391,12 @@ export function RideRequest({
                     <button
                       className="primary"
                       disabled={
-                        !routeReady || busy || offline || !enabled
+                        !routeReady || !quote || expired || busy || offline || !enabled
                       }
                       onClick={async () => {
                         try {
-                          await onRequest({
-                            origin: destinationLabel(
-                              origin.label,
-                              origin.point,
-                            ),
-                            destination: destinationLabel(
-                              destination.label,
-                              destination.point,
-                            ),
-                          });
+                          if (!quote || expired) return;
+                          await onRequest({ quote: quote.quote, signature: quote.signature });
                         } catch {
                           setMessage(
                             "No se pudo solicitar el viaje. Inténtalo otra vez.",

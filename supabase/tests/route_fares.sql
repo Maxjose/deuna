@@ -1,0 +1,43 @@
+-- Transactional fixtures; no persistent users, trips or settings changes.
+begin;
+do $test$
+declare passenger uuid:=gen_random_uuid(); other_user uuid:=gen_random_uuid();
+  q jsonb; signed_text text; signature text; secret text; rejected boolean;
+begin
+  insert into auth.users(id) values(passenger),(other_user);
+  update public.service_settings set enabled=true,open_time='00:00',close_time='00:00' where id=1;
+  perform set_config('request.jwt.claim.sub',passenger::text,true);
+  select k.secret into secret from private.fare_key k where id=1;
+  q:=jsonb_build_object('id',gen_random_uuid(),'user_id',passenger,'origin','Test A','destination','Test B','distance_meters',5000,'duration_seconds',600,'fare_cents',350,'currency','USD','expires_at',floor(extract(epoch from now()))+300);
+  signed_text:=q::text;
+  signature:=encode(extensions.hmac(signed_text,secret,'sha256'),'hex');
+  rejected:=false;
+  begin perform public.operate('request',jsonb_build_object('quote',signed_text,'signature','wrong')); exception when others then rejected:=true;end;
+  assert rejected,'Must reject forged price';
+  perform set_config('request.jwt.claim.sub',other_user::text,true);
+  rejected:=false;
+  begin perform public.operate('request',jsonb_build_object('quote',signed_text,'signature',signature)); exception when others then rejected:=true;end;
+  assert rejected,'Must reject another passenger quote';
+  perform set_config('request.jwt.claim.sub',passenger::text,true);
+  rejected:=false;
+  begin perform public.operate('request',jsonb_build_object('origin','Test A','destination','Test B')); exception when others then rejected:=true;end;
+  assert rejected,'Must reject requests without quote';
+  perform public.operate('request',jsonb_build_object('quote',signed_text,'signature',signature));
+  assert exists(select 1 from public.trips where passenger_id=passenger and fare_cents=350 and currency='USD' and distance_meters=5000),'Must save confirmed fare';
+  update public.trips set status='cancelled' where passenger_id=passenger;
+  rejected:=false;
+  begin perform public.operate('request',jsonb_build_object('quote',signed_text,'signature',signature)); exception when unique_violation then rejected:=true;end;
+  assert rejected,'Must reject quote reuse';
+  q:=q||jsonb_build_object('id',gen_random_uuid(),'expires_at',floor(extract(epoch from now()))-1);
+  signed_text:=q::text; signature:=encode(extensions.hmac(signed_text,secret,'sha256'),'hex');
+  rejected:=false;
+  begin perform public.operate('request',jsonb_build_object('quote',signed_text,'signature',signature)); exception when others then rejected:=true;end;
+  assert rejected,'Must reject expired quote';
+  rejected:=false;
+  begin perform public.operate('fares','{"base_cents":0,"per_km_cents":50,"minimum_cents":100}'); exception when others then rejected:=true;end;
+  assert rejected,'Only admin sets fares';
+  update public.profiles set role='admin' where id=passenger;
+  perform public.operate('fares','{"base_cents":100,"per_km_cents":50,"minimum_cents":200}');
+  assert (select per_km_cents=50 from public.service_settings where id=1),'Admin rates saved';
+end;$test$;
+rollback;

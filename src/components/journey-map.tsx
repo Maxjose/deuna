@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { MapPoint } from "@/lib/destination";
 import { decodeRoute } from "@/lib/journey";
+import type { Place } from "@/lib/journey";
+import type { FareQuote } from "@/lib/fare";
 import "leaflet/dist/leaflet.css";
 export default function JourneyMap({
   origin,
@@ -9,20 +11,24 @@ export default function JourneyMap({
   picking,
   onPick,
   onRoute,
+  quotePlaces,
+  onQuote,
 }: {
   origin: MapPoint | null;
   destination: MapPoint | null;
   picking?: boolean;
   onPick?: (p: MapPoint) => void;
   onRoute?: (ready: boolean) => void;
+  quotePlaces?: { origin: Place; destination: Place };
+  onQuote?: (quote: FareQuote | null) => void;
 }) {
   const container = useRef<HTMLDivElement>(null),
     mapRef = useRef<import("leaflet").Map | null>(null),
-    callbacks = useRef({ onPick, onRoute });
+    callbacks = useRef({ onPick, onRoute, onQuote });
   const [library, setLibrary] = useState<typeof import("leaflet") | null>(null),
     [message, setMessage] = useState(""),
     [retry, setRetry] = useState(0);
-  callbacks.current = { onPick, onRoute };
+  callbacks.current = { onPick, onRoute, onQuote };
   useEffect(() => {
     let alive = true;
     void import("leaflet")
@@ -66,6 +72,7 @@ export default function JourneyMap({
     let active = true;
     const timeout = setTimeout(() => controller.abort(), 15000);
     callbacks.current.onRoute?.(false);
+    callbacks.current.onQuote?.(null);
     setMessage("");
     const mark = (p: MapPoint, text: string) =>
       L.marker([p.lat, p.lng], {
@@ -95,15 +102,21 @@ export default function JourneyMap({
         "https://router.project-osrm.org";
       const coordinates = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
       fetch(
-        `${base}/route/v1/driving/${coordinates}?overview=full&geometries=geojson&radiuses=250;250`,
-        { signal: controller.signal },
+        quotePlaces ? '/api/quote' : `${base}/route/v1/driving/${coordinates}?overview=full&geometries=geojson&radiuses=250;250`,
+        { signal: controller.signal, ...(quotePlaces ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(quotePlaces) } : {}) },
       )
         .then(async (r) => {
-          if (!r.ok) throw Error();
-          return decodeRoute(await r.json());
+          const body = await r.json();
+          if (!r.ok) throw Error(body.error || 'No pudimos trazar la ruta.');
+          if (quotePlaces) {
+            if (!active) return null;
+            callbacks.current.onQuote?.(body);
+            return body.geometry as [number, number][];
+          }
+          return decodeRoute(body);
         })
         .then((route) => {
-          if (!active) return;
+          if (!active || !route) return;
           L.polyline(route, { color: "#fff", weight: 9, opacity: 0.95 }).addTo(
             layer,
           );
@@ -114,10 +127,10 @@ export default function JourneyMap({
           callbacks.current.onRoute?.(true);
           setMessage("Ruta de referencia");
         })
-        .catch(() => {
+        .catch((error) => {
           if (active)
             setMessage(
-              "No pudimos trazar la ruta. Revisa los puntos o vuelve a intentar.",
+              error instanceof Error && error.message.includes('tarifas') ? error.message : "No pudimos trazar la ruta. Revisa los puntos o vuelve a intentar.",
             );
         })
         .finally(() => clearTimeout(timeout));
@@ -129,7 +142,7 @@ export default function JourneyMap({
       map.off("click", clicked);
       layer.remove();
     };
-  }, [origin, destination, picking, library, retry]);
+  }, [origin, destination, picking, library, retry, quotePlaces]);
   return (
     <div className="journey-map">
       <div
@@ -156,7 +169,7 @@ export default function JourneyMap({
       {message && (
         <div className="map-feedback" role="status">
           {message}
-          {message.startsWith("No pudimos") && (
+          {message !== 'Ruta de referencia' && message !== 'Trazando tu ruta…' && (
             <button onClick={() => setRetry((n) => n + 1)}>Reintentar</button>
           )}
         </div>

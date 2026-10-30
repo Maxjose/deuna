@@ -3,17 +3,20 @@ import { useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { parseStoredPlace } from "@/lib/journey";
 import { AppIcon } from "./app-icon";
+import { usd } from "@/lib/fare";
 const JourneyMap = dynamic(() => import("./journey-map"), { ssr: false });
 export function RideWaiting({
   origin,
   destination,
   busy,
   onCancel,
+  fareCents,
 }: {
   origin: string;
   destination: string;
   busy: boolean;
   onCancel: () => void;
+  fareCents?: number | null;
 }) {
   const sheet = useRef<HTMLDialogElement>(null),
     from = useMemo(() => parseStoredPlace(origin), [origin]),
@@ -37,6 +40,7 @@ export function RideWaiting({
       <section className="journey-bottom-sheet waiting-sheet">
         <div className="sheet-handle" />
         <h2>Conectando con tu motorizado</h2>
+        {fareCents != null && <strong>{usd(fareCents)}</strong>}
         <p role="status">Estamos buscando quién te lleve.</p>
         <div className="connecting-progress" aria-hidden="true">
           <span />
