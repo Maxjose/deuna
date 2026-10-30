@@ -33,7 +33,7 @@ export function AdminRecords({section,busy,refresh,onDriver,renderTrip}:{section
     {isPeople&&<dialog ref={detail} className="action-sheet member-sheet" aria-label="Gestionar cuenta" onCancel={e=>{if(saving)e.preventDefault();}} onClose={()=>{setPerson(null);setOperation('');}}>
       {person&&<><div className="row"><h2>{person.name||person.email||'Usuario sin nombre'}</h2><button className="icon-button" disabled={saving} aria-label="Cerrar ficha" onClick={()=>detail.current?.close()}>×</button></div>
       <p className="team-email">{person.email}</p>{person.phone&&<p>{person.phone}</p>}
-      {person.role==='driver'&&<DriverReputation personId={person.id}/>}
+      <DriverReputation personId={person.id}/>
       <p>{person.role==='driver'?'Motorizado · Moto':'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
       {person.role==='driver'&&<p className="muted">{person.available?'Disponible para viajes':'Desconectado'}</p>}
       {operation?<div className="member-confirm"><p>¿Confirmar: {operationLabel(operation)}?</p><p className="muted">La cuenta no debe tener viajes activos.</p><button className="primary" disabled={saving||busy} onClick={()=>void manage()}>{saving?'Guardando…':'Confirmar cambio'}</button><button className="secondary" disabled={saving} onClick={()=>setOperation('')}>Cancelar</button></div>:<div className="member-actions">

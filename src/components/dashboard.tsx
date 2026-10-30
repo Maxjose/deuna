@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
 import { TripChat } from "./trip-chat";
-import { TripCancellation,TripCompletion,DriverReputation } from './trip-resolution';
+import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
 import { DriverNavigation } from "./driver-navigation";
 import { AdminRecords } from "./admin-records";
 import { NotificationInbox } from "./notification-inbox";
@@ -333,8 +333,10 @@ export function Dashboard({
         {page !== "history" && t.zone && <p className="muted">{t.zone}</p>}
         {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{page !== "history" && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
         {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
+        {role==='driver'&&<TripPerson tripId={t.id} label="Pasajero"/>}
+        {role==='passenger'&&t.driver_id&&<TripPerson tripId={t.id} label="Motorizado"/>}
         {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="secondary" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Hablar con mi motorizado</button>}
-        {t.driver_id && <p className="trip-person"><small>Motorizado</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
+        {t.driver_id && role==='admin' && <p className="trip-person"><small>Motorizado</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
         {role === "driver" && t.status === "searching" && (
           <button
             className="primary"
@@ -492,6 +494,7 @@ export function Dashboard({
               <article className="trip-card account-card">
                 <div className="avatar">{(displayName || email)[0]?.toUpperCase()}</div>
                 <h2>{displayName || "Tu cuenta"}</h2>
+                <DriverReputation personId={userId}/>
                 <p className="account-email">{email}</p>
                 <span className="pill green">
                   {role === "admin"
@@ -512,7 +515,6 @@ export function Dashboard({
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>
               <PasskeySecurity />
-              {role==='driver'&&<DriverReputation personId={userId}/>}
               <FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>
               <PushPreferences />
               <InstallApp />
@@ -663,7 +665,7 @@ export function Dashboard({
         </section>
       </main>
       <Toast message={message} />
-      {role==='passenger'&&!profile?.suspended&&<TripCompletion refresh={trips} onDone={()=>navigate('home')}/>}
+      {role!=='admin'&&!profile?.suspended&&<TripCompletion refresh={trips} onDone={()=>navigate('home')}/>}
       <dialog ref={acceptDialog} className="action-sheet" aria-labelledby="accept-title" onClose={()=>setAcceptTrip(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
         <div className="sheet-handle"/>
         <h2 id="accept-title">¿Aceptar este viaje?</h2>
