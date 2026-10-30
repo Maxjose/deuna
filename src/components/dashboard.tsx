@@ -4,6 +4,7 @@ import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
+import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { useRouter } from "next/navigation";
 
@@ -117,11 +118,13 @@ export function Dashboard({
       if (error) throw error;
       await load();
       setMessage("Cambio guardado.");
+      return true;
     } catch {
       setMessage(
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
       await load();
+      return false;
     } finally {
       setBusy(false);
     }
@@ -210,35 +213,12 @@ export function Dashboard({
   function card(t: Trip) {
     if (role === "passenger" && page === "home" && t.status === "searching")
       return (
-        <section
-          className="searching-ride"
-          key={t.id}
-          aria-label="Buscando motorizado"
-        >
-          <div className="search-visual" aria-hidden="true">
-            <span />
-            <span />
-            <div>
-              <AppIcon name="moto" />
-            </div>
-          </div>
-          <h2>Buscando tu motorizado</h2>
-          <p role="status">Estamos buscando quién te lleve.</p>
-          <article className="trip-card search-route">
-            <small>RECOGIDA</small>
-            <strong>{t.origin}</strong>
-            <span className="route-dots">↓</span>
-            <small>DESTINO</small>
-            <strong>{t.destination}</strong>
-          </article>
-          <button
-            className="secondary"
-            disabled={busy || offline}
-            onClick={() => setCancelId(t.id)}
-          >
-            Cancelar solicitud
-          </button>
-        </section>
+        <RideWaiting
+          origin={t.origin}
+          destination={t.destination}
+          busy={busy || offline}
+          onCancel={() => setCancelId(t.id)}
+        />
       );
     return (
       <article className="trip-card" key={t.id}>
@@ -531,7 +511,10 @@ export function Dashboard({
                 enabled={settings?.enabled || false}
                 busy={busy}
                 offline={offline}
-                onRequest={(payload) => act("request", payload)}
+                onRequest={async (payload) => {
+                  if (!(await act("request", payload)))
+                    throw new Error("No se pudo solicitar");
+                }}
               />
             )
           ) : (
