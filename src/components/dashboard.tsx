@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
 import { TripChat } from "./trip-chat";
+import { TripCancellation,TripCompletion,DriverReputation } from './trip-resolution';
 import { DriverNavigation } from "./driver-navigation";
 import { AdminRecords } from "./admin-records";
 import { NotificationInbox } from "./notification-inbox";
@@ -42,6 +43,7 @@ type Trip = {
   driver_id: string | null;
   passenger_name?: string;
   driver_name?: string;
+  cancel_requested?: boolean;
 };
 type Settings = FareConfig & {
   id: number;
@@ -92,7 +94,7 @@ export function Dashboard({
       client.from("profiles").select("id,role,approved,available,suspended"),
       client
         .from("trips")
-        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters")
+        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested")
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
@@ -265,10 +267,11 @@ export function Dashboard({
             : [["messages", "Mensajes"]]),
           ["account", "Cuenta"],
         ];
+  const driverActive=role==='driver'?trips.find(t=>t.driver_id===userId&&['assigned','arrived','ongoing'].includes(t.status)):undefined;
   const visibleTrips = trips.filter((t) =>
     page === "history"
       ? role === "admin" || t.passenger_id === userId || t.driver_id === userId
-      : role === "admin" ||
+      : driverActive ? t.id===driverActive.id : role === "admin" ||
         (t.driver_id === userId &&
           !["finished", "cancelled"].includes(t.status)) ||
         (profile?.approved && profile.available && t.status === "searching"),
@@ -346,8 +349,10 @@ export function Dashboard({
           page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onAdvance={()=>void act('advance',{id:t.id})}/>
+            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onAdvance={()=>void act('advance',{id:t.id})}><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
           )}
+        {role === "passenger" &&
+          t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/>}
         {role === "passenger" &&
           t.passenger_id === userId &&
           ["searching", "assigned", "arrived"].includes(t.status) && (
@@ -433,6 +438,7 @@ export function Dashboard({
           {role === "admin" && <AdminThemeToggle theme={adminTheme} onToggle={toggleTheme} />}
           <NotificationInbox userId={userId} />
         </header>
+        {role==='passenger'&&mine?.cancel_requested&&page!=='home'&&<button className="secondary" onClick={()=>navigate('home')}>Tu motorizado solicita cancelar. Revisar solicitud</button>}
         {offline && (
           <div className="connection-banner" role="status">
             Sin conexión. Reconéctate para consultar o actualizar viajes.
@@ -505,6 +511,7 @@ export function Dashboard({
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>
               <PasskeySecurity />
+              {role==='driver'&&<DriverReputation personId={userId}/>}
               <FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>
               <PushPreferences />
               <InstallApp />
@@ -593,7 +600,7 @@ export function Dashboard({
             )
           ) : (
             <>
-              {role === "driver" && page === "home" && (
+              {role === "driver" && page === "home" && !driverActive && (
                 <>
                   <p className="muted">
                     {profile.approved
@@ -602,7 +609,7 @@ export function Dashboard({
                   </p>
                   <button
                     className="primary"
-                    disabled={busy || offline || !profile.approved}
+                    disabled={busy || offline || !profile.approved || !!driverActive}
                     onClick={() =>
                       void act("available", { available: !profile.available })
                     }
@@ -655,6 +662,7 @@ export function Dashboard({
         </section>
       </main>
       <Toast message={message} />
+      {role==='passenger'&&!profile?.suspended&&<TripCompletion refresh={trips} onDone={()=>navigate('home')}/>}
       <dialog ref={acceptDialog} className="action-sheet" aria-labelledby="accept-title" onClose={()=>setAcceptTrip(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
         <div className="sheet-handle"/>
         <h2 id="accept-title">¿Aceptar este viaje?</h2>

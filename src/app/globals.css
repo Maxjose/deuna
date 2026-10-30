@@ -127,6 +127,17 @@ textarea,
 .trip-person small, .trip-person strong { display: block; }
 .trip-person small { font-size: 10px; color: var(--muted); margin-bottom: 5px; }
 .trip-person strong { font-size: 13px; }
+.trip-cancellation { font-size: 12px; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+.completion-sheet.action-sheet { inset: 24px 0; margin: auto; height: fit-content; max-height: calc(100dvh - 48px); overflow-y: auto; border-radius: 28px; padding: 30px 24px; text-align: center; }
+.completion-sheet:focus { outline: none; }
+.completion-check { display: grid; place-items: center; width: 84px; height: 84px; margin: 0 auto 22px; border-radius: 50%; color: #122033; background: var(--lime); font-size: 44px; animation: completion-pop .5s ease-out; }
+.rating-stars { display: flex; justify-content: center; gap: 4px; margin: 22px 0; }
+.rating-stars button { width: 44px; height: 48px; padding: 0; background: transparent; font-size: 36px; color: #c4ccd4; }
+.rating-stars .chosen { color: #d08d00; }
+.completion-sheet .text { margin-top: 14px; }
+.reputation { font-size: 13px; color: var(--ink); }
+@keyframes completion-pop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media(prefers-reduced-motion:reduce) { .completion-check { animation: none; } }
 .admin-records > .catalog-pages { max-width: 400px; margin-left: auto; }
 .catalog-sidebar { display: grid; gap: 24px; min-width: 0; align-content: start; }
 .catalog-pages .secondary { width: auto; padding: 10px 14px; margin: 0; }

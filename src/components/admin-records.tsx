@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { browserClient } from '@/lib/supabase/client';
+import { DriverReputation } from './trip-resolution';
 type Person={id:string;name:string;email:string;phone:string;role:string;approved:boolean;available:boolean;suspended:boolean};
 export type AdminTrip={id:string;origin:string;destination:string;zone:string|null;fare_cents:number|null;distance_meters:number|null;status:string;passenger_id:string;driver_id:string|null;passenger_name?:string;driver_name?:string};
 export function AdminRecords({section,busy,refresh,onDriver,renderTrip}:{section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
@@ -32,6 +33,7 @@ export function AdminRecords({section,busy,refresh,onDriver,renderTrip}:{section
     {isPeople&&<dialog ref={detail} className="action-sheet member-sheet" aria-label="Gestionar cuenta" onCancel={e=>{if(saving)e.preventDefault();}} onClose={()=>{setPerson(null);setOperation('');}}>
       {person&&<><div className="row"><h2>{person.name||person.email||'Usuario sin nombre'}</h2><button className="icon-button" disabled={saving} aria-label="Cerrar ficha" onClick={()=>detail.current?.close()}>×</button></div>
       <p className="team-email">{person.email}</p>{person.phone&&<p>{person.phone}</p>}
+      {person.role==='driver'&&<DriverReputation personId={person.id}/>}
       <p>{person.role==='driver'?'Motorizado · Moto':'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
       {person.role==='driver'&&<p className="muted">{person.available?'Disponible para viajes':'Desconectado'}</p>}
       {operation?<div className="member-confirm"><p>¿Confirmar: {operationLabel(operation)}?</p><p className="muted">La cuenta no debe tener viajes activos.</p><button className="primary" disabled={saving||busy} onClick={()=>void manage()}>{saving?'Guardando…':'Confirmar cambio'}</button><button className="secondary" disabled={saving} onClick={()=>setOperation('')}>Cancelar</button></div>:<div className="member-actions">

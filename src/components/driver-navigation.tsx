@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { parseStoredPlace } from '@/lib/journey';
 import { refreshNavigationRoute, usableFix, type NavigationFix } from '@/lib/navigation';
 import type { MapPoint } from '@/lib/destination';
 import { AppIcon } from './app-icon';
 const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
-export function DriverNavigation({origin,destination,status,busy,onAdvance}:{origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void}){
+export function DriverNavigation({origin,destination,status,busy,onAdvance,children}:{origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void;children?:ReactNode}){
  const pickup=useMemo(()=>parseStoredPlace(origin),[origin]),dropoff=useMemo(()=>parseStoredPlace(destination),[destination]);
  const target=status==='ongoing'?dropoff:pickup;
  const dialog=useRef<HTMLDialogElement>(null),lastRoute=useRef<{point:MapPoint;at:number}|null>(null);
@@ -58,6 +58,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance}:{ori
     <label className="check"><input type="checkbox" checked={awake} onChange={e=>setAwake(e.target.checked)}/>Mantener pantalla encendida {awake&&<small>{wakeActive?'· Activo':'· No disponible ahora'}</small>}</label>
     <p className="muted driver-nav-note">Mantén esta pantalla abierta. Al bloquear el teléfono o cambiar de app, el GPS puede pausarse.</p>
     <button className="primary" disabled={busy} onClick={onAdvance}>{status==='assigned'?'Ya llegué a la recogida':status==='arrived'?'Iniciar viaje':'Finalizar viaje'}</button>
+    {children}
    </footer>
   </dialog>
  </>;
