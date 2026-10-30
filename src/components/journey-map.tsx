@@ -73,6 +73,13 @@ export default function JourneyMap({
       mapRef.current = null;
     };
   }, []);
+  useEffect(()=>{
+    if(!library||!container.current)return;
+    let frame=0;
+    const observer=new ResizeObserver(()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>mapRef.current?.invalidateSize({animate:false,debounceMoveend:true}));});
+    observer.observe(container.current);
+    return()=>{observer.disconnect();cancelAnimationFrame(frame);};
+  },[library]);
   useEffect(() => {
     const map = mapRef.current,
       L = library;

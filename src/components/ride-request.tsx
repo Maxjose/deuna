@@ -42,6 +42,7 @@ export function RideRequest({
     [moto, setMoto] = useState(false),
     [routeReady, setRouteReady] = useState(false);
   const [mapReference,setMapReference]=useState<'origin'|'destination'|null>(null);
+  const [mapCompact,setMapCompact]=useState(false);
   const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
   const quotePlaces = useMemo(() => ({ origin, destination }), [origin, destination]);
   const { message, notify: setMessage } = useNotice(step);
@@ -69,6 +70,7 @@ export function RideRequest({
   }, [step]);
   useEffect(() => () => { searchController.current?.abort(); locationVersion.current++; }, []);
   function open() {
+    setMapCompact(false);
     setStep("search");
     setActive("destination");
     setMessage("");
@@ -83,6 +85,7 @@ export function RideRequest({
     );
   }
   function edit(kind: "origin" | "destination") {
+    setMapCompact(false);
     setMapReference(null);
     if (kind === "origin") { locationVersion.current++; setLocating(false); }
     searchVersion.current++;
@@ -102,6 +105,7 @@ export function RideRequest({
       return;
     }
     const version = ++searchVersion.current;
+    setMapCompact(true);
     searchController.current?.abort();
     const controller = new AbortController();
     searchController.current = controller;
@@ -128,13 +132,17 @@ export function RideRequest({
       const places=mergeSearchPlaces(catalog,external);
       if(sources.every(source=>source.status==='rejected'))throw Error();
       if(!places.length&&sources.some(source=>source.status==='rejected'))throw Error();
-      if (!places.length)
+      if (!places.length) {
+        setMapCompact(false);
         setMessage("No encontramos ese lugar en el Zulia. Puedes fijarlo en el mapa.");
+      }
     } catch {
-      if (version === searchVersion.current)
+      if (version === searchVersion.current) {
+        setMapCompact(false);
         setMessage(
           "No pudimos buscar la dirección. Puedes elegirla en el mapa.",
         );
+      }
     } finally {
       clearTimeout(timeout);
       if (version === searchVersion.current) setLoading(false);
@@ -312,7 +320,7 @@ export function RideRequest({
                   </button>
                 </form>
               </div>
-              <div className="journey-search-body">
+              <div className={"journey-search-body"+(mapCompact?' map-is-compact':'')}>
                   <div className="place-results">
                     {results.map((place, i) => (
                       <button
@@ -321,6 +329,7 @@ export function RideRequest({
                           searchVersion.current++;
                           searchController.current?.abort();
                           setLoading(false);
+                          setMapCompact(false);
                           update(place);
                           setResults([]);
                           setMessage("");
@@ -347,6 +356,7 @@ export function RideRequest({
                         picking
                         onPick={point=>void pickPoint(point)}
                       />
+                      {mapCompact&&<button type="button" className="expand-picker-map" onClick={()=>setMapCompact(false)}>Ver mapa</button>}
                     </div>
                     {mapReference===active&&current.point&&<label className="map-reference">Referencia del punto marcado<input aria-label="Referencia del punto marcado" maxLength={110} value={current.label} disabled={loading} placeholder="Calle, negocio o referencia para llegar" onChange={e=>update({...current,label:e.target.value})}/></label>}
 

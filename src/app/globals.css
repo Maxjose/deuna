@@ -2082,3 +2082,12 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 @media(max-height:550px) { .completion-screen[open] { justify-content:flex-start; } }
 
 .map-center-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 22px; height: 22px; color: #122033; opacity: .8; z-index: 450; pointer-events: none; }
+
+.journey-search-body .journey-picker-map { position:relative; flex:1 1 0; transition:flex-grow 320ms ease,flex-basis 320ms ease,min-height 320ms ease; }
+.journey-search-body .place-results { min-height:0; transition:flex-grow 320ms ease,max-height 320ms ease; }
+.journey-search-body.map-is-compact .place-results { flex:1 1 0; max-height:100%; }
+.journey-search-body.map-is-compact .journey-picker-map { flex:0 0 36px; min-height:36px; border-radius:12px; }
+.map-is-compact .journey-picker-map .journey-map { min-height:0; }
+.map-is-compact .point-picker-label, .map-is-compact .map-reference { display:none; }
+.expand-picker-map { position:absolute; inset:0; width:100%; z-index:600; display:grid; place-items:center; font-size:11px; font-weight:650; background:#ffffffb8; color:var(--ink); backdrop-filter:blur(1px); }
+@media(prefers-reduced-motion:reduce) { .journey-search-body .journey-picker-map, .journey-search-body .place-results { transition:none; } }
