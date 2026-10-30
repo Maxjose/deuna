@@ -16,7 +16,7 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
   const load=useCallback(async()=>{
     const version=++loadVersion.current;setLoading(true);
-    const {data,error}=await browserClient().rpc('catalog_admin',{action:'list',payload:{query:filter,page}});
+    const {data,error}=await browserClient().rpc('catalog_admin',{action:'list',payload:{query:filter,page:Math.floor(page/5)}});
     if(version!==loadVersion.current)return;
     if(error)notify('No pudimos cargar el catálogo.');
     else{setItems(data.items);setTotal(data.total);setActive(data.active);}
@@ -45,11 +45,6 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
       if(error)throw error;
       dialog.current?.close();setEditor(null);notify('Lugar guardado.');await load();
     }catch{notify('No pudimos guardar el lugar. Revisa los datos y reintenta.');}finally{setBusy(false);}
-  }
-  async function toggle(place:CatalogRecord){
-    setBusy(true);
-    try{const {error}=await browserClient().rpc('catalog_admin',{action:'toggle',payload:{id:place.id,active:!place.active}});if(error)throw error;notify(place.active?'Lugar desactivado.':'Lugar activado.');await load();}
-    catch{notify('No pudimos cambiar este lugar.');}finally{setBusy(false);}
   }
   async function readFile(file:File|undefined){
     setErrors([]);setPlan(null);if(!file)return;
@@ -81,6 +76,7 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
   }
   return <div className="account-stack catalog-workspace">
     <button className="text catalog-back" onClick={onBack} disabled={busy}>← Volver a Servicio</button>
+    <div className="catalog-sidebar">
     <section className="trip-card catalog-intro"><h2>Catálogo de lugares</h2><p className="muted">Agrega referencias locales para encontrarlas al pedir un viaje.</p><button className="primary" disabled={busy} onClick={()=>edit()}>Agregar lugar</button></section>
     <section className="trip-card catalog-import">
       <h2>Importar por lotes</h2><p className="muted">JSON UTF-8 · hasta 1.000 lugares y 5 MB por archivo. Se validará antes de guardar.</p>
@@ -97,15 +93,16 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
         {plan.completed<plan.places.length&&<button className="primary" disabled={busy} onClick={()=>void importPlaces()}>{busy?'Importando…':plan.completed?'Continuar importación':`Importar ${plan.places.length} lugares`}</button>}
       </div>}
     </section>
+    </div>
     <section className="trip-card catalog-results"><h2>Lugares registrados</h2>
       <form className="catalog-filter" onSubmit={e=>{e.preventDefault();setPage(0);setFilter(query);}}><label>Buscar en el catálogo<input value={query} maxLength={120} onChange={e=>setQuery(e.target.value)} placeholder="Nombre, alias o municipio"/></label><button className="secondary" disabled={busy}>Buscar</button></form>
       <p className="muted">{total} resultados · {active} activos</p>
-      {loading?<p role="status">Cargando lugares…</p>:!items.length?<p className="muted">No hay lugares para esta búsqueda.</p>:items.map(place=><article className="catalog-item" key={place.id}>
+      {loading?<p role="status">Cargando lugares…</p>:!items.length?<p className="muted">No hay lugares para esta búsqueda.</p>:items.slice((page%5)*5,(page%5)*5+5).map(place=><article className="catalog-item" key={place.id}>
         <div className="row"><strong>{place.name}</strong><span className={'pill '+(place.active?'green':'')}>{place.active?'Activo':'Inactivo'}</span></div>
         <p className="muted">{[place.address,place.municipality].filter(Boolean).join(', ')||'Sin dirección adicional'}</p><small>{place.source} / {place.external_id}</small>
-        <div className="catalog-item-actions"><button className="secondary" disabled={busy} onClick={()=>edit(place)}>Editar</button><button className="text" disabled={busy} onClick={()=>void toggle(place)}>{place.active?'Desactivar':'Activar'}</button></div>
+        <div className="catalog-item-actions"><button className="secondary" disabled={busy} onClick={()=>edit(place)}>Editar</button></div>
       </article>)}
-      <div className="catalog-pages"><button className="text" disabled={!page||busy||loading} onClick={()=>setPage(p=>p-1)}>Anterior</button><span>Página {page+1}</span><button className="text" disabled={(page+1)*25>=total||busy||loading} onClick={()=>setPage(p=>p+1)}>Siguiente</button></div>
+      <div className="catalog-pages"><button className="secondary" disabled={!page||busy||loading} onClick={()=>setPage(p=>p-1)}>Anterior</button><span>Página {page+1} de {Math.max(1,Math.ceil(total/5))}</span><button className="secondary" disabled={(page+1)*5>=total||busy||loading} onClick={()=>setPage(p=>p+1)}>Siguiente</button></div>
     </section>
     <Toast message={message}/>
     <dialog ref={dialog} tabIndex={-1} className="action-sheet catalog-editor" aria-label="Editar lugar" onClose={()=>setEditor(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
@@ -122,7 +119,7 @@ export function PlacesCatalog({onBack}:{onBack:()=>void}) {
         <label>Origen (source)<input required maxLength={40} readOnly={editor.editing} value={editor.source} onChange={e=>change('source',e.target.value)}/></label>
         <label>Identificador estable (external_id)<input required maxLength={160} readOnly={editor.editing} value={editor.external_id} onChange={e=>change('external_id',e.target.value)}/></label>
         <label>URL de referencia (opcional)<input type="url" maxLength={2048} value={editor.source_url} onChange={e=>change('source_url',e.target.value)}/></label>
-        <label className="check"><input type="checkbox" checked={editor.active} onChange={e=>change('active',e.target.checked)}/>Mostrar en búsquedas</label>
+        <label className="check"><input type="checkbox" checked={editor.active} onChange={e=>change('active',e.target.checked)}/>Lugar activo (visible en búsquedas)</label>
         <button className="primary" disabled={busy}>{busy?'Guardando…':'Guardar lugar'}</button><button type="button" className="secondary" disabled={busy} onClick={()=>dialog.current?.close()}>Cancelar</button>
       </form>}
       <Toast message={message}/>
