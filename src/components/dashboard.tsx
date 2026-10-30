@@ -81,6 +81,9 @@ export function Dashboard({
     [offline, setOffline] = useState(false),
     [cancelId, setCancelId] = useState<string | null>(null);
   const cancelDialog = useRef<HTMLDialogElement>(null);
+  const acceptDialog = useRef<HTMLDialogElement>(null);
+  const [acceptTrip,setAcceptTrip]=useState<Trip|null>(null);
+  useEffect(()=>{if(acceptTrip)acceptDialog.current?.showModal();},[acceptTrip]);
   const signOutDialog = useRef<HTMLDialogElement>(null);
   const [signingOut, setSigningOut] = useState(false);
   const { message, notify: setMessage } = useNotice(page);
@@ -313,14 +316,14 @@ export function Dashboard({
             <i>●</i>
             <span>
               <small>RECOGIDA</small>
-              {t.origin}
+              {parseStoredPlace(t.origin).label}
             </span>
           </div>
           <div>
             <i>↗</i>
             <span>
               <small>DESTINO</small>
-              {t.destination}
+              {parseStoredPlace(t.destination).label}
             </span>
           </div>
         </div>}
@@ -334,7 +337,7 @@ export function Dashboard({
             disabled={
               busy || offline || !profile?.available || !profile?.approved
             }
-            onClick={() => void act("accept", { id: t.id })}
+            onClick={() => setAcceptTrip(t)}
           >
             Aceptar viaje ↗
           </button>
@@ -652,6 +655,13 @@ export function Dashboard({
         </section>
       </main>
       <Toast message={message} />
+      <dialog ref={acceptDialog} className="action-sheet" aria-labelledby="accept-title" onClose={()=>setAcceptTrip(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
+        <div className="sheet-handle"/>
+        <h2 id="accept-title">¿Aceptar este viaje?</h2>
+        {acceptTrip&&<><p><strong>Recogida:</strong> {parseStoredPlace(acceptTrip.origin).label}</p><p><strong>Destino:</strong> {parseStoredPlace(acceptTrip.destination).label}</p>{acceptTrip.fare_cents!=null&&<p><strong>{usd(acceptTrip.fare_cents)}</strong></p>}</>}
+        <button className="primary" disabled={busy||offline} onClick={async()=>{if(acceptTrip){const accepted=await act('accept',{id:acceptTrip.id});if(accepted)acceptDialog.current?.close();}}}>{busy?'Aceptando…':'Sí, aceptar viaje'}</button>
+        <button className="secondary" disabled={busy} onClick={()=>acceptDialog.current?.close()}>Volver a solicitudes</button>
+      </dialog>
       <dialog ref={signOutDialog} className="action-sheet" aria-labelledby="signout-title" onCancel={e => { if (signingOut) e.preventDefault(); }}>
         <div className="sheet-handle" />
         <h2 id="signout-title">¿Cerrar sesión?</h2>
