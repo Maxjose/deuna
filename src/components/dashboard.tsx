@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { AppIcon } from "./app-icon";
+import { DriverNavigation } from "./driver-navigation";
 import { AdminRecords } from "./admin-records";
 import { NotificationInbox } from "./notification-inbox";
 import { FavoritePlaces, useFavoritePlaces } from "./favorite-places";
@@ -338,22 +339,10 @@ export function Dashboard({
           </button>
         )}
         {role === "driver" &&
+          page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <button
-              className="primary"
-              disabled={busy || offline}
-              onClick={() => void act("advance", { id: t.id })}
-            >
-              {
-                {
-                  assigned: "Ya llegué",
-                  arrived: "Iniciar viaje",
-                  ongoing: "Finalizar viaje",
-                }[t.status]
-              }{" "}
-              ↗
-            </button>
+            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onAdvance={()=>void act('advance',{id:t.id})}/>
           )}
         {role === "passenger" &&
           t.passenger_id === userId &&

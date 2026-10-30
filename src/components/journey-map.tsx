@@ -13,6 +13,9 @@ export default function JourneyMap({
   onRoute,
   quotePlaces,
   onQuote,
+  navigation = false,
+  livePosition,
+  follow = false,
 }: {
   origin: MapPoint | null;
   destination: MapPoint | null;
@@ -21,6 +24,9 @@ export default function JourneyMap({
   onRoute?: (ready: boolean) => void;
   quotePlaces?: { origin: Place; destination: Place };
   onQuote?: (quote: FareQuote | null) => void;
+  navigation?: boolean;
+  livePosition?: (MapPoint & {accuracy:number}) | null;
+  follow?: boolean;
 }) {
   const container = useRef<HTMLDivElement>(null),
     mapRef = useRef<import("leaflet").Map | null>(null),
@@ -29,6 +35,8 @@ export default function JourneyMap({
     [message, setMessage] = useState(""),
     [retry, setRetry] = useState(0);
   callbacks.current = { onPick, onRoute, onQuote };
+  const cameraFollow=useRef(follow);
+  cameraFollow.current=follow;
   useEffect(() => {
     let alive = true;
     void import("leaflet")
@@ -85,11 +93,11 @@ export default function JourneyMap({
         title: kind === "origin" ? "Tu punto de recogida" : "Destino del viaje",
         alt: kind === "origin" ? "Tu punto de recogida" : "Destino del viaje",
       }).addTo(layer);
-    if (origin) mark(origin, "origin");
+    if (origin && !navigation) mark(origin, "origin");
     if (destination) mark(destination, "destination");
     const points = [origin, destination].filter(Boolean) as MapPoint[];
-    if (points.length === 1) map.setView([points[0].lat, points[0].lng], 15);
-    else if (points.length === 2)
+    if (points.length === 1 && (!navigation || !cameraFollow.current || !origin)) map.setView([points[0].lat, points[0].lng], 15);
+    else if (points.length === 2 && (!navigation || !cameraFollow.current))
       map.fitBounds(
         points.map((p) => [p.lat, p.lng] as [number, number]),
         { padding: [55, 70], maxZoom: 16 },
@@ -125,7 +133,7 @@ export default function JourneyMap({
           const line = L.polyline(route, { color: "#122033", weight: 5 }).addTo(
             layer,
           );
-          map.fitBounds(line.getBounds(), { padding: [45, 60] });
+          if (!navigation || !cameraFollow.current) map.fitBounds(line.getBounds(), { padding: [45, 60] });
           callbacks.current.onRoute?.(true);
           setMessage("Ruta de referencia");
         })
@@ -144,7 +152,17 @@ export default function JourneyMap({
       map.off("click", clicked);
       layer.remove();
     };
-  }, [origin, destination, picking, library, retry, quotePlaces]);
+  }, [origin, destination, picking, library, retry, quotePlaces, navigation]);
+  useEffect(()=>{
+    const map=mapRef.current,L=library;
+    if(!map||!L||!livePosition)return;
+    const position:[number,number]=[livePosition.lat,livePosition.lng];
+    const layer=L.layerGroup().addTo(map);
+    L.circle(position,{radius:livePosition.accuracy,color:'#2876e8',weight:1,fillOpacity:.08,interactive:false}).addTo(layer);
+    L.circleMarker(position,{radius:9,color:'white',weight:3,fillColor:'#2876e8',fillOpacity:1}).bindTooltip('Tu ubicación actual').addTo(layer);
+    if(follow)map.setView(position,Math.max(16,map.getZoom()),{animate:false});
+    return()=>{layer.remove();};
+  },[livePosition,follow,library]);
   return (
     <div className="journey-map">
       <div

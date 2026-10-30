@@ -1644,6 +1644,18 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
   box-shadow: 0 3px 8px #12203330;
   font: 700 12px system-ui;
 }
+.driver-navigation[open] { display: flex; flex-direction: column; }
+.driver-nav-header { display: flex; gap: 12px; align-items: center; padding: calc(14px + env(safe-area-inset-top)) 18px 14px; }
+.driver-nav-header > div { flex: 1; min-width: 0; }
+.driver-nav-header small { display: block; font-size: 9px; color: var(--muted); margin-bottom: 5px; }
+.driver-nav-header strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.driver-nav-map { flex: 1; min-height: 180px; position: relative; }
+.driver-nav-map > .journey-map { position: absolute; inset: 0; }
+.driver-follow.secondary { position: absolute; z-index: 500; top: 14px; left: 12px; width: auto; padding: 10px 12px; font-size: 11px; box-shadow: 0 3px 15px #12203320; background: white; }
+.driver-nav-footer { padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); background: white; max-height: 45dvh; overflow-y: auto; }
+.driver-gps { font-size: 12px; margin: 0 0 10px; }
+.driver-nav-note { font-size: 10px; line-height: 1.5; margin: 8px 0 12px; }
+.driver-nav-footer .check { font-size: 12px; flex-wrap: wrap; }
 .journey-map-top {
   display: flex;
   align-items: center;
