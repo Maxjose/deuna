@@ -104,6 +104,21 @@ textarea,
 .catalog-pages { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 20px; font-size: 12px; }
 .catalog-back { text-align: left; }
 .admin-records { min-width: 0; }
+.member-sheet.action-sheet { inset: 20px 0; margin: auto; width: min(960px,calc(100vw - 32px)); max-width: none; height: fit-content; max-height: calc(100dvh - 40px); border-radius: 24px; padding: 24px; overflow-y: auto; }
+.member-sheet h2 { overflow-wrap: anywhere; }
+.member-sheet .row h2 { flex: 1; min-width: 0; }
+.member-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+.member-actions .secondary { width: auto; }
+.member-confirm { padding: 18px; border: 1px solid var(--line); border-radius: 16px; margin: 20px 0; }
+.member-sheet .cards { grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr)); }
+@media(max-width:760px) {
+  .admin-shell .sidebar nav { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  .admin-shell .sidebar nav .nav-item { flex: 0 0 64px; }
+  .shell:not(.admin-shell) .nav-item:disabled { opacity: .55; }
+  .shell:not(.admin-shell) .sidebar nav { justify-content: space-around; }
+  .shell:not(.admin-shell) .nav-item.selected svg { background: transparent; box-shadow: none; }
+  .shell:not(.admin-shell) .nav-item.selected { color: #122033; font-weight: 750; }
+}
 .admin-records-search { display: flex; align-items: end; gap: 12px; }
 .admin-records-search label { flex: 1; min-width: 0; }
 .admin-records-search input { margin-bottom: 0; }
@@ -1008,37 +1023,6 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
   .sidebar nav {
     min-height: 80px;
     padding-top: 9px;
-  }
-  .nav-item.nav-ride {
-    transform: translateY(-13px);
-    overflow: visible;
-    color: var(--ink);
-    font-weight: 750;
-  }
-  .nav-item.nav-ride svg,
-  .nav-item.nav-ride.selected svg {
-    height: 54px;
-    width: 54px;
-    padding: 14px;
-    border-radius: 19px;
-    background: var(--lime);
-    box-shadow:
-      0 5px 16px #7aa82f25,
-      0 0 0 6px var(--paper);
-    stroke-width: 1.8;
-  }
-  .nav-item.nav-ride.selected svg {
-    background: var(--ink);
-    color: var(--lime);
-    box-shadow:
-      0 5px 16px #12203322,
-      0 0 0 6px var(--paper);
-  }
-  .nav-item.nav-ride span {
-    margin-top: 3px;
-  }
-  .nav-item.nav-ride:active {
-    transform: translateY(-13px) scale(0.96);
   }
   .ride-screen {
     height: 100dvh;

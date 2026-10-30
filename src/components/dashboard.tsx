@@ -26,6 +26,7 @@ type Profile = {
   role: "passenger" | "driver" | "admin";
   approved: boolean;
   available: boolean;
+  suspended: boolean;
 };
 type Trip = {
   id: string;
@@ -83,7 +84,7 @@ export function Dashboard({
   const { message, notify: setMessage } = useNotice(page);
   const load = useCallback(async () => {
     const [p, t, s] = await Promise.all([
-      client.from("profiles").select("id,role,approved,available"),
+      client.from("profiles").select("id,role,approved,available,suspended"),
       client
         .from("trips")
         .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters")
@@ -201,7 +202,7 @@ export function Dashboard({
       const value = window.location.hash.slice(1);
       const allowed =
         profile?.role === "admin"
-          ? ["home", "history", "settings", "places", "drivers", "notifications", "account"]
+          ? ["home", "history", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "account"];
       setPage(allowed.includes(value) ? value : "home");
     };
@@ -233,8 +234,9 @@ export function Dashboard({
   const tabs =
     role === "passenger"
       ? [
-          ["history", "Viajes"],
           ["home", "Inicio"],
+          ["history", "Viajes"],
+          ["messages", "Mensajes"],
           ["account", "Cuenta"],
         ]
       : [
@@ -250,6 +252,7 @@ export function Dashboard({
           ...(role === "admin"
             ? [
                 ["drivers", "Equipo"],
+                ["users", "Usuarios"],
                 ["settings", "Servicio"],
                 ["places", "Lugares"],
                 ["notifications", "Avisos"],
@@ -400,11 +403,12 @@ export function Dashboard({
               key={p}
               className={
                 "nav-item " +
-                (page === p ? "selected " : "") +
-                (p === "home" && role === "passenger" ? "nav-ride" : "")
+                (page === p ? "selected " : "")
               }
               aria-current={page === p ? "page" : undefined}
               onClick={() => navigate(p)}
+              disabled={p === "messages"}
+              title={p === "messages" ? "Mensajes: próximamente" : undefined}
             >
               <AppIcon name={p} />
               <span>{label}</span>
@@ -458,6 +462,8 @@ export function Dashboard({
                 ? "Comunica de una."
               : page === "settings"
                 ? "Cerca, a tu manera."
+                : page === "users"
+                  ? "Nuestros usuarios."
                 : page === "drivers"
                   ? "Personas que nos mueven."
                   : page === "history"
@@ -477,6 +483,8 @@ export function Dashboard({
               <div className="skeleton" />
               <div className="skeleton" />
             </div>
+          ) : profile.suspended ? (
+            <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={()=>signOutDialog.current?.showModal()}>Cerrar sesión</button></article>
           ) : page === "account" ? (
             <div className="account-stack">
               <article className="trip-card account-card">
@@ -568,8 +576,8 @@ export function Dashboard({
               </button>
             </form>
             </div>
-          ) : role === "admin" && (page === "drivers" || page === "history") ? (
-            <AdminRecords key={page} section={page === "drivers" ? "team" : "trips"} busy={busy || offline} refresh={trips} onDriver={(id,approved)=>act("driver",{id,approved})} renderTrip={card}/>
+          ) : role === "admin" && (page === "drivers" || page === "users" || page === "history") ? (
+            <AdminRecords key={page} section={page === "drivers" ? "team" : page === "users" ? "users" : "trips"} busy={busy || offline} refresh={profiles} onDriver={(id,approved)=>act("driver",{id,approved})} renderTrip={card}/>
           ) : page === "home" && role === "passenger" ? (
             mine ? (
               card(mine)
