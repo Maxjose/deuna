@@ -10,13 +10,11 @@ const JourneyMap = dynamic(() => import("./journey-map"), {
 });
 type Step = "home" | "search" | "choose" | "confirm";
 export function RideRequest({
-  zones,
   enabled,
   busy,
   offline,
   onRequest,
 }: {
-  zones: string[];
   enabled: boolean;
   busy: boolean;
   offline: boolean;
@@ -31,8 +29,7 @@ export function RideRequest({
     [loading, setLoading] = useState(false),
     [message, setMessage] = useState(""),
     [moto, setMoto] = useState(false),
-    [routeReady, setRouteReady] = useState(false),
-    [zone, setZone] = useState("");
+    [routeReady, setRouteReady] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null),
     destinationInput = useRef<HTMLInputElement>(null),
     searchController = useRef<AbortController | null>(null),
@@ -405,23 +402,10 @@ export function RideRequest({
                         </p>
                       </div>
                     </div>
-                    <label className="confirmation-zone">
-                      Zona de destino
-                      <select
-                        required
-                        value={zone}
-                        onChange={(e) => setZone(e.target.value)}
-                      >
-                        <option value="">Selecciona una zona</option>
-                        {zones.map((z) => (
-                          <option key={z}>{z}</option>
-                        ))}
-                      </select>
-                    </label>
                     <button
                       className="primary"
                       disabled={
-                        !routeReady || !zone || busy || offline || !enabled
+                        !routeReady || busy || offline || !enabled
                       }
                       onClick={async () => {
                         try {
@@ -434,7 +418,6 @@ export function RideRequest({
                               destination.label,
                               destination.point,
                             ),
-                            zone,
                           });
                         } catch {
                           setMessage(

@@ -18,7 +18,7 @@ type Trip = {
   id: string;
   origin: string;
   destination: string;
-  zone: string;
+  zone: string | null;
   status: string;
   passenger_id: string;
   driver_id: string | null;
@@ -239,7 +239,7 @@ export function Dashboard({
             </span>
           </div>
         </div>
-        <p className="muted">{t.zone}</p>
+        {t.zone && <p className="muted">{t.zone}</p>}
         {t.driver_id && <p>Motorizado #{t.driver_id.slice(0, 8)}</p>}
         {role === "driver" && t.status === "searching" && (
           <button
@@ -496,7 +496,6 @@ export function Dashboard({
               card(mine)
             ) : (
               <RideRequest
-                zones={settings?.zones || []}
                 enabled={settings?.enabled || false}
                 busy={busy}
                 offline={offline}
