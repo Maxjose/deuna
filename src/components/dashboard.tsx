@@ -6,6 +6,7 @@ import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
+import { Toast, useNotice } from "./toast";
 import { serviceIsOpen } from "@/lib/service-hours";
 import { FareSettings } from "./fare-settings";
 import { usd, type FareSettings as FareConfig } from "@/lib/fare";
@@ -33,7 +34,6 @@ type Settings = FareConfig & {
   enabled: boolean;
   open_time: string;
   close_time: string;
-  zones: string[];
 };
 const labels: Record<string, string> = {
   searching: "Buscando motorizado",
@@ -57,8 +57,6 @@ export function Dashboard({
     [trips, setTrips] = useState<Trip[]>([]),
     [settings, setSettings] = useState<Settings | null>(null),
     [page, setPage] = useState("home"),
-    [message, setMessage] = useState(""),
-    [profileToast, setProfileToast] = useState(""),
     [displayName, setDisplayName] = useState(""),
     [draftName, setDraftName] = useState(""),
     [phone, setPhone] = useState(""),
@@ -66,6 +64,7 @@ export function Dashboard({
     [offline, setOffline] = useState(false),
     [cancelId, setCancelId] = useState<string | null>(null);
   const cancelDialog = useRef<HTMLDialogElement>(null);
+  const { message, notify: setMessage } = useNotice(page);
   const load = useCallback(async () => {
     const [p, t, s] = await Promise.all([
       client.from("profiles").select("id,role,approved,available"),
@@ -86,7 +85,7 @@ export function Dashboard({
     setProfile(p.data.find((p) => p.id === userId) || null);
     setTrips(t.data);
     setSettings(s.data);
-  }, [client, userId]);
+  }, [client, userId, setMessage]);
   useEffect(() => {
     let active = true;
     void client.auth.getUser().then(({ data }) => {
@@ -110,17 +109,11 @@ export function Dashboard({
       if (error) throw error;
       setDisplayName(name);
       setDraftName(name);
-      setProfileToast("Tus datos se guardaron.");
+      setMessage("Tus datos se guardaron.");
     } catch {
       setMessage("No pudimos guardar tus datos. Inténtalo de nuevo.");
     } finally { setBusy(false); }
   }
-  useEffect(() => {
-    if (!profileToast) return;
-    const timer = setTimeout(() => setProfileToast(""), 3000);
-    return () => clearTimeout(timer);
-  }, [profileToast]);
-  useEffect(() => { if (page !== "account") setProfileToast(""); }, [page]);
   useEffect(() => {
     void load();
     const channel = client
@@ -428,11 +421,6 @@ export function Dashboard({
                       : "Vamos de una."}
           </h1>
           </>}
-          {message && (
-            <p className="notice" role="status">
-              {message}
-            </p>
-          )}
           {!profile ? (
             <div
               className="skeleton-group"
@@ -488,10 +476,6 @@ export function Dashboard({
                   enabled: f.has("enabled"),
                   open_time: f.get("open"),
                   close_time: f.get("close"),
-                  zones: String(f.get("zones"))
-                    .split("\n")
-                    .map((z) => z.trim())
-                    .filter(Boolean),
                 });
               }}
             >
@@ -526,15 +510,6 @@ export function Dashboard({
               <p className="muted">
                 Hora de Venezuela. Horas iguales representan 24 horas.
               </p>
-              <label>
-                Zonas (una por línea)
-                <textarea
-                  name="zones"
-                  rows={5}
-                  required
-                  defaultValue={settings.zones.join("\n")}
-                />
-              </label>
               <button className="primary" disabled={busy || offline}>
                 Guardar configuración
               </button>
@@ -639,7 +614,7 @@ export function Dashboard({
           )}
         </section>
       </main>
-      {page === "account" && profileToast && <div className="profile-toast" role="status">{profileToast}</div>}
+      <Toast message={message} />
       <dialog
         ref={cancelDialog}
         className="action-sheet"

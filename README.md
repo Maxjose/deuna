@@ -38,6 +38,8 @@ Definir tarifa, moneda, soporte, incorporación de conductores, identidad visibl
 
 Referencia funcional: PLAN_DE_DESARROLLO.md y De1na_Manual_de_Marca.md.
 
+Los avisos de acciones se muestran flotantes durante tres segundos y pertenecen a la pantalla que los generó. Se descartan al navegar, incluidas respuestas tardías. Comprobado en navegador con un receptor aislado (ruta temporal eliminada). Servicio ya no solicita ni modifica zonas; conserva los valores históricos de la base sin usarlos como cobertura.
+
 ## Experiencia móvil y PWA
 
 Navegación inferior fija en teléfonos, cabecera compacta, áreas táctiles de 54 px, pantalla de cuenta, confirmación de cancelación en hoja modal, navegación compatible con Atrás y estados de carga/conexión. El historial del motorizado muestra únicamente sus viajes asignados.

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { usePasskeys } from "@/lib/use-passkeys";
+import { Toast, useNotice } from "./toast";
 type Credential = { id: string; friendly_name?: string; created_at: string };
 export function PasskeySecurity() {
   const client = useMemo(() => browserClient(), []),
@@ -9,8 +10,8 @@ export function PasskeySecurity() {
   const [keys, setKeys] = useState<Credential[]>([]),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
-    [message, setMessage] = useState(""),
     [remove, setRemove] = useState<string | null>(null);
+  const { message, notify: setMessage } = useNotice("security");
   const dialog = useRef<HTMLDialogElement>(null),
     controller = useRef<AbortController | null>(null);
   const load = useCallback(async () => {
@@ -24,7 +25,7 @@ export function PasskeySecurity() {
     } finally {
       setLoading(false);
     }
-  }, [client]);
+  }, [client, setMessage]);
   useEffect(() => {
     if (state === "enabled") void load();
   }, [state, load]);
@@ -144,7 +145,7 @@ export function PasskeySecurity() {
           </button>
         </>
       )}
-      {message && <p role="status">{message}</p>}
+      <Toast message={message} />
       <dialog
         ref={dialog}
         className="action-sheet"

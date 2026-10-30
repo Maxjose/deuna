@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Toast, useNotice } from "./toast";
 type InstallEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: string }>;
@@ -7,7 +8,7 @@ type InstallEvent = Event & {
 export function InstallApp() {
   const [prompt, setPrompt] = useState<InstallEvent | null>(null);
   const [installed, setInstalled] = useState(false);
-  const [error, setError] = useState(false);
+  const { message, notify } = useNotice("installation");
   useEffect(() => {
     setInstalled(window.matchMedia("(display-mode: standalone)").matches);
     const available = (e: Event) => {
@@ -38,11 +39,11 @@ export function InstallApp() {
           className="secondary"
           onClick={async () => {
             try {
-              setError(false);
+              notify("");
               await prompt.prompt();
               await prompt.userChoice;
             } catch {
-              setError(true);
+              notify("No se pudo abrir la instalación. Usa Agregar a pantalla de inicio en el menú del navegador.");
             } finally {
               setPrompt(null);
             }
@@ -56,12 +57,7 @@ export function InstallApp() {
           navegador → Instalar aplicación o Agregar a pantalla de inicio.
         </p>
       )}
-      {error && (
-        <p role="status">
-          No se pudo abrir la instalación. Usa la opción Agregar a pantalla de
-          inicio del navegador.
-        </p>
-      )}
+      <Toast message={message} />
     </div>
   );
 }

@@ -39,5 +39,7 @@ begin
   update public.profiles set role='admin' where id=passenger;
   perform public.operate('fares','{"base_cents":100,"per_km_cents":50,"minimum_cents":200}');
   assert (select per_km_cents=50 from public.service_settings where id=1),'Admin rates saved';
+  perform public.operate('settings','{"enabled":true,"open_time":"00:00","close_time":"00:00"}');
+  assert (select enabled and open_time=close_time and per_km_cents=50 from public.service_settings where id=1),'Settings without zones preserve fares';
 end;$test$;
 rollback;

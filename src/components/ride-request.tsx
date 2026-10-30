@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AppIcon } from "./app-icon";
+import { Toast, useNotice } from "./toast";
 import { usd, type FareQuote } from "@/lib/fare";
 import { type Place, placeSearchUrl, localPlaces } from "@/lib/journey";
 const JourneyMap = dynamic(() => import("./journey-map"), {
@@ -27,11 +28,14 @@ export function RideRequest({
     [results, setResults] = useState<Place[]>([]),
     [locating, setLocating] = useState(false),
     [loading, setLoading] = useState(false),
-    [message, setMessage] = useState(""),
     [moto, setMoto] = useState(false),
     [routeReady, setRouteReady] = useState(false);
   const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
   const quotePlaces = useMemo(() => ({ origin, destination }), [origin, destination]);
+  const { message, notify: setMessage } = useNotice(step);
+  useEffect(() => {
+    if (step === "confirm" && !enabled) setMessage("Las solicitudes no están disponibles en este horario.");
+  }, [step, enabled, setMessage]);
   useEffect(() => {
     setExpired(false);
     if (!quote) return;
@@ -55,7 +59,6 @@ export function RideRequest({
     setStep("search");
     setActive("destination");
     setMessage("");
-    if (!origin.point) locate();
   }
   function back() {
     locationVersion.current++;
@@ -137,6 +140,9 @@ export function RideRequest({
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
     );
   }
+  useEffect(() => {
+    if (step === "search" && !origin.point) locate();
+  }, [step]);
   function next() {
     if (!destination.point) {
       setActive("destination");
@@ -252,11 +258,6 @@ export function RideRequest({
                 </form>
               </div>
               <div className="journey-search-body">
-                {message && (
-                  <p className="notice" role="status">
-                    {message}
-                  </p>
-                )}
                   <div className="place-results">
                     {results.map((place, i) => (
                       <button
@@ -404,17 +405,12 @@ export function RideRequest({
                       {busy ? "Solicitando…" : "Confirmar y solicitar"}
                       <AppIcon name="arrow" />
                     </button>
-                    {!enabled && (
-                      <p className="service-closed">
-                        Las solicitudes no están disponibles en este momento.
-                      </p>
-                    )}
-                    {message && <p role="status">{message}</p>}
                   </>
                 )}
               </section>
             </>
           ))}
+        <Toast message={message} />
       </dialog>
     </div>
   );

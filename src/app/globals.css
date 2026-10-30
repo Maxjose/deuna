@@ -64,7 +64,7 @@ textarea,
   user-select: text;
   -webkit-touch-callout: default;
 }
-.profile-toast {
+.app-toast {
   position: fixed;
   top: calc(18px + env(safe-area-inset-top));
   left: 50%;
@@ -77,6 +77,7 @@ textarea,
   background: var(--ink);
   color: white;
   box-shadow: 0 8px 30px #12203330;
+  pointer-events: none;
 }
 .journey-flow-screen:focus { outline: none; }
 .fare-summary { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
