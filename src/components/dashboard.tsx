@@ -53,6 +53,7 @@ export function Dashboard({
     [settings, setSettings] = useState<Settings | null>(null),
     [page, setPage] = useState("home"),
     [message, setMessage] = useState(""),
+    [profileToast, setProfileToast] = useState(""),
     [displayName, setDisplayName] = useState(""),
     [draftName, setDraftName] = useState(""),
     [phone, setPhone] = useState(""),
@@ -104,11 +105,17 @@ export function Dashboard({
       if (error) throw error;
       setDisplayName(name);
       setDraftName(name);
-      setMessage("Tus datos se guardaron.");
+      setProfileToast("Tus datos se guardaron.");
     } catch {
       setMessage("No pudimos guardar tus datos. Inténtalo de nuevo.");
     } finally { setBusy(false); }
   }
+  useEffect(() => {
+    if (!profileToast) return;
+    const timer = setTimeout(() => setProfileToast(""), 3000);
+    return () => clearTimeout(timer);
+  }, [profileToast]);
+  useEffect(() => { if (page !== "account") setProfileToast(""); }, [page]);
   useEffect(() => {
     void load();
     const channel = client
@@ -420,8 +427,8 @@ export function Dashboard({
           ) : page === "account" ? (
             <div className="account-stack">
               <article className="trip-card account-card">
-                <div className="avatar">{email[0]?.toUpperCase()}</div>
-                <h2>Tu cuenta De1na</h2>
+                <div className="avatar">{(displayName || email)[0]?.toUpperCase()}</div>
+                <h2>{displayName || "Tu cuenta"}</h2>
                 <p className="account-email">{email}</p>
                 <span className="pill green">
                   {role === "admin"
@@ -442,9 +449,7 @@ export function Dashboard({
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>
               <PasskeySecurity />
-              <article className="trip-card">
-                <InstallApp />
-              </article>
+              <InstallApp />
               <button
                 className="secondary signout"
                 onClick={() => void signOut()}
@@ -612,6 +617,7 @@ export function Dashboard({
           )}
         </section>
       </main>
+      {page === "account" && profileToast && <div className="profile-toast" role="status">{profileToast}</div>}
       <dialog
         ref={cancelDialog}
         className="action-sheet"

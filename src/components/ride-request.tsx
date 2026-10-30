@@ -38,6 +38,7 @@ export function RideRequest({
   useEffect(() => {
     if (step !== "home" && !dialog.current?.open) {
       dialog.current?.showModal();
+      dialog.current?.focus({ preventScroll: true });
     }
     if (step === "home") dialog.current?.close();
   }, [step]);
@@ -181,6 +182,7 @@ export function RideRequest({
       </section>
       <dialog
         ref={dialog}
+        tabIndex={-1}
         className="journey-flow-screen"
         aria-label="Solicitar un viaje"
         onCancel={(e) => {

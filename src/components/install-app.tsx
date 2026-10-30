@@ -28,7 +28,7 @@ export function InstallApp() {
   if (installed)
     return null;
   return (
-    <div className="install-panel">
+    <div className="trip-card install-panel">
       <strong>Lleva De1na contigo</strong>
       <p className="muted">
         Agrégala a tu pantalla de inicio para abrirla como una app.

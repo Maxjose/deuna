@@ -53,6 +53,21 @@ body {
   font-size: 15px;
   line-height: 1.5;
 }
+.profile-toast {
+  position: fixed;
+  top: calc(18px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: calc(100% - 32px);
+  width: max-content;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: white;
+  box-shadow: 0 8px 30px #12203330;
+}
+.journey-flow-screen:focus { outline: none; }
 button,
 input,
 select,
