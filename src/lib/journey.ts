@@ -107,3 +107,8 @@ export function localPlaces(body: unknown, point: MapPoint | null) {
   const distance = (p: MapPoint) => (p.lat-center.lat)**2 + ((p.lng-center.lng)*Math.cos(center.lat*Math.PI/180))**2;
   return places.sort((a,b) => distance(a.point!) - distance(b.point!)).slice(0,6);
 }
+
+export function selectedPointLabel(body:unknown,point:MapPoint){
+ const nearest=decodePlaces(body).find(place=>place.point&&Math.hypot((place.point.lat-point.lat)*111320,(place.point.lng-point.lng)*111320*Math.cos(point.lat*Math.PI/180))<=750);
+ return nearest?`Cerca de ${nearest.label}`.slice(0,110):'';
+}

@@ -9,6 +9,8 @@ import { usd, type FareQuote } from "@/lib/fare";
 import { type Place, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
 import { decodeCatalogPlaces } from "@/lib/catalog";
 import { browserClient } from "@/lib/supabase/client";
+import {selectedPointLabel} from '@/lib/journey';
+import type {MapPoint} from '@/lib/destination';
 const JourneyMap = dynamic(() => import("./journey-map"), {
   ssr: false,
   loading: () => <div className="journey-map-placeholder">Abriendo mapa…</div>,
@@ -39,6 +41,7 @@ export function RideRequest({
     [loading, setLoading] = useState(false),
     [moto, setMoto] = useState(false),
     [routeReady, setRouteReady] = useState(false);
+  const [mapReference,setMapReference]=useState<'origin'|'destination'|null>(null);
   const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
   const quotePlaces = useMemo(() => ({ origin, destination }), [origin, destination]);
   const { message, notify: setMessage } = useNotice(step);
@@ -71,6 +74,7 @@ export function RideRequest({
     setMessage("");
   }
   function back() {
+    searchVersion.current++;searchController.current?.abort();setLoading(false);
     locationVersion.current++;
     setLocating(false);
     setMessage("");
@@ -79,6 +83,7 @@ export function RideRequest({
     );
   }
   function edit(kind: "origin" | "destination") {
+    setMapReference(null);
     if (kind === "origin") { locationVersion.current++; setLocating(false); }
     searchVersion.current++;
     searchController.current?.abort();
@@ -165,7 +170,26 @@ export function RideRequest({
   useEffect(() => {
     if (step === "search" && !origin.point) { const goHome=quickHome.current;quickHome.current=false;locate(goHome); }
   }, [step]);
+  async function pickPoint(point:MapPoint){
+    const kind=active,setPlace=kind==='origin'?setOrigin:setDestination;
+    const version=++searchVersion.current;
+    searchController.current?.abort();
+    const controller=new AbortController();searchController.current=controller;
+    if(kind==='origin'){locationVersion.current++;setLocating(false);}
+    setResults([]);setMapReference(kind);setPlace({label:'',point});setLoading(true);setQuote(null);setRouteReady(false);
+    const timer=setTimeout(()=>controller.abort(),6000);
+    try{
+      const url=new URL('https://photon.komoot.io/reverse');url.search=new URLSearchParams({lat:String(point.lat),lon:String(point.lng),lang:'es',radius:'0.75',limit:'1'}).toString();
+      const response=await fetch(url,{signal:controller.signal});if(!response.ok)throw Error();
+      const label=selectedPointLabel(await response.json(),point);
+      if(version!==searchVersion.current)return;
+      setPlace({label,point});
+      if(!label)setMessage('Escribe una referencia para este punto del mapa.');
+    }catch{if(version===searchVersion.current)setMessage('No reconocimos la dirección. Escribe una referencia sin mover el punto.');}
+    finally{clearTimeout(timer);if(version===searchVersion.current)setLoading(false);}
+  }
   function next() {
+    if(!origin.label.trim()||!destination.label.trim()){setMessage('Escribe una referencia para la recogida y el destino.');return;}
     if (!destination.point) {
       setActive("destination");
       setMessage("Selecciona un resultado o fija el destino en el mapa.");
@@ -321,23 +345,10 @@ export function RideRequest({
                         origin={origin.point}
                         destination={destination.point}
                         picking
-                        onPick={(point) => {
-                          searchVersion.current++;
-                          searchController.current?.abort();
-                          setLoading(false);
-                          if (active === "origin") { locationVersion.current++; setLocating(false); }
-                          setResults([]);
-                          update({
-                            label:
-                              current.label ||
-                              (active === "origin"
-                                ? "Punto de recogida"
-                                : "Destino seleccionado"),
-                            point,
-                          });
-                        }}
+                        onPick={point=>void pickPoint(point)}
                       />
                     </div>
+                    {mapReference===active&&current.point&&<label className="map-reference">Referencia del punto marcado<input aria-label="Referencia del punto marcado" maxLength={110} value={current.label} disabled={loading} placeholder="Calle, negocio o referencia para llegar" onChange={e=>update({...current,label:e.target.value})}/></label>}
 
               </div>
               <div className="journey-bottom-action">

@@ -16,6 +16,7 @@ export default function JourneyMap({
   navigation = false,
   livePosition,
   follow = false,
+  extraPoint,
 }: {
   origin: MapPoint | null;
   destination: MapPoint | null;
@@ -27,6 +28,7 @@ export default function JourneyMap({
   navigation?: boolean;
   livePosition?: (MapPoint & {accuracy:number}) | null;
   follow?: boolean;
+  extraPoint?: MapPoint|null;
 }) {
   const container = useRef<HTMLDivElement>(null),
     mapRef = useRef<import("leaflet").Map | null>(null),
@@ -95,9 +97,10 @@ export default function JourneyMap({
       }).addTo(layer);
     if (origin && !navigation) mark(origin, "origin");
     if (destination) mark(destination, "destination");
-    const points = [origin, destination].filter(Boolean) as MapPoint[];
+    if(extraPoint)L.circleMarker([extraPoint.lat,extraPoint.lng],{radius:7,color:'#122033',weight:2,fillColor:'#b4f36a',fillOpacity:1}).bindTooltip('Destino del pasajero').addTo(layer);
+    const points = [origin, destination, extraPoint].filter(Boolean) as MapPoint[];
     if (points.length === 1 && (!navigation || !cameraFollow.current || !origin)) map.setView([points[0].lat, points[0].lng], 15);
-    else if (points.length === 2 && (!navigation || !cameraFollow.current))
+    else if (points.length >= 2 && (!navigation || !cameraFollow.current || !origin))
       map.fitBounds(
         points.map((p) => [p.lat, p.lng] as [number, number]),
         { padding: [55, 70], maxZoom: 16 },
@@ -152,7 +155,7 @@ export default function JourneyMap({
       map.off("click", clicked);
       layer.remove();
     };
-  }, [origin, destination, picking, library, retry, quotePlaces, navigation]);
+  }, [origin, destination, picking, library, retry, quotePlaces, navigation,extraPoint]);
   useEffect(()=>{
     const map=mapRef.current,L=library;
     if(!map||!L||!livePosition)return;
