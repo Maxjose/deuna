@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { PasskeyLogin } from "./passkey-login";
+import { Toast, useNotice } from "./toast";
 export function AuthForm({
   configured,
   reset = false,
@@ -12,8 +13,8 @@ export function AuthForm({
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register" | "recover">("login"),
-    [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
+  const { message, notify: setMessage } = useNotice(reset ? "reset" : mode);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -146,6 +147,7 @@ export function AuthForm({
                 />
               </label>
             )}
+            <div className="auth-actions">
             <button className="primary" disabled={busy}>
               {busy
                 ? "Procesando…"
@@ -158,12 +160,11 @@ export function AuthForm({
                       : "Iniciar sesión"}{" "}
               ↗
             </button>
+            {!reset && mode === "login" && <PasskeyLogin disabled={busy} onBusyChange={setBusy} />}
+            </div>
           </form>
         )}
-        {configured && !reset && mode === "login" && (
-          <PasskeyLogin disabled={busy} onBusyChange={setBusy} />
-        )}
-        {message && <p role="status">{message}</p>}
+        <Toast message={message} />
         {!reset && (
           <>
             <button
@@ -188,10 +189,6 @@ export function AuthForm({
             </button>
           </>
         )}
-        <p className="demo-note">
-          Servicio en preparación. El registro no garantiza disponibilidad de
-          transporte. La tarifa se definirá antes de habilitar viajes reales.
-        </p>
       </section>
     </div>
   );

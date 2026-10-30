@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { usePasskeys } from "@/lib/use-passkeys";
+import { AppIcon } from "./app-icon";
+import { Toast, useNotice } from "./toast";
 export function PasskeyLogin({
   disabled,
   onBusyChange,
@@ -12,8 +14,8 @@ export function PasskeyLogin({
 }) {
   const { state } = usePasskeys(),
     router = useRouter();
-  const [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { message, notify: setMessage } = useNotice("passkey-login");
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   if (state !== "enabled") return null;
@@ -29,7 +31,7 @@ export function PasskeyLogin({
       });
       if (error || !data?.session) {
         setMessage(
-          "No se completó el acceso rápido. Puedes volver a intentarlo o entrar con tu contraseña.",
+          "No pudimos entrar. Usa tu contraseña.",
         );
         return;
       }
@@ -37,7 +39,7 @@ export function PasskeyLogin({
       router.refresh();
     } catch {
       setMessage(
-        "No se completó el acceso rápido. Inténtalo de nuevo o usa tu contraseña.",
+        "No pudimos entrar. Usa tu contraseña.",
       );
     } finally {
       setBusy(false);
@@ -45,22 +47,19 @@ export function PasskeyLogin({
     }
   }
   return (
-    <div className="passkey-login">
-      <div className="auth-divider">
-        <span>o entra más rápido</span>
-      </div>
+    <>
       <button
         type="button"
-        className="secondary"
+        className="passkey-button"
+        aria-label="Entrar con passkey"
+        title="Entrar con passkey"
+        aria-busy={busy}
         disabled={busy || disabled}
         onClick={() => void signIn()}
       >
-        {busy ? "Confirma en tu dispositivo…" : "Entrar con passkey"}
+        <AppIcon name="fingerprint" />
       </button>
-      <p className="muted">
-        Usa Face ID, huella o el desbloqueo de tu dispositivo.
-      </p>
-      {message && <p role="status">{message}</p>}
-    </div>
+      <Toast message={message} />
+    </>
   );
 }
