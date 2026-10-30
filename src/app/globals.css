@@ -350,6 +350,14 @@ main {
 .content > .eyebrow {
   display: none;
 }
+.pill.cancelled {
+  color: #a52b3c;
+  background: #fde9ed;
+}
+.trip-summary-destination { margin-top: 20px; min-width: 0; }
+.trip-summary-destination small { display: block; font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-bottom: 6px; }
+.trip-summary-destination strong { display: block; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cancelled-fare { color: var(--muted); text-decoration-thickness: 2px; }
 .trip-card {
   background: var(--surface);
   border: 1px solid var(--line);

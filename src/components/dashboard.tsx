@@ -8,6 +8,7 @@ import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { Toast, useNotice } from "./toast";
 import { serviceIsOpen } from "@/lib/service-hours";
+import { parseStoredPlace } from "@/lib/journey";
 import { FareSettings } from "./fare-settings";
 import { usd, type FareSettings as FareConfig } from "@/lib/fare";
 import { useRouter } from "next/navigation";
@@ -256,6 +257,7 @@ export function Dashboard({
     }
   }
   function card(t: Trip) {
+    const destinationName = parseStoredPlace(t.destination).label;
     if (role === "passenger" && page === "home" && t.status === "searching")
       return (
         <RideWaiting
@@ -269,10 +271,15 @@ export function Dashboard({
     return (
       <article className="trip-card" key={t.id}>
         <div className="row">
-          <span className="pill green">{labels[t.status]}</span>
+          <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>
           <small>#{t.id.slice(0, 6)}</small>
         </div>
-        <div className="route">
+        {page === "history" ? (
+          <div className="trip-summary-destination">
+            <small>DESTINO</small>
+            <strong title={destinationName}>{destinationName.split(",")[0]}</strong>
+          </div>
+        ) : <div className="route">
           <div>
             <i>●</i>
             <span>
@@ -287,9 +294,9 @@ export function Dashboard({
               {t.destination}
             </span>
           </div>
-        </div>
-        {t.zone && <p className="muted">{t.zone}</p>}
-        {t.fare_cents != null && <p><strong>{usd(t.fare_cents)}</strong> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</p>}
+        </div>}
+        {page !== "history" && t.zone && <p className="muted">{t.zone}</p>}
+        {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{page !== "history" && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
         {t.driver_id && <p>Motorizado #{t.driver_id.slice(0, 8)}</p>}
         {role === "driver" && t.status === "searching" && (
           <button
