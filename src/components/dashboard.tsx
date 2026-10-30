@@ -333,6 +333,7 @@ export function Dashboard({
         {page !== "history" && t.zone && <p className="muted">{t.zone}</p>}
         {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{page !== "history" && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
         {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
+        {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="secondary" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Hablar con mi motorizado</button>}
         {t.driver_id && <p className="trip-person"><small>Motorizado</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
         {role === "driver" && t.status === "searching" && (
           <button
@@ -373,7 +374,7 @@ export function Dashboard({
     <div
       data-admin-theme={role === "admin" ? adminTheme : undefined}
       className={
-        "shell " + (role === "admin" ? "admin-shell " : "") +
+        "shell " + (page === "messages" ? "messages-screen " : "") + (role === "admin" ? "admin-shell " : "") +
         (page === "home" && role === "passenger" ? "ride-screen" : "")
       }
     >

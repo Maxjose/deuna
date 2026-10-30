@@ -2023,3 +2023,17 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .chat-messages{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px;display:flex;flex-direction:column;gap:10px}.chat-bubble{align-self:flex-start;max-width:85%;padding:10px 14px;border-radius:16px 16px 16px 4px;background:#f0f3f6;flex-shrink:0}.chat-bubble.mine{align-self:flex-end;border-radius:16px 16px 4px 16px;background:#e3f5ce}.chat-bubble p{margin:0;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.chat-bubble time{display:block;font-size:9px;text-align:right;margin-top:5px;color:var(--muted)}
 .chat-compose{display:flex;gap:10px;padding:12px;border-top:1px solid var(--line);flex-shrink:0}.chat-compose input{flex:1;min-width:0;margin:0}.chat-compose .primary{width:48px;padding:10px;flex-shrink:0}
 .chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--muted);min-height:260px}.chat-empty>svg{width:48px;height:48px}.chat-empty h2{color:var(--ink);font-size:20px}.chat-empty p,.chat-hint{font-size:12px;line-height:1.6;color:var(--muted)}.chat-hint{text-align:center;margin:auto 10px}.chat-error{font-size:12px;background:#fff1e1;padding:10px 16px;flex-shrink:0}
+
+.shell.messages-screen > main > .content { width: 100%; min-width: 0; display: flex; flex-direction: column; overflow: hidden; margin: 0 auto; }
+.messages-screen .content > h1 { flex-shrink: 0; margin-top: 0; margin-bottom: 12px; }
+.messages-screen .trip-chat { width: 100%; max-width: 720px; min-width: 0; flex: 1; min-height: 0; height: auto; align-self: center; }
+.trip-chat > *, .chat-header > p, .chat-person, .chat-person > div, .chat-compose, .chat-messages { min-width: 0; max-width: 100%; }
+.chat-header, .chat-compose { width: 100%; }
+.chat-header { overflow: hidden; }
+.chat-person > div { flex: 1; }
+.chat-person strong, .chat-person small, .chat-error { overflow-wrap: anywhere; }
+.chat-bubble { min-width: 0; }
+.chat-compose input { width: 0; flex: 1 1 0; }
+.chat-compose .primary { flex: 0 0 48px; max-width: 48px; }
+.messages-screen .chat-empty { min-height: 0; }
+.chat-person strong, .chat-person small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

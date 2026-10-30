@@ -11,6 +11,12 @@ select public.trip_chat('send',current_setting('qa.trip')::uuid,'Hola',current_s
 do $$begin if jsonb_array_length(public.trip_chat('fetch')->'messages')<>1 then raise exception 'Duplicate message';end if;end $$;
 select set_config('request.jwt.claim.sub',current_setting('qa.driver'),true);
 do $$begin if jsonb_array_length(public.trip_chat('fetch')->'messages')<>1 then raise exception 'Driver cannot read';end if;end $$;
+select public.trip_chat('send',current_setting('qa.trip')::uuid,'Respuesta del motorizado',gen_random_uuid())->'trip'->>'status';
+select set_config('request.jwt.claim.sub',current_setting('qa.passenger'),true);
+do $$declare response jsonb;begin
+ response:=public.trip_chat('fetch');
+ if response->'trip'->>'status'<>'assigned' or response->'trip'->>'peer_name' is null or jsonb_array_length(response->'messages')<>2 then raise exception 'Passenger cannot open or receive';end if;
+end $$;
 select set_config('request.jwt.claim.sub',current_setting('qa.other'),true);
 do $$begin
  if (public.trip_chat('fetch',current_setting('qa.trip')::uuid)->'trip')<>'null'::jsonb then raise exception 'Outsider can read';end if;
