@@ -39,6 +39,17 @@ export default function JourneyMap({
   callbacks.current = { onPick, onRoute, onQuote };
   const cameraFollow=useRef(follow);
   cameraFollow.current=follow;
+  const overviewBounds=useRef<import('leaflet').LatLngBounds|null>(null);
+  const overviewAllowed=useRef(true);
+  overviewAllowed.current=!navigation||!follow||!origin;
+  function fitOverview(){
+    const map=mapRef.current,bounds=overviewBounds.current;
+    if(!map||!bounds||!overviewAllowed.current)return;
+    const size=map.getSize();
+    if(size.x<100||size.y<120)return;
+    const x=Math.min(45,size.x*.12),y=Math.min(50,size.y*.18);
+    map.fitBounds(bounds,{paddingTopLeft:[x,y],paddingBottomRight:[x,y],maxZoom:16,animate:false});
+  }
   useEffect(() => {
     let alive = true;
     void import("leaflet")
@@ -76,7 +87,7 @@ export default function JourneyMap({
   useEffect(()=>{
     if(!library||!container.current)return;
     let frame=0;
-    const observer=new ResizeObserver(()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>mapRef.current?.invalidateSize({animate:false,debounceMoveend:true}));});
+    const observer=new ResizeObserver(()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{mapRef.current?.invalidateSize({animate:false,debounceMoveend:true});fitOverview();});});
     observer.observe(container.current);
     return()=>{observer.disconnect();cancelAnimationFrame(frame);};
   },[library]);
@@ -106,12 +117,9 @@ export default function JourneyMap({
     if (destination) mark(destination, "destination");
     if(extraPoint)L.circleMarker([extraPoint.lat,extraPoint.lng],{radius:7,color:'#122033',weight:2,fillColor:'#b4f36a',fillOpacity:1}).bindTooltip('Destino del pasajero').addTo(layer);
     const points = [origin, destination, extraPoint].filter(Boolean) as MapPoint[];
+    overviewBounds.current=points.length?L.latLngBounds(points.map(p=>[p.lat,p.lng] as [number,number])):null;
     if (points.length === 1 && (!navigation || !cameraFollow.current || !origin)) map.setView([points[0].lat, points[0].lng], 15);
-    else if (points.length >= 2 && (!navigation || !cameraFollow.current || !origin))
-      map.fitBounds(
-        points.map((p) => [p.lat, p.lng] as [number, number]),
-        { padding: [55, 70], maxZoom: 16 },
-      );
+    else if (points.length >= 2)fitOverview();
     const clicked = (e: import("leaflet").LeafletMouseEvent) =>
       callbacks.current.onPick?.({ lat: e.latlng.lat, lng: e.latlng.lng });
     if (picking) map.on("click", clicked);
@@ -143,7 +151,9 @@ export default function JourneyMap({
           const line = L.polyline(route, { color: "#122033", weight: 5 }).addTo(
             layer,
           );
-          if (!navigation || !cameraFollow.current) map.fitBounds(line.getBounds(), { padding: [45, 60] });
+          overviewBounds.current=line.getBounds();
+          for(const point of points)overviewBounds.current.extend([point.lat,point.lng]);
+          fitOverview();
           callbacks.current.onRoute?.(true);
           setMessage("Ruta de referencia");
         })

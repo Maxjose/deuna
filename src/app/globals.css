@@ -1443,7 +1443,7 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
   font-size: 26px;
   box-shadow: none;
 }
-.pickup-address input { padding-right: 52px; }
+.journey-addresses .pickup-address input { padding-right: 56px; text-overflow: ellipsis; }
 .locate-button {
   position: absolute;
   right: 0;
