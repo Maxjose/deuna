@@ -53,6 +53,9 @@ export function Dashboard({
     [settings, setSettings] = useState<Settings | null>(null),
     [page, setPage] = useState("home"),
     [message, setMessage] = useState(""),
+    [displayName, setDisplayName] = useState(""),
+    [draftName, setDraftName] = useState(""),
+    [phone, setPhone] = useState(""),
     [busy, setBusy] = useState(false),
     [offline, setOffline] = useState(false),
     [cancelId, setCancelId] = useState<string | null>(null);
@@ -78,6 +81,34 @@ export function Dashboard({
     setTrips(t.data);
     setSettings(s.data);
   }, [client, userId]);
+  useEffect(() => {
+    let active = true;
+    void client.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      const meta = data.user?.user_metadata;
+      const name = typeof meta?.display_name === "string" ? meta.display_name : "";
+      setDisplayName(name);
+      setDraftName(name);
+      setPhone(typeof meta?.contact_phone === "string" ? meta.contact_phone : "");
+    });
+    return () => { active = false; };
+  }, [client]);
+  async function saveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    const name = draftName.trim().replace(/\s+/g, " ");
+    if (!name || name.length > 80 || phone.trim().length > 30) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const { error } = await client.auth.updateUser({ data: { display_name: name, contact_phone: phone.trim() } });
+      if (error) throw error;
+      setDisplayName(name);
+      setDraftName(name);
+      setMessage("Tus datos se guardaron.");
+    } catch {
+      setMessage("No pudimos guardar tus datos. Inténtalo de nuevo.");
+    } finally { setBusy(false); }
+  }
   useEffect(() => {
     void load();
     const channel = client
@@ -352,6 +383,9 @@ export function Dashboard({
           </div>
         )}
         <section className="content" key={page} aria-busy={busy}>
+          {page === "home" && role === "passenger" && (
+            <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}` : "Hola"}</h1>
+          )}
           {!(page === "home" && role === "passenger") && <>
           <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
           <h1>
@@ -397,6 +431,16 @@ export function Dashboard({
                       : "Pasajero"}
                 </span>
               </article>
+              <form className="trip-card" onSubmit={saveProfile}>
+                <h2>Tus datos</h2>
+                <label>Nombre
+                  <input name="name" autoComplete="name" value={draftName} onChange={(e) => setDraftName(e.target.value)} required maxLength={80} />
+                </label>
+                <label>Teléfono de contacto
+                  <input name="phone" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+                </label>
+                <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
+              </form>
               <PasskeySecurity />
               <article className="trip-card">
                 <InstallApp />
