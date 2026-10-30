@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AppIcon } from "./app-icon";
 import { usd, type FareQuote } from "@/lib/fare";
-import { decodePlaces, type Place } from "@/lib/journey";
+import { type Place, placeSearchUrl, localPlaces } from "@/lib/journey";
 const JourneyMap = dynamic(() => import("./journey-map"), {
   ssr: false,
   loading: () => <div className="journey-map-placeholder">Abriendo mapa…</div>,
@@ -92,21 +92,18 @@ export function RideRequest({
     setMessage("");
     setResults([]);
     try {
-      const endpoint = new URL(
+      const endpoint = placeSearchUrl(
         process.env.NEXT_PUBLIC_GEOCODING_URL ||
           "https://photon.komoot.io/api/",
+        query, origin.point,
       );
-      endpoint.searchParams.set("q", query);
-      endpoint.searchParams.set("lat", String(origin.point?.lat || 11.087));
-      endpoint.searchParams.set("lon", String(origin.point?.lng || -71.603));
-      endpoint.searchParams.set("limit", "6");
       const r = await fetch(endpoint, { signal: controller.signal });
       if (!r.ok) throw Error();
-      const places = decodePlaces(await r.json());
+      const places = localPlaces(await r.json(), origin.point);
       if (version !== searchVersion.current) return;
       setResults(places);
       if (!places.length)
-        setMessage("No encontramos ese lugar. Puedes fijarlo en el mapa.");
+        setMessage("No encontramos ese lugar en el Zulia. Puedes fijarlo en el mapa.");
     } catch {
       if (version === searchVersion.current)
         setMessage(
@@ -397,9 +394,9 @@ export function RideRequest({
                         try {
                           if (!quote || expired) return;
                           await onRequest({ quote: quote.quote, signature: quote.signature });
-                        } catch {
+                        } catch (error) {
                           setMessage(
-                            "No se pudo solicitar el viaje. Inténtalo otra vez.",
+                            error instanceof Error ? error.message : "No se pudo solicitar el viaje. Inténtalo otra vez.",
                           );
                         }
                       }}

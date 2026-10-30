@@ -63,3 +63,36 @@ export function decodePlaces(body: unknown): Place[] {
     return label ? [{ label, point }] : [];
   });
 }
+
+// Search envelope for Zulia; this is not a trip coverage geofence.
+const bounds = { west: -73.5, south: 8.3, east: -70.5, north: 12.6 };
+const fallback = { lat: 11.087, lng: -71.603 };
+function inRegion(p: MapPoint) {
+  return validPoint(p) && p.lng >= bounds.west && p.lng <= bounds.east && p.lat >= bounds.south && p.lat <= bounds.north;
+}
+export function searchCenter(point: MapPoint | null) { return point && inRegion(point) ? point : fallback; }
+export function placeSearchUrl(base: string, query: string, point: MapPoint | null) {
+  const center = searchCenter(point), url = new URL(base);
+  url.searchParams.set('q', query);
+  url.searchParams.set('lat', String(center.lat));
+  url.searchParams.set('lon', String(center.lng));
+  url.searchParams.set('bbox', `${bounds.west},${bounds.south},${bounds.east},${bounds.north}`);
+  url.searchParams.set('countrycode', 'VE');
+  url.searchParams.set('location_bias_scale', '0.1');
+  url.searchParams.set('zoom', '12');
+  url.searchParams.set('limit', '12');
+  return url;
+}
+export function localPlaces(body: unknown, point: MapPoint | null) {
+  const features = (body as { features?: unknown[] })?.features;
+  if (!Array.isArray(features)) return [];
+  const center = searchCenter(point);
+  const places = features.flatMap(feature => {
+    const props = (feature as { properties?: { countrycode?: unknown; state?: unknown } } | null)?.properties;
+    if (typeof props?.countrycode !== 'string' || props.countrycode.toUpperCase() !== 'VE') return [];
+    if (typeof props.state === 'string' && !props.state.toLowerCase().includes('zulia')) return [];
+    return decodePlaces({ features: [feature] }).filter(place => place.point && inRegion(place.point));
+  });
+  const distance = (p: MapPoint) => (p.lat-center.lat)**2 + ((p.lng-center.lng)*Math.cos(center.lat*Math.PI/180))**2;
+  return places.sort((a,b) => distance(a.point!) - distance(b.point!)).slice(0,6);
+}

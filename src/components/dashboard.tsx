@@ -6,6 +6,7 @@ import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
+import { serviceIsOpen } from "@/lib/service-hours";
 import { FareSettings } from "./fare-settings";
 import { usd, type FareSettings as FareConfig } from "@/lib/fare";
 import { useRouter } from "next/navigation";
@@ -158,7 +159,19 @@ export function Dashboard({
       await load();
       setMessage("Cambio guardado.");
       return true;
-    } catch {
+    } catch (error) {
+      if (action === 'request') {
+        const failure = error as { message?: string; code?: string };
+        const messages: Record<string, string> = {
+          'Servicio cerrado': 'El servicio está cerrado según el horario configurado. Revisa los horarios en el panel de administración.',
+          'Solo pasajeros': 'Para solicitar un viaje debes entrar con una cuenta de pasajero.',
+          'Cotizacion vencida': 'El precio venció. Actualiza la cotización antes de solicitar.',
+          'Cotizacion invalida': 'No pudimos validar el precio. Actualiza la cotización.',
+          'Cotizacion requerida': 'Vuelve a calcular la ruta y su precio antes de solicitar.',
+        };
+        await load();
+        throw new Error(messages[failure.message || ''] || (failure.code === '23505' ? 'Ya tienes una solicitud activa o esta cotización ya fue utilizada. Revisa tus viajes.' : 'No se pudo solicitar el viaje. Comprueba tu conexión y vuelve a intentar.'));
+      }
       setMessage(
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
@@ -554,7 +567,7 @@ export function Dashboard({
               card(mine)
             ) : (
               <RideRequest
-                enabled={settings?.enabled || false}
+                enabled={serviceIsOpen(settings)}
                 busy={busy}
                 offline={offline}
                 onRequest={async (payload) => {
