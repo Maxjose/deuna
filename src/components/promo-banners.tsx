@@ -10,7 +10,6 @@ const banners = [
 
 export function PromoBanners({ hidden = false }: { hidden?: boolean }) {
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
@@ -20,12 +19,12 @@ export function PromoBanners({ hidden = false }: { hidden?: boolean }) {
     return () => media.removeEventListener("change", update);
   }, []);
   useEffect(() => {
-    if (hidden || paused || interacting || reducedMotion) return;
+    if (hidden || interacting || reducedMotion) return;
     const timer = window.setInterval(() => {
       if (!document.hidden) setIndex(current => (current + 1) % banners.length);
     }, 4500);
     return () => window.clearInterval(timer);
-  }, [hidden, paused, interacting, reducedMotion]);
+  }, [hidden, interacting, reducedMotion]);
   return <section className="promo-carousel" aria-label="Promociones y publicidad" aria-roledescription="carrusel"
     onMouseEnter={() => setInteracting(true)} onMouseLeave={() => setInteracting(false)}
     onFocusCapture={() => setInteracting(true)} onBlurCapture={e => { if (!e.currentTarget.contains(e.relatedTarget)) setInteracting(false); }}>
@@ -39,7 +38,6 @@ export function PromoBanners({ hidden = false }: { hidden?: boolean }) {
     </div>
     <div className="promo-controls">
       <div className="promo-dots">{banners.map((banner, i) => <button key={banner.title} type="button" aria-label={`Ver banner ${i + 1}`} aria-pressed={index === i} onClick={() => setIndex(i)}><span /></button>)}</div>
-      {!reducedMotion && <button type="button" className="promo-pause" onClick={() => setPaused(value => !value)} aria-label={paused ? "Reanudar banners" : "Pausar banners"}>{paused ? "Reanudar" : "Pausar"}</button>}
     </div>
   </section>;
 }
