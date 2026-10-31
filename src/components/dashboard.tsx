@@ -91,6 +91,7 @@ export function Dashboard({
   const [moreOpen,setMoreOpen]=useState(false);
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const moreDialog=useRef<HTMLDialogElement>(null);
+  const dragStart=useRef<number|null>(null);
   useEffect(()=>{if(moreOpen)moreDialog.current?.showModal();else moreDialog.current?.close();},[moreOpen]);
   const openSection=(section:string)=>{
     setPage('account');setAccountSection(section);setMoreOpen(false);
@@ -789,7 +790,16 @@ export function Dashboard({
         </button>
       )}
       {role === "admin" && (
-        <dialog ref={moreDialog} className="action-sheet more-sheet" aria-label="Más secciones" onClose={() => setMoreOpen(false)}>
+        <dialog
+          ref={moreDialog}
+          className="action-sheet more-sheet"
+          aria-label="Más secciones"
+          onClose={() => setMoreOpen(false)}
+          onClick={(e) => { if (e.target === e.currentTarget) { const r = e.currentTarget.getBoundingClientRect(); if (e.clientY < r.top || e.clientY > r.bottom || e.clientX < r.left || e.clientX > r.right) setMoreOpen(false); } }}
+          onTouchStart={(e) => { dragStart.current = e.touches[0].clientY; }}
+          onTouchMove={(e) => { if (dragStart.current == null) return; const dy = Math.max(0, e.touches[0].clientY - dragStart.current); e.currentTarget.classList.add("is-dragging"); e.currentTarget.style.transform = `translateY(${dy}px)`; }}
+          onTouchEnd={(e) => { const sheet = e.currentTarget; const dy = dragStart.current == null ? 0 : e.changedTouches[0].clientY - dragStart.current; dragStart.current = null; sheet.classList.remove("is-dragging"); sheet.style.transform = ""; if (dy > 70) setMoreOpen(false); }}
+        >
           <div className="sheet-handle" />
           {moreTabs.map(([p, label, group], index) => (
             <Fragment key={p}>

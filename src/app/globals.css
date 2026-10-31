@@ -117,8 +117,8 @@ textarea,
 .member-confirm { padding: 18px; border: 1px solid var(--line); border-radius: 16px; margin: 20px 0; }
 .member-sheet .cards { grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr)); }
 @media(max-width:760px) {
-  .admin-shell .sidebar nav { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
-  .admin-shell .sidebar nav .nav-item { flex: 0 0 64px; }
+  .admin-shell .sidebar nav { justify-content: space-around; }
+  .admin-shell .sidebar nav .nav-item { flex: 1; }
   .shell:not(.admin-shell) .nav-item:disabled { opacity: .55; }
   .shell:not(.admin-shell) .sidebar nav { justify-content: space-around; }
   .shell:not(.admin-shell) .nav-item.selected svg { background: transparent; box-shadow: none; }
@@ -2381,3 +2381,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .history-list .trip-card > .payment-note { grid-column: 1 / -1; margin: 4px 0 0; }
 .history-list .trip-card > .payment-panel { grid-column: 1 / -1; }
 .admin-shell[data-admin-theme='dark'] .payment-note.is-pago-movil { background: var(--paper); }
+
+/* Hoja "Más": se cierra tocando fuera o deslizando hacia abajo */
+.more-sheet { touch-action: pan-x; transition: transform .2s ease; }
+.more-sheet.is-dragging { transition: none; }
