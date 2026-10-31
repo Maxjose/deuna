@@ -1,0 +1,59 @@
+plugins {
+    id "com.android.application"
+}
+
+// Datos de la TWA de pruebas. La app oficial tendrá su propio paquete, dominio y clave.
+def twa = [
+    host        : "deuna-five.vercel.app",
+    launchUrl   : "/dashboard?source=twa",
+    name        : "De1na Pruebas",
+    themeColor  : "#122033",
+    background  : "#F5F7F8",
+]
+
+android {
+    namespace "com.de1na.app.pruebas"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.de1na.app.pruebas"
+        minSdk 23
+        targetSdk 35
+        versionCode Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
+        versionName "0.1." + (System.getenv("VERSION_CODE") ?: "1")
+
+        resValue "string", "app_name", twa.name
+        resValue "string", "launch_url", "https://" + twa.host + twa.launchUrl
+        resValue "string", "host_name", twa.host
+        resValue "color", "theme_color", twa.themeColor
+        resValue "color", "background_color", twa.background
+        resValue "string", "asset_statements",
+            "[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://" + twa.host + "\"}}]"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("TWA_KEYSTORE_PATH") ?: "missing.jks")
+            storePassword System.getenv("TWA_KEYSTORE_PASSWORD")
+            keyAlias "pruebas"
+            keyPassword System.getenv("TWA_KEYSTORE_PASSWORD")
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0"
+    implementation "com.google.androidbrowserhelper:locationdelegation:1.1.1"
+}

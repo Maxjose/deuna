@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.de1na.app.pruebas",
+      "sha256_cert_fingerprints": [
+        "71:0C:6D:A0:A7:F9:65:AC:A1:B2:44:22:25:06:8B:C2:67:7C:E8:B4:57:77:27:02:53:AA:37:7E:BF:F3:DA:73"
+      ]
+    }
+  }
+]
