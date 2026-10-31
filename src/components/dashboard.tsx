@@ -537,7 +537,7 @@ export function Dashboard({
           {page === "home" && role === "passenger" && (
             <>
               <span className={"page-context " + (serviceIsOpen(settings) ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
-              <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}.` : "Hola."}<span>¿Pa’ dónde vamos?</span></h1>
+              <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}.` : "Hola."}</h1>
             </>
           )}
           {!(page === "home" && role === "passenger") && page !== "messages" && <>
