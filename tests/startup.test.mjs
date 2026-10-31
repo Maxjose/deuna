@@ -43,7 +43,7 @@ test("usuario sin sesi?n: acceso p?blico y rutas protegidas", async () => {
     assert.ok(ready, log);
     const html = await (await fetch("http://127.0.0.1:3187/login")).text();
     assert.match(html, /De1na/);
-    assert.match(html, /name="email"|El acceso/);
+    assert.match(html, /Preparando De1na/);
     const manifest = await (
       await fetch("http://127.0.0.1:3187/manifest.webmanifest")
     ).json();
@@ -77,7 +77,12 @@ test("usuario sin sesi?n: acceso p?blico y rutas protegidas", async () => {
       const r = await fetch("http://127.0.0.1:3187" + path, {
         redirect: "manual",
       });
-      assert.ok([307, 308].includes(r.status), path);
+      if(r.status===200){
+        // A gated streaming response carries the server auth redirect in its RSC payload.
+        const body=await r.text();
+        assert.match(body,/NEXT_REDIRECT/,path);
+        assert.match(body,/Preparando De1na/,path);
+      }else assert.ok([307, 308].includes(r.status), path);
     }
     assert.equal(
       (await fetch("http://127.0.0.1:3187/does-not-exist")).status,

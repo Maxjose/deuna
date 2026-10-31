@@ -15,6 +15,32 @@
   font-family: var(--font-brand), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
+.install-gate-check { min-height:100dvh; background:#122033; }
+.install-gate { position:relative; isolation:isolate; min-height:100dvh; overflow:hidden; background:#122033; color:white; padding:calc(26px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); }
+.install-gate-orbit { position:absolute; z-index:-1; width:600px; height:600px; top:-240px; right:-340px; border:1px solid #b4f36235; border-radius:50%; box-shadow:0 0 0 60px #b4f36205,0 0 0 120px #b4f36204; background:radial-gradient(circle,#b4f36218,transparent 65%); pointer-events:none; }
+.install-gate-content { width:100%; max-width:440px; margin:auto; }
+.install-gate-brand { display:flex; align-items:center; gap:10px; font-size:25px; font-weight:850; letter-spacing:-1px; }
+.install-gate-brand > span > span { color:#b4f36a; }
+.install-gate .install-beta { color:#b4f36a; background:#b4f36a18; padding:4px 8px; border-radius:20px; font-size:9px; letter-spacing:1px; }
+.install-gate-icon { margin:36px 0 26px; width:112px; height:112px; border-radius:28px; box-shadow:0 16px 48px #0005; transform:rotate(-5deg); }
+.install-gate-icon img { display:block; border-radius:28px; }
+.install-eyebrow { display:block; font-size:9px; font-weight:800; letter-spacing:1.6px; color:#b4f36a; }
+.install-gate h1 { font-size:clamp(34px,10vw,46px); line-height:1.1; letter-spacing:-1.8px; margin:14px 0 16px; }
+.install-gate h1 em { font-style:normal; color:#b4f36a; }
+.install-gate-intro { color:#becbd8; font-size:14px; line-height:1.7; max-width:340px; margin:0 0 26px; }
+.install-gate-card { background:#fff; color:#122033; border-radius:24px; padding:22px; box-shadow:0 14px 36px #0002; }
+.install-gate-card h2 { margin:0 0 10px; font-size:19px; letter-spacing:-.5px; }
+.install-gate-card p { color:#536477; font-size:13px; line-height:1.6; margin:0 0 16px; }
+.install-gate .install-gate-button { width:100%; background:#b4f36a; color:#122033; justify-content:center; gap:10px; border:0; border-radius:16px; font-size:14px; box-shadow:none; }
+.install-gate-button > svg:last-child { margin-left:auto; width:18px; }
+.install-gate-card ol { list-style:none; padding:0; margin:0; display:grid; gap:16px; }
+.install-gate-card li { display:flex; align-items:flex-start; gap:12px; font-size:12px; line-height:1.6; }
+.install-gate-card li > span { display:grid; place-items:center; flex:0 0 26px; height:26px; border-radius:9px; background:#eff7e5; font-size:11px; font-weight:800; }
+.install-inline-icon { display:inline-block; width:18px; height:18px; vertical-align:middle; }
+.install-manual { font-size:12px; line-height:1.7; margin-top:16px; padding-top:16px; border-top:1px solid #e7ebef; }
+.install-gate footer { margin-top:24px; text-align:center; color:#b5c5d4; font-size:12px; }
+.install-gate footer strong { color:#b4f36a; }
+@media(max-height:740px) { .install-gate-icon { width:80px; height:80px; margin:22px 0; } .install-gate-icon img { width:80px; height:80px; border-radius:20px; } .install-gate h1 { font-size:34px; } .install-gate-intro { margin-bottom:20px; } }
 * {
   box-sizing: border-box;
 }
