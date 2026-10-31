@@ -1,6 +1,10 @@
 import type { MapPoint } from "./destination";
 export type Place = { label: string; point: MapPoint | null };
 export function placeDistanceMeters(point:MapPoint,center:MapPoint){return Math.hypot((point.lat-center.lat)*111320,(point.lng-center.lng)*111320*Math.cos(center.lat*Math.PI/180));}
+export function nearbyReferencePlaces(catalog:Place[],external:Place[],point:MapPoint){
+ const nearby=(place:Place)=>!!place.point&&placeDistanceMeters(place.point,point)<=3000;
+ return mergeSearchPlaces(catalog.filter(nearby),external.filter(nearby),point).slice(0,5);
+}
 export function mergeSearchPlaces(catalog:Place[],external:Place[],center:MapPoint|null=null) {
   const merged:Place[]=[];
   const key=(label:string)=>label.split(',')[0].normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');

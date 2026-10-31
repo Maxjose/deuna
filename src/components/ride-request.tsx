@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AppIcon } from "./app-icon";
+import { ReferenceInput } from './reference-input';
 import { PromoBanners } from "./promo-banners";
 import type { Favorite } from './favorite-places';
 import { bs, bsAmount, pagoMovilReady, rateValue, type PaymentMethod, type PaymentSettings } from '@/lib/payments';
@@ -396,7 +397,7 @@ export function RideRequest({
                       />
                       {mapCompact&&<button type="button" className="expand-picker-map" onClick={()=>setMapCompact(false)}>Ver mapa</button>}
                     </div>
-                    {(mapReferences[active]||!current.label.trim())&&current.point&&<label className="map-reference">Referencia del punto marcado<input aria-label="Referencia del punto marcado" maxLength={110} value={current.label} disabled={loading} placeholder="Calle, negocio o referencia para llegar" onChange={e=>update({...current,label:e.target.value})}/></label>}</>}
+                    {(mapReferences[active]||!current.label.trim())&&current.point&&<ReferenceInput key={active} label={current.label} point={current.point} disabled={loading} onChange={label=>update({...current,label})} onSelect={place=>{if(!place.point)return;update(place);setQuote(null);setRouteReady(false);setMapCompact(false);setMessage('');}}/>}</>}
                     {!mapVisible&&<button type="button" className="show-picker-map" aria-label="Mostrar mapa" title="Mostrar mapa" onClick={()=>{setMapVisible(true);setMapCompact(false);}}><AppIcon name="map"/></button>}
 
               </div>
