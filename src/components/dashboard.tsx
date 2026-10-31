@@ -465,7 +465,7 @@ export function Dashboard({
           <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
           <h1>
             {page === "account"
-              ? ({overview:"Tu espacio.",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",preferences:"Configuración"}[accountSection] || "Tu espacio.")
+              ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",preferences:"Configuración"}[accountSection] || "Tu espacio")
               : page === "places"
                 ? "Lugares que nos conectan."
               : page === "notifications"
@@ -479,7 +479,7 @@ export function Dashboard({
                 : page === "drivers"
                   ? "Personas que nos mueven."
                   : page === "history"
-                    ? "Cada vuelta cuenta."
+                    ? "Cada vuelta cuenta"
                     : role === "passenger"
                       ? "¿Pa’ dónde vamos?"
                       : "Vamos de una."}
@@ -501,7 +501,7 @@ export function Dashboard({
             <TripChat userId={userId} refresh={trips} offline={offline}/>
           ) : page === "account" ? (
             <div className={"account-stack " + (accountSection === "overview" ? "account-overview" : "account-subsection")}>
-              {accountSection!=="overview"&&<button className="account-back text" onClick={()=>setAccountSection("overview")}>← Volver a Cuenta</button>}
+              {accountSection!=="overview"&&<button type="button" className="account-back secondary" onClick={()=>setAccountSection("overview")}>Volver</button>}
               {accountSection==="overview"&&<>
               <article className="trip-card account-card">
                 <div className="avatar">{(displayName || email)[0]?.toUpperCase()}</div>
