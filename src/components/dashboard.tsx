@@ -320,6 +320,10 @@ export function Dashboard({
           !["finished", "cancelled"].includes(t.status)) ||
         (profile?.approved && profile.available && t.status === "searching"),
   );
+  function openSignOut() {
+    signOutDialog.current?.showModal();
+    signOutDialog.current?.focus();
+  }
   async function signOut() {
     if (signingOut) return;
     setSigningOut(true);
@@ -535,7 +539,7 @@ export function Dashboard({
               <div className="skeleton" />
             </div>
           ) : profile.suspended ? (
-            <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={()=>signOutDialog.current?.showModal()}>Cerrar sesión</button></article>
+            <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={openSignOut}>Cerrar sesión</button></article>
           ) : page === "messages" && role !== "admin" ? (
             <TripChat userId={userId} refresh={trips} offline={offline} role={role}/>
           ) : page === "account" ? (
@@ -557,7 +561,7 @@ export function Dashboard({
               <div className="account-menu">
                 {[["info","Tu información","account"],["security","Seguridad","key"],["favorites","Lugares favoritos","places"],["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
-              <button className="secondary signout" onClick={()=>signOutDialog.current?.showModal()}>Cerrar sesión</button>
+              <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
               {accountSection==="info"&&
               <form className="trip-card" onSubmit={saveProfile}>
@@ -760,11 +764,11 @@ export function Dashboard({
         <button className="secondary" disabled={busy} onClick={()=>acceptDialog.current?.close()}>Volver a solicitudes</button>
         <Toast message={message}/>
       </dialog>
-      <dialog ref={signOutDialog} className="action-sheet" aria-labelledby="signout-title" onCancel={e => { if (signingOut) e.preventDefault(); }}>
+      <dialog ref={signOutDialog} tabIndex={-1} className="action-sheet" aria-labelledby="signout-title" onCancel={e => { if (signingOut) e.preventDefault(); }}>
         <div className="sheet-handle" />
         <h2 id="signout-title">¿Cerrar sesión?</h2>
         <p className="muted">Tendrás que iniciar sesión de nuevo para usar tu cuenta.</p>
-        <button className="primary" disabled={signingOut} autoFocus onClick={() => signOutDialog.current?.close()}>Seguir en mi cuenta</button>
+        <button className="primary" disabled={signingOut} onClick={() => signOutDialog.current?.close()}>Seguir en mi cuenta</button>
         <button className="secondary danger" disabled={signingOut} onClick={() => void signOut()}>{signingOut ? "Cerrando sesión…" : "Sí, cerrar sesión"}</button>
       </dialog>
       <dialog
