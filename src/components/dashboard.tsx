@@ -9,6 +9,8 @@ import { TripChat } from "./trip-chat";
 import { TripSound } from "./trip-sound";
 import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
 import { DriverNavigation } from "./driver-navigation";
+import { PassengerPayment, PaymentSettingsForm, TripPaymentNote } from "./trip-payment";
+import type { PaymentSettings } from "@/lib/payments";
 import { DriverSharingStatus, PassengerLiveMap, useDriverLocationSharing } from "./live-location";
 import { AdminRecords } from "./admin-records";
 import { NotificationInbox } from "./notification-inbox";
@@ -51,8 +53,11 @@ type Trip = {
   passenger_name?: string;
   driver_name?: string;
   cancel_requested?: boolean;
+  payment_method?: string | null;
+  exchange_rate?: number | string | null;
+  payment_reference?: string | null;
 };
-type Settings = FareConfig & {
+type Settings = FareConfig & PaymentSettings & {
   id: number;
   enabled: boolean;
   open_time: string;
@@ -122,7 +127,7 @@ export function Dashboard({
       client.from("profiles").select("id,role,approved,available,suspended"),
       client
         .from("trips")
-        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested")
+        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference")
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
@@ -410,6 +415,11 @@ export function Dashboard({
         </div>}
         {page !== "history" && t.zone && <p className="muted">{t.zone}</p>}
         {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{page !== "history" && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
+        {role === "passenger" && t.passenger_id === userId && (page === "home" || (page === "history" && t.status === "finished" && t.payment_method === "pago_movil" && !t.payment_reference)) && (
+          <PassengerPayment trip={t} settings={settings} offline={offline} />
+        )}
+        {(role === "driver" && (page === "home" || t.driver_id === userId)) && <TripPaymentNote trip={t} viewer="driver" />}
+        {role === "admin" && <TripPaymentNote trip={t} viewer="admin" />}
         {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
         {role==='driver'&&<TripPerson viewerId={userId} tripId={t.id} label="Pasajero"/>}
         {role==='passenger'&&t.driver_id&&<TripPerson viewerId={userId} tripId={t.id} label="Motorizado"/>}
@@ -619,6 +629,7 @@ export function Dashboard({
           ) : page === "settings" && settings ? (
             <div className="account-stack">
 
+            <PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} />
             <FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />
             <AvailabilitySettings />
             <form
@@ -685,6 +696,7 @@ export function Dashboard({
                 enabled={serviceOpen}
                 busy={busy}
                 offline={offline}
+                payment={settings}
                 onRequest={async (payload) => {
                   if (!(await act("request", payload)))
                     throw new Error("No se pudo solicitar");
@@ -795,7 +807,7 @@ export function Dashboard({
       <dialog ref={acceptDialog} className="action-sheet" aria-labelledby="accept-title" onClose={()=>setAcceptTrip(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
         <div className="sheet-handle"/>
         <h2 id="accept-title">¿Aceptar este viaje?</h2>
-        {acceptTrip&&<><p><strong>Recogida:</strong> {parseStoredPlace(acceptTrip.origin).label}</p><p><strong>Destino:</strong> {parseStoredPlace(acceptTrip.destination).label}</p>{acceptTrip.fare_cents!=null&&<p><strong>{usd(acceptTrip.fare_cents)}</strong></p>}</>}
+        {acceptTrip&&<><p><strong>Recogida:</strong> {parseStoredPlace(acceptTrip.origin).label}</p><p><strong>Destino:</strong> {parseStoredPlace(acceptTrip.destination).label}</p>{acceptTrip.fare_cents!=null&&<p><strong>{usd(acceptTrip.fare_cents)}</strong></p>}<TripPaymentNote trip={acceptTrip} viewer="driver" /></>}
         <button className="primary" disabled={busy||offline} onClick={async()=>{if(acceptTrip){const accepted=await act('accept',{id:acceptTrip.id});if(accepted)acceptDialog.current?.close();}}}>{busy?'Aceptando…':'Sí, aceptar viaje'}</button>
         <button className="secondary" disabled={busy} onClick={()=>acceptDialog.current?.close()}>Volver a solicitudes</button>
         <Toast message={message}/>

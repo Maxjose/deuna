@@ -117,7 +117,7 @@ Verificación: npm run build, npm test y supabase/tests/route_fares.sql (fixture
 
 ## Ubicación en vivo del motorizado
 
-Migración: supabase/migrations/20261031010000_trip_locations.sql. Tabla public.trip_locations con la última posición por viaje; solo se escribe con share_location (motorizado asignado, aprobado, viaje assigned/arrived/ongoing, validación de coordenadas y hora, máximo una escritura cada 2 s). RLS: lee el motorizado, el pasajero de ese viaje y la administración. La fila se borra al finalizar, cancelar o reasignar el viaje. Publicada en supabase_realtime.
+Migración: supabase/migrations/20261031013000_trip_locations.sql. Tabla public.trip_locations con la última posición por viaje; solo se escribe con share_location (motorizado asignado, aprobado, viaje assigned/arrived/ongoing, validación de coordenadas y hora, máximo una escritura cada 2 s). RLS: lee el motorizado, el pasajero de ese viaje y la administración. La fila se borra al finalizar, cancelar o reasignar el viaje. Publicada en supabase_realtime.
 
 El motorizado envía su posición mientras la app está abierta (cada 4 s con movimiento, latido cada 15 s). El pasajero ve el mapa en vivo, la antigüedad de la señal y un tiempo estimado aproximado. Si la migración no está aplicada, la interfaz oculta la función sin errores.
 

@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { AppIcon } from "./app-icon";
 import { PromoBanners } from "./promo-banners";
 import type { Favorite } from './favorite-places';
+import { bs, bsAmount, pagoMovilReady, rateValue, type PaymentMethod, type PaymentSettings } from '@/lib/payments';
 import { Toast, useNotice } from "./toast";
 import { usd, type FareQuote } from "@/lib/fare";
 import { type Place, placeDistanceMeters, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
@@ -15,13 +16,13 @@ const JourneyMap = dynamic(() => import("./journey-map"), {
   ssr: false,
   loading: () => <div className="journey-map-placeholder">Abriendo mapa…</div>,
 });
-type Step = "home" | "search" | "choose" | "confirm";
+type Step = "home" | "search" | "choose" | "payment" | "confirm";
 export function RideRequest({
   enabled,
   busy,
   offline,
   onRequest,
-  home, work, homeLoading, homeError, onSetupHome, onManagePlaces,
+  home, work, homeLoading, homeError, onSetupHome, onManagePlaces, payment,
 }: {
   enabled: boolean;
   busy: boolean;
@@ -33,7 +34,12 @@ export function RideRequest({
   onSetupHome: () => void;
   work?: Favorite;
   onManagePlaces: () => void;
+  payment?: PaymentSettings | null;
 }) {
+  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const pagoMovil = pagoMovilReady(payment);
+  const rate = rateValue(payment?.exchange_rate);
+  useEffect(() => { if (!pagoMovil) setMethod("cash"); }, [pagoMovil]);
   const [step, setStep] = useState<Step>("home"),
     [active, setActive] = useState<"origin" | "destination">("destination"),
     [origin, setOrigin] = useState<Place>({ label: "", point: null }),
@@ -95,7 +101,7 @@ export function RideRequest({
     setLocating(false);
     setMessage("");
     setStep(
-      step === "confirm" ? "choose" : step === "choose" ? "search" : "home",
+      step === "confirm" ? "payment" : step === "payment" ? "choose" : step === "choose" ? "search" : "home",
     );
   }
   backRef.current = back;
@@ -413,16 +419,18 @@ export function RideRequest({
               />
               <section className="journey-bottom-sheet passenger-stage-sheet journey-preparation-sheet">
                 <div className="sheet-handle" />
-                <div className="journey-preparation-steps" aria-label="Preparación del viaje"><span className={step==='choose'?'current':'done'}>1 · Transporte</span><span className={step==='confirm'?'current':''}>2 · Confirmar</span></div>
+                <div className="journey-preparation-steps" aria-label="Preparación del viaje"><span className={step==='choose'?'current':'done'}>1 · Transporte</span><span className={step==='payment'?'current':step==='confirm'?'done':''}>2 · Pago</span><span className={step==='confirm'?'current':''}>3 · Confirmar</span></div>
                 <h2>
                   {step === "choose"
                     ? "Elige cómo ir"
-                    : "Confirma tu recorrido"}
+                    : step === "payment"
+                      ? "¿Cómo vas a pagar?"
+                      : "Confirma tu recorrido"}
                 </h2>
                 <div className="fare-summary" aria-live="polite" aria-busy={!quote} aria-label={!quote ? "Calculando precio, distancia y tiempo" : undefined}>
                   <strong className={!quote ? "fare-placeholder" : undefined} aria-hidden={!quote}>{quote ? usd(quote.fare_cents) : '\u00a0'}</strong>
                   <span className={!quote ? "fare-placeholder" : undefined} aria-hidden={!quote}>{quote ? `${(quote.distance_meters / 1000).toLocaleString('es-VE', { maximumFractionDigits: 2 })} km · ${Math.max(1, Math.round(quote.duration_seconds / 60))} min aprox.` : '\u00a0'}</span>
-                  <small>Pago directo al motorizado · USD</small>
+                  {quote && rate != null && <small className="fare-bs">≈ {bs(bsAmount(quote.fare_cents, rate) ?? 0)} · tasa {rate.toLocaleString("es-VE")} Bs/USD</small>}
                 </div>
                 {expired && <button className="secondary" onClick={() => { setQuote(null); setQuoteRevision(n => n + 1); }}>Actualizar precio</button>}
                 {step === "choose" ? (
@@ -444,9 +452,28 @@ export function RideRequest({
                     <button
                       className="primary"
                       disabled={!moto}
-                      onClick={() => setStep("confirm")}
+                      onClick={() => setStep("payment")}
                     >
                       Elegir Moto
+                      <AppIcon name="arrow" />
+                    </button>
+                  </>
+                ) : step === "payment" ? (
+                  <>
+                    <div className="payment-options" role="radiogroup" aria-label="Método de pago">
+                      <button type="button" role="radio" aria-checked={method === "cash"} className={"moto-option payment-option " + (method === "cash" ? "is-selected" : "")} onClick={() => setMethod("cash")}>
+                        <span className="service-icon"><AppIcon name="cash" /></span>
+                        <span><strong>Efectivo</strong><small>Le pagas al motorizado al llegar</small></span>
+                        <span className="selection-dot" />
+                      </button>
+                      <button type="button" role="radio" aria-checked={method === "pago_movil"} disabled={!pagoMovil} className={"moto-option payment-option " + (method === "pago_movil" ? "is-selected" : "")} onClick={() => setMethod("pago_movil")}>
+                        <span className="service-icon"><AppIcon name="phone" /></span>
+                        <span><strong>Pago móvil</strong><small>{pagoMovil ? "Transfieres cuando un motorizado acepte tu viaje" : "No disponible por ahora"}</small></span>
+                        <span className="selection-dot" />
+                      </button>
+                    </div>
+                    <button className="primary" onClick={() => setStep("confirm")}>
+                      Continuar
                       <AppIcon name="arrow" />
                     </button>
                   </>
@@ -468,6 +495,15 @@ export function RideRequest({
                         </p>
                       </div>
                     </div>
+                    <div className="confirmation-payment">
+                      <AppIcon name={method === "cash" ? "cash" : "phone"} />
+                      <p>
+                        <small>PAGO</small>
+                        <strong>{method === "cash" ? "Efectivo al motorizado" : "Pago móvil"}</strong>
+                        <span>{method === "cash" ? "Ten el monto listo al llegar." : "Te mostraremos los datos para transferir cuando un motorizado acepte."}</span>
+                      </p>
+                      <button type="button" className="text" onClick={() => setStep("payment")}>Cambiar</button>
+                    </div>
                     <button
                       className="primary"
                       disabled={
@@ -476,7 +512,7 @@ export function RideRequest({
                       onClick={async () => {
                         try {
                           if (!quote || expired) return;
-                          await onRequest({ quote: quote.quote, signature: quote.signature });
+                          await onRequest({ quote: quote.quote, signature: quote.signature, payment_method: method === "pago_movil" && pagoMovil ? "pago_movil" : "cash" });
                         } catch (error) {
                           setMessage(
                             error instanceof Error ? error.message : "No se pudo solicitar el viaje. Inténtalo otra vez.",
