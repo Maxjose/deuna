@@ -6,6 +6,8 @@ export function LaunchScreen({ children }: { children: React.ReactNode }) {
     "opening",
   );
   useEffect(() => {
+    // En escritorio (panel de administración) no se muestra la pantalla de carga.
+    if (window.matchMedia("(min-width: 761px)").matches) { setPhase("ready"); return; }
     const fade = window.setTimeout(() => setPhase("leaving"), 1750);
     const finish = window.setTimeout(() => setPhase("ready"), 2050);
     return () => {

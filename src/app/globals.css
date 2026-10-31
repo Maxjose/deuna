@@ -2554,3 +2554,8 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .payment-switch input:checked::after { transform: translateX(18px); }
 .payment-switch span { display: flex; flex-direction: column; }
 .payment-switch small { font-size: 12px; color: var(--muted); }
+/* Escritorio: sin pantalla de carga (también antes de hidratar, para evitar el destello). */
+@media (min-width: 761px) {
+  .launch-screen { display: none; }
+  .app-content.is-opening { opacity: 1; transform: none; animation: none; visibility: visible; }
+}
