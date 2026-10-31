@@ -407,7 +407,7 @@ export function RideRequest({
                 quotePlaces={quotePlaces}
                 onQuote={setQuote}
               />
-              <section className="journey-bottom-sheet passenger-stage-sheet">
+              <section className="journey-bottom-sheet passenger-stage-sheet journey-preparation-sheet">
                 <div className="sheet-handle" />
                 <div className="journey-preparation-steps" aria-label="Preparación del viaje"><span className={step==='choose'?'current':'done'}>1 · Transporte</span><span className={step==='confirm'?'current':''}>2 · Confirmar</span></div>
                 <h2>

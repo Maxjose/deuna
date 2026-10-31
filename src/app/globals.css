@@ -2266,3 +2266,18 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 
 .journey-addresses .pickup-address .locate-button { top:auto; bottom:10px; height:43px; display:grid; place-items:center; padding:0; }
 .journey-addresses .pickup-address input { display:block; }
+
+.journey-preparation-sheet.journey-bottom-sheet { overflow:hidden; max-height:none; flex:0 0 auto; }
+.journey-preparation-sheet .confirmation-stops { margin-bottom:10px; }
+.journey-preparation-sheet .confirmation-stops strong { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media(max-height:700px) {
+ .journey-preparation-sheet.journey-bottom-sheet { padding:10px 18px calc(14px + env(safe-area-inset-bottom)); }
+ .journey-preparation-sheet .sheet-handle { margin-bottom:8px; }
+ .journey-preparation-sheet h2 { font-size:20px; margin-bottom:10px; }
+ .journey-preparation-sheet .journey-preparation-steps { margin-bottom:8px; }
+ .journey-preparation-sheet .fare-summary { margin:8px 0; padding:10px 12px; }
+ .journey-preparation-sheet .confirmation-stops { margin:8px 0; }
+ .journey-preparation-sheet .confirmation-stops > div { padding:6px 0; }
+ .journey-preparation-sheet .confirmation-stops p { margin:0; }
+ .journey-preparation-sheet > .primary { margin-top:10px; min-height:46px; }
+}
