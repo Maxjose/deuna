@@ -19,6 +19,7 @@ export function AppIcon({ name }: { name: string }) {
     account: "M20 21v-2a7 7 0 0 0-14 0v2M13 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
     refresh: "M20 7a9 9 0 1 0 1 8M21 3v5h-5",
     arrow: "M5 12h14m-6-6 6 6-6 6",
+    search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-3.5-3.5",
     more: "M5 12h.01M12 12h.01M19 12h.01",
     drivers: "M8 17a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm14 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM5 17l4-7h5l5 7M9 10l4 7H5M14 10l-2-5h4M7 7h3",
   };

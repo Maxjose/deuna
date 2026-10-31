@@ -104,6 +104,7 @@ export function Dashboard({
   const [setupHome,setSetupHome]=useState(false);
   const [accountSection,setAccountSection]=useState("overview");
   const [moreOpen,setMoreOpen]=useState(false);
+  const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const moreDialog=useRef<HTMLDialogElement>(null);
   useEffect(()=>{if(moreOpen)moreDialog.current?.showModal();else moreDialog.current?.close();},[moreOpen]);
   const openSection=(section:string)=>{window.location.hash=section==="overview"?"account":`account/${section}`;};
@@ -337,7 +338,7 @@ export function Dashboard({
                 : serviceLabel;
   const visibleTrips = trips.filter((t) =>
     page === "history"
-      ? role === "admin" || t.passenger_id === userId || t.driver_id === userId
+      ? (role === "admin" || t.passenger_id === userId || t.driver_id === userId) && (historyFilter === "all" || t.status === historyFilter)
       : driverActive ? t.id===driverActive.id : role === "admin" ||
         (t.driver_id === userId &&
           !["finished", "cancelled"].includes(t.status)) ||
@@ -406,7 +407,7 @@ export function Dashboard({
         {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
         {role==='driver'&&<TripPerson viewerId={userId} tripId={t.id} label="Pasajero"/>}
         {role==='passenger'&&t.driver_id&&<TripPerson viewerId={userId} tripId={t.id} label="Motorizado"/>}
-        {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="secondary" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Hablar con mi motorizado</button>}
+        {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="primary trip-chat-button" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Mensaje a mi motorizado</button>}
         {t.driver_id && role==='admin' && <p className="trip-person"><small>Motorizado</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
         {role === "driver" && t.status === "searching" && (
           <button
@@ -431,13 +432,13 @@ export function Dashboard({
           t.passenger_id === userId &&
           ["searching", "assigned", "arrived"].includes(t.status) && (
             <button
-              className="secondary"
+              className="text danger trip-cancel-link"
               disabled={busy || offline}
               onClick={() => {
                 setCancelId(t.id);
               }}
             >
-              Cancelar solicitud
+              Cancelar viaje
             </button>
           )}
       </article>
@@ -536,7 +537,7 @@ export function Dashboard({
           {page === "home" && role === "passenger" && (
             <>
               <span className={"page-context " + (serviceIsOpen(settings) ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
-              <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}` : "Hola"}</h1>
+              <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}.` : "Hola."}<span>¿Pa’ dónde vamos?</span></h1>
             </>
           )}
           {!(page === "home" && role === "passenger") && page !== "messages" && <>
@@ -658,6 +659,8 @@ export function Dashboard({
             ) : (
               <RideRequest
                 home={savedPlaces.favorites.find(place=>place.kind==='home')}
+                work={savedPlaces.favorites.find(place=>place.kind==='work')}
+                onManagePlaces={()=>openSection('favorites')}
                 homeLoading={savedPlaces.loading}
                 homeError={savedPlaces.error}
                 onSetupHome={()=>{setSetupHome(true);openSection('favorites');}}
@@ -717,7 +720,14 @@ export function Dashboard({
                   ))}
                 </div>
               )}
-              <div className="cards">
+              {page === "history" && (
+                <div className="history-filters" role="group" aria-label="Filtrar viajes">
+                  {([["all","Todos"],["finished","Finalizados"],["cancelled","Cancelados"]] as const).map(([value,label])=>(
+                    <button key={value} type="button" aria-pressed={historyFilter===value} onClick={()=>setHistoryFilter(value)}>{label}</button>
+                  ))}
+                </div>
+              )}
+              <div className={"cards " + (page === "history" ? "history-list" : "")}>
                 {visibleTrips.map(card)}
                 {visibleTrips.length === 0 && (
                   <div className="empty">

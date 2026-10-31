@@ -21,7 +21,7 @@ export function RideRequest({
   busy,
   offline,
   onRequest,
-  home, homeLoading, homeError, onSetupHome,
+  home, work, homeLoading, homeError, onSetupHome, onManagePlaces,
 }: {
   enabled: boolean;
   busy: boolean;
@@ -31,6 +31,8 @@ export function RideRequest({
   homeLoading: boolean;
   homeError: string;
   onSetupHome: () => void;
+  work?: Favorite;
+  onManagePlaces: () => void;
 }) {
   const [step, setStep] = useState<Step>("home"),
     [active, setActive] = useState<"origin" | "destination">("destination"),
@@ -235,32 +237,36 @@ export function RideRequest({
   return (
     <div className="ride-entry">
       <button className="ride-search-entry" onClick={open}>
-        <AppIcon name="ride" />
-        <span>¿A dónde quieres ir?</span>
-        <AppIcon name="arrow" />
+        <AppIcon name="search" />
+        <span>Selecciona tu destino</span>
       </button>
+      <section className="home-places" aria-labelledby="places-title">
+        <h2 id="places-title">Tus lugares</h2>
+        <div className="home-places-grid">
+          {([["home", "Casa", home], ["work", "Trabajo", work]] as const).map(([kind, title, place]) => (
+            <button key={kind} className="home-place" disabled={homeLoading} onClick={() => {
+              if (homeError) { setMessage(homeError); return; }
+              if (!place) { if (kind === "home") onSetupHome(); else onManagePlaces(); return; }
+              setOrigin({ label: "", point: null });
+              setDestination({ label: place.label, point: { lat: place.latitude, lng: place.longitude } });
+              setMoto(false); setQuote(null); setRouteReady(false); quickHome.current = true; open();
+            }}>
+              <span className="home-place-icon"><AppIcon name={kind} /></span>
+              <span className="home-place-text"><strong>{title}</strong><small>{place ? place.label : "Agregar"}</small></span>
+            </button>
+          ))}
+        </div>
+      </section>
       <section className="home-services" aria-labelledby="services-title">
-        <h2 id="services-title">Nuestros Servicios</h2>
-        <div className="home-services-grid">
-          <button className="home-service" onClick={open}>
-            <span className="home-service-icon"><AppIcon name="moto" /></span>
-            <strong>Moto</strong>
-          </button>
-          <button className="home-service" disabled>
-            <span className="home-service-icon"><AppIcon name="package" /></span>
-            <strong>Envíos</strong>
-            <small>Próximamente</small>
-          </button>
-          <button className="home-service" disabled>
-            <span className="home-service-icon"><AppIcon name="calendar" /></span>
-            <strong>Programar</strong>
-            <small>Próximamente</small>
-          </button>
-          <button className="home-service" disabled={homeLoading} onClick={()=>{
-            if(homeError){setMessage(homeError);return;}
-            if(!home){onSetupHome();return;}
-            setOrigin({label:'',point:null});setDestination({label:home.label,point:{lat:home.latitude,lng:home.longitude}});setMoto(false);setQuote(null);setRouteReady(false);quickHome.current=true;open();
-          }}><span className="home-service-icon"><AppIcon name="home"/></span><strong>Ir a casa</strong></button>
+        <h2 id="services-title">Elige tu tipo de viaje</h2>
+        <button className="home-service-main" onClick={open}>
+          <span className="home-service-icon"><AppIcon name="moto" /></span>
+          <span className="home-service-text"><strong>De1na Moto</strong><small>Viajes individuales</small></span>
+          <span className={"home-service-badge " + (enabled ? "" : "is-closed")}>{enabled ? "Disponible" : "Fuera de horario"}</span>
+        </button>
+        <div className="home-services-soon" aria-label="Servicios próximamente">
+          <span><AppIcon name="package" />Envíos · Pronto</span>
+          <span><AppIcon name="calendar" />Programar · Pronto</span>
         </div>
       </section>
       <PromoBanners hidden={step !== "home"} />
