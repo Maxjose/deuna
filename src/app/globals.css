@@ -2249,3 +2249,17 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
  .passenger-stops p { margin:6px 0; }
  .passenger-stage-footer { padding-top:8px; }
 }
+
+.shell.messages-screen.has-trip-card > main > .content { padding-bottom:0; }
+.passenger-journey .passenger-stage-sheet { overflow:hidden; max-height:none; flex:0 0 auto; overscroll-behavior:none; }
+.passenger-journey .passenger-route-map { min-height:120px; }
+@media(max-width:760px) {
+ .shell.messages-screen.has-trip-card { padding-bottom:calc(148px + env(safe-area-inset-bottom)); }
+}
+@media(max-height:700px) {
+ .passenger-journey .passenger-stops { display:none; }
+ .passenger-stage-sheet .trip-progress-title { font-size:20px; }
+ .passenger-journey .passenger-stage-description { margin:6px 0 8px; }
+ .passenger-journey .passenger-driver-card { padding:8px 10px; margin:8px 0; }
+ .passenger-journey .passenger-message { min-height:44px; padding:10px; margin:8px 0; }
+}
