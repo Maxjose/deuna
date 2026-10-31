@@ -5,7 +5,7 @@ import {parseStoredPlace} from '@/lib/journey';
 import {AppIcon} from './app-icon';
 type Message={id:string;sender_id:string;body:string;created_at:string};
 type ChatTrip={id:string;status:string;origin:string;destination:string;peer_name:string|null;peer_role:string};
-export function TripChat({userId,refresh,offline}:{userId:string;refresh:unknown;offline:boolean}){
+export function TripChat({userId,refresh,offline,role}:{userId:string;refresh:unknown;offline:boolean;role:string}){
  const client=useMemo(()=>browserClient(),[]),version=useRef(0),list=useRef<HTMLDivElement>(null),nearBottom=useRef(true),pending=useRef<{id:string;body:string;trip:string}|null>(null);
  const [trip,setTrip]=useState<ChatTrip|null>(null),[messages,setMessages]=useState<Message[]>([]),[draft,setDraft]=useState(''),[loading,setLoading]=useState(true),[sending,setSending]=useState(false),[error,setError]=useState('');
  const load=useCallback(async()=>{
@@ -32,7 +32,7 @@ export function TripChat({userId,refresh,offline}:{userId:string;refresh:unknown
  if(loading)return <div className="chat-empty" role="status">Abriendo mensajes…</div>;
  return <section className="trip-chat">
   {error&&<div className="chat-error" role="alert">{error}<button className="text" onClick={()=>void load()}>Reintentar</button></div>}
-  {!trip?<div className="chat-empty"><AppIcon name="messages"/><h2>Tu próximo viaje, en contacto</h2><p>Aquí podrás comunicarte con tu transportista cuando tengas un viaje activo.</p></div>:<>
+  {!trip?<div className="chat-empty"><AppIcon name="messages"/><h2>Tu próximo viaje, en contacto</h2><p>{role==='driver'?'Aquí podrás comunicarte con tu pasajero cuando tengas un viaje activo.':'Aquí podrás comunicarte con tu transportista cuando tengas un viaje activo.'}</p></div>:<>
    <header className="chat-header"><div className="chat-person"><span className="chat-avatar" aria-hidden="true">{trip.peer_name?.[0]?.toUpperCase()||<AppIcon name="moto"/>}</span><div><strong>{trip.peer_name||(canChat?'Tu contacto del viaje':'Buscando motorizado')}</strong><small>{canChat?trip.peer_role:'El chat se habilita cuando acepte tu viaje'}</small></div></div><p><small>TU VIAJE ACTIVO</small><strong>{parseStoredPlace(trip.destination).label}</strong></p></header>
    <div ref={list} className="chat-messages" role="log" aria-label="Mensajes del viaje" aria-live="polite" aria-relevant="additions" onScroll={e=>{const el=e.currentTarget;nearBottom.current=el.scrollHeight-el.scrollTop-el.clientHeight<80;}}>
     {!messages.length&&<p className="chat-hint">{canChat?'Coordinen aquí los detalles del encuentro. El chat se elimina al finalizar o cancelar el viaje.':'Estamos esperando que un motorizado acepte el viaje.'}</p>}

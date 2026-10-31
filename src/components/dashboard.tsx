@@ -537,7 +537,7 @@ export function Dashboard({
           ) : profile.suspended ? (
             <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={()=>signOutDialog.current?.showModal()}>Cerrar sesión</button></article>
           ) : page === "messages" && role !== "admin" ? (
-            <TripChat userId={userId} refresh={trips} offline={offline}/>
+            <TripChat userId={userId} refresh={trips} offline={offline} role={role}/>
           ) : page === "account" ? (
             <div className={"account-stack " + (accountSection === "overview" ? "account-overview" : "account-subsection")}>
               {accountSection==="overview"&&<>
