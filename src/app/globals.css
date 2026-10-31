@@ -2397,3 +2397,4 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
+.sharing-background button { flex-basis: 100%; margin-top: 8px; min-height: 48px; }

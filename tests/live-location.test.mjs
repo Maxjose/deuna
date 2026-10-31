@@ -38,3 +38,10 @@ test('ubicación en vivo: tolera señal imprecisa al compartir, pero no datos in
   assert.equal(shareableFix(fix, now), true, 'interiores: 350 m y 30 s');
   for (const change of [{accuracy: 1500}, {timestamp: now - 61000}, {lat: 91}, {lng: NaN}, {accuracy: -1}]) assert.equal(shareableFix({...fix, ...change}, now), false);
 });
+
+test('TWA: intent del servicio de ubicación con paquete explícito', async () => {
+  const {trackingIntentUrl, TWA_PACKAGE} = await import('../src/lib/twa.ts');
+  const url = trackingIntentUrl('start', {token: 'a'.repeat(64), url: 'https://x.supabase.co', key: 'sb_publishable_k'});
+  assert.equal(url, `intent://start?token=${'a'.repeat(64)}&url=https%3A%2F%2Fx.supabase.co&key=sb_publishable_k#Intent;scheme=de1na-tracking;package=${TWA_PACKAGE};end`);
+  assert.equal(trackingIntentUrl('stop'), `intent://stop#Intent;scheme=de1na-tracking;package=${TWA_PACKAGE};end`);
+});

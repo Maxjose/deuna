@@ -388,7 +388,7 @@ export function Dashboard({
           <PassengerLiveMap tripId={t.id} status={t.status} origin={t.origin} destination={t.destination} />
         )}
         {page === "home" && role === "driver" && t.driver_id === userId && ["assigned", "arrived", "ongoing"].includes(t.status) && (
-          <DriverSharingStatus state={sharing.state} />
+          <DriverSharingStatus state={sharing.state} background={sharing.background} />
         )}
         <div className="row">
           <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>
@@ -442,7 +442,7 @@ export function Dashboard({
           page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
+            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
           )}
         {role === "passenger" &&
           t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/>}

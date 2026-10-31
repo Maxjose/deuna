@@ -5,6 +5,7 @@ import { browserClient } from "@/lib/supabase/client";
 import { parseStoredPlace } from "@/lib/journey";
 import type { MapPoint } from "@/lib/destination";
 import { refreshNavigationRoute } from "@/lib/navigation";
+import { detectTwa, trackingIntentUrl } from "@/lib/twa";
 import {
   shouldShareFix, shareParams, shareableFix, locationFreshness, ageLabel, etaMinutes,
   type LiveLocation, type SharedFix,
@@ -77,7 +78,29 @@ export function useDriverLocationSharing(tripId: string | null) {
       window.removeEventListener("offline", online);
     };
   }, [client, tripId]);
-  return { state, lastSent };
+  // Dentro de la app Android: token de seguimiento para el servicio nativo (sigue con la pantalla apagada).
+  const [twa, setTwa] = useState(false);
+  const [backgroundToken, setBackgroundToken] = useState<string | null>(null);
+  const [backgroundActive, setBackgroundActive] = useState(false);
+  useEffect(() => { setTwa(detectTwa()); }, []);
+  useEffect(() => {
+    setBackgroundToken(null); setBackgroundActive(false);
+    if (!twa || !tripId) return;
+    let alive = true;
+    void client.rpc("issue_tracking_token", { trip_id: tripId }).then(({ data, error }) => {
+      if (alive && !error && typeof data === "string") setBackgroundToken(data);
+    });
+    return () => { alive = false; };
+  }, [client, twa, tripId]);
+  const startBackground = () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    if (!backgroundToken || !url || !key) return;
+    // Debe ejecutarse dentro del toque del usuario: Chrome solo abre apps con un gesto.
+    window.location.href = trackingIntentUrl("start", { token: backgroundToken, url, key });
+    setBackgroundActive(true);
+  };
+  const background = twa && tripId ? { ready: !!backgroundToken, active: backgroundActive, start: startBackground } : null;
+  return { state, lastSent, background };
 }
 
 const sharingCopy: Record<SharingState, string> = {
@@ -91,9 +114,21 @@ const sharingCopy: Record<SharingState, string> = {
   error: "No pudimos enviar tu ubicación. Seguimos intentando.",
 };
 
-export function DriverSharingStatus({ state }: { state: SharingState }) {
-  if (state === "idle") return null;
+export function DriverSharingStatus({ state, background }: { state: SharingState; background?: { ready: boolean; active: boolean; start: () => void } | null }) {
+  if (state === "idle" && !background) return null;
   const ok = state === "sharing";
+  if (background) {
+    return (
+      <div className={"sharing-status sharing-background " + (background.active ? "is-ok" : "is-warning")} role="status">
+        <i aria-hidden="true" />
+        {background.active ? "Ubicación activa también con la pantalla apagada." : "Para que el pasajero te siga viendo con la app minimizada, actívala en segundo plano."}
+        <small>{background.active ? "Verás un aviso fijo de De1na mientras dure el viaje. Se desactiva solo al terminar." : sharingCopy[state] || ""}</small>
+        <button type="button" className={background.active ? "secondary" : "primary"} disabled={!background.ready} onClick={background.start}>
+          {background.active ? "Reactivar" : background.ready ? "Mantener ubicación activa" : "Preparando…"}
+        </button>
+      </div>
+    );
+  }
   return (
     <p className={"sharing-status " + (ok ? "is-ok" : state === "starting" ? "" : "is-warning")} role="status">
       <i aria-hidden="true" />

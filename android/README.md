@@ -22,4 +22,11 @@ Sin esa verificación Android muestra la barra de direcciones.
 - Pantalla de inicio con el icono y colores de la marca.
 - La web se abre con `?source=twa` para poder distinguirla del navegador.
 
-Pendiente: servicio nativo de ubicación en segundo plano.
+## Ubicación en segundo plano
+
+`LocationService` es un servicio en primer plano (aviso fijo "Compartiendo tu ubicación") que envía la
+posición del conductor a `share_location_token` aunque la app esté minimizada o la pantalla apagada.
+La web, dentro de la TWA, muestra el botón "Mantener ubicación activa": pide un token ligado al viaje
+(`issue_tracking_token`) y abre `de1na-tracking://start` (`TrackingActivity`), que solicita los permisos
+y arranca el servicio. El servicio se detiene solo cuando el viaje termina, se cancela o se reasigna
+(el servidor rechaza el token), o con el botón "Detener" del aviso.
