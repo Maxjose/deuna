@@ -24,7 +24,6 @@ import { PushCampaigns } from "./push-campaigns";
 import { PlacesCatalog } from "./places-catalog";
 import { disconnectPushDevice } from "@/lib/push-device";
 import { Toast, useNotice } from "./toast";
-import { serviceIsOpen } from "@/lib/service-hours";
 import { parseStoredPlace } from "@/lib/journey";
 import { FareSettings } from "./fare-settings";
 import { DriverAvailability, AvailabilitySettings } from "./driver-availability";
@@ -113,12 +112,13 @@ export function Dashboard({
   const [signingOut, setSigningOut] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [emailVerified,setEmailVerified]=useState(false);
+  const [serviceOpen,setServiceOpen]=useState(false);
   const { message, notify: setMessage } = useNotice(page === "account" ? `account-${accountSection}` : page);
   const noticeRef=useRef(setMessage);
   noticeRef.current=setMessage;
   const load = useCallback(async () => {
     const notifyFailure=noticeRef.current;
-    const [p, t, s] = await Promise.all([
+    const [p, t, s, service] = await Promise.all([
       client.from("profiles").select("id,role,approved,available,suspended"),
       client
         .from("trips")
@@ -126,8 +126,9 @@ export function Dashboard({
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
+      client.rpc('service_status'),
     ]);
-    if (p.error || t.error || s.error) {
+    if (p.error || t.error || s.error || service.error) {
       notifyFailure(
         "No se pudo cargar la operación. Comprueba la conexión y la configuración del servicio.",
       );
@@ -141,6 +142,7 @@ export function Dashboard({
     setProfile(p.data.find((p) => p.id === userId) || null);
     setTrips(t.data);
     setSettings(s.data);
+    setServiceOpen(service.data?.open===true);
   }, [client, userId]);
   useEffect(() => {
     let active = true;
@@ -213,7 +215,7 @@ export function Dashboard({
       if (action === 'request') {
         const failure = error as { message?: string; code?: string };
         const messages: Record<string, string> = {
-          'Servicio cerrado': 'El servicio está cerrado según el horario configurado. Revisa los horarios en el panel de administración.',
+          'Servicio cerrado': 'El servicio no está disponible en este momento. Fuera del horario habitual necesitamos un motorizado disponible.',
           'Solo pasajeros': 'Para solicitar un viaje debes entrar con una cuenta de pasajero.',
           'Cotizacion vencida': 'El precio venció. Actualiza la cotización antes de solicitar.',
           'Cotizacion invalida': 'No pudimos validar el precio. Actualiza la cotización.',
@@ -308,7 +310,7 @@ export function Dashboard({
   const currentTrip = role === "passenger" ? mine : driverActive;
   const driverDisconnected = role === "driver" && page === "home" && !profile?.available && !driverActive;
   const chatActive = !!currentTrip?.driver_id && ["assigned", "arrived", "ongoing"].includes(currentTrip.status);
-  const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceIsOpen(settings) ? "Servicio abierto" : "Fuera de horario";
+  const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceOpen ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
     page === "account"
       ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",preferences:"Configuración"}[accountSection] || "Tu espacio")
@@ -516,7 +518,7 @@ export function Dashboard({
           {role === "admin" && <div className="admin-desktop-header">
             <div className="admin-header-title"><span>DE1NA / OPERACIONES</span><strong>Panel de administración</strong></div>
             <div className="admin-header-actions">
-              <span className={"admin-service-status " + (serviceIsOpen(settings) ? "is-open" : "")}><i />{serviceLabel}</span>
+              <span className={"admin-service-status " + (serviceOpen ? "is-open" : "")}><i />{serviceLabel}</span>
               <button className="admin-user-button" onClick={()=>navigate('account')} aria-label="Abrir mi cuenta"><span className="admin-user-avatar">{(displayName || email)[0]?.toUpperCase()}</span><span>{displayName || email}</span><AppIcon name="account" /></button>
             </div>
           </div>}
@@ -542,7 +544,7 @@ export function Dashboard({
         <section className={"content" + (role === "admin" ? ` admin-page-${page}` : "")} key={page} aria-busy={busy}>
           {page === "home" && role === "passenger" && (
             <>
-              <span className={"page-context " + (serviceIsOpen(settings) ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
+              <span className={"page-context " + (serviceOpen ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
               <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}.` : "Hola."}</h1>
             </>
           )}
@@ -550,7 +552,7 @@ export function Dashboard({
             <button type="button" className="account-back" aria-label="Volver a tu cuenta" onClick={()=>openSection("overview")}><AppIcon name="back" /></button>
             <div><span className="page-context">{pageContext}</span><h1>{pageTitle}</h1></div>
           </div> : !(page === "home" && role === "passenger") && page !== "messages" && <>
-          <span className={"page-context " + (page === "home" && role === "admin" && serviceIsOpen(settings) || page === "home" && role === "driver" && profile?.available ? "is-open" : "")}>{page === "home" && role !== "passenger" && <i />}{pageContext}</span>
+          <span className={"page-context " + (page === "home" && role === "admin" && serviceOpen || page === "home" && role === "driver" && profile?.available ? "is-open" : "")}>{page === "home" && role !== "passenger" && <i />}{pageContext}</span>
           <h1>{pageTitle}</h1>
           </>}
           {!profile ? (
@@ -659,7 +661,7 @@ export function Dashboard({
                 </label>
               </div>
               <p className="muted">
-                Hora de Venezuela. Horas iguales representan 24 horas.
+                Hora de Venezuela. Durante este horario el servicio permanece abierto. Fuera de él, abre solo si hay un motorizado disponible y sin viaje activo. Horas iguales representan 24 horas. Deshabilitar las solicitudes pausa todo el servicio.
               </p>
               <button className="primary" disabled={busy || offline}>
                 Guardar configuración
@@ -679,7 +681,7 @@ export function Dashboard({
                 homeLoading={savedPlaces.loading}
                 homeError={savedPlaces.error}
                 onSetupHome={()=>{setSetupHome(true);openSection('favorites');}}
-                enabled={serviceIsOpen(settings)}
+                enabled={serviceOpen}
                 busy={busy}
                 offline={offline}
                 onRequest={async (payload) => {
