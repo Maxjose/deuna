@@ -1662,6 +1662,9 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
 .driver-nav-header > div { flex: 1; min-width: 0; }
 .driver-nav-header small { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
 .driver-nav-header strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.driver-nav-header .icon-button { width:42px; height:42px; flex-shrink:0; background:#f2f4f5; box-shadow:none; }
+.driver-nav-footer .trip-cancellation { text-align:right; }
+.driver-nav-footer .trip-cancellation > button.text { color:var(--danger); font-weight:700; padding:10px 0; width:auto; }
 .driver-nav-map { flex: 1; min-height: 180px; position: relative; }
 .driver-nav-map > .journey-map { position: absolute; inset: 0; }
 .driver-follow.secondary { position: absolute; z-index: 500; top: 14px; left: 12px; width: auto; padding: 10px 12px; font-size: 12px; box-shadow: 0 3px 15px #12203320; background: white; }
@@ -2120,7 +2123,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .trip-progress li span { height: 6px; border-radius: var(--radius-pill); background: var(--line); }
 .trip-progress li.done span { background: var(--ink); }
 .trip-progress li.current { color: var(--ink); font-weight: 800; }
-.trip-progress li.current span { background: var(--lime); box-shadow: inset 0 0 0 2px var(--ink); }
+.trip-progress li.current span { background: var(--lime); }
 .active-trip-card { position: fixed; z-index: 19; right: 24px; bottom: 24px; width: min(380px, calc(100% - 24px)); display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0; border-radius: var(--radius); background: #122033; color: #fff; text-align: left; box-shadow: 0 10px 30px #1220334d; cursor: pointer; }
 .active-trip-card > svg { color: var(--lime); flex-shrink: 0; }
 .active-trip-icon { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--lime); color: #122033; }

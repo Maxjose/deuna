@@ -49,7 +49,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
  const fresh=fix&&usableFix(fix,now||Date.now());
  return <><button className="secondary" onClick={()=>setOpened(true)}><AppIcon name="ride"/>Abrir navegación</button>
   <dialog ref={dialog} tabIndex={-1} className="journey-flow-screen driver-navigation" aria-label="Navegación del motorizado" onClose={()=>setOpened(false)}>
-   <header className="driver-nav-header"><button className="icon-button" aria-label="Cerrar navegación" onClick={()=>dialog.current?.close()}>←</button><div><small>{status==='ongoing'?'LLEVAR AL PASAJERO':'RECOGER AL PASAJERO'}</small><strong>{target.label}</strong></div></header>
+   <header className="driver-nav-header"><button className="icon-button" aria-label="Cerrar navegación" onClick={()=>dialog.current?.close()}><AppIcon name="back"/></button><div><small>{status==='ongoing'?'LLEVAR AL PASAJERO':'RECOGER AL PASAJERO'}</small><strong>{target.label}</strong></div></header>
    <div className="driver-nav-map">{opened&&<JourneyMap extraPoint={status!=='ongoing'?dropoff.point:null} navigation origin={routeOrigin} destination={target.point} livePosition={fix} follow={follow}/>}<button className="driver-follow secondary" aria-pressed={follow} onClick={()=>setFollow(value=>!value)}>{follow?'Explorar mapa':'Seguir mi ubicación'}</button></div>
    <footer className="driver-nav-footer">
     <button type="button" className="secondary driver-chat-button" onClick={()=>{dialog.current?.close();onOpenChat();}}><AppIcon name="messages"/>Abrir chat del viaje</button>
