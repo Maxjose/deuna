@@ -6,6 +6,7 @@ import {clearParticipantCache} from "@/lib/participant-cache";
 import {TripProgress} from "./trip-progress";
 import { AppIcon } from "./app-icon";
 import { TripChat } from "./trip-chat";
+import { TripSound } from "./trip-sound";
 import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
 import { DriverNavigation } from "./driver-navigation";
 import { DriverSharingStatus, PassengerLiveMap, useDriverLocationSharing } from "./live-location";
@@ -443,6 +444,7 @@ export function Dashboard({
         (page === "home" && role === "passenger" ? "ride-screen " : "") + (page === "home" && role === "driver" ? "driver-home " : "") + (currentTrip && page !== "home" ? "has-trip-card" : "")
       }
     >
+      <TripSound userId={userId} trips={trips} />
       <aside className="sidebar">
         <a className="brand" href="/dashboard">
           <img
