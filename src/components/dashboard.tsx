@@ -90,6 +90,7 @@ export function Dashboard({
   const [accountSection,setAccountSection]=useState("overview");
   const [moreOpen,setMoreOpen]=useState(false);
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
+  const [historyPage,setHistoryPage]=useState(0);
   const moreDialog=useRef<HTMLDialogElement>(null);
   const dragStart=useRef<number|null>(null);
   useEffect(()=>{if(moreOpen)moreDialog.current?.showModal();else moreDialog.current?.close();},[moreOpen]);
@@ -345,6 +346,9 @@ export function Dashboard({
           !["finished", "cancelled"].includes(t.status)) ||
         (profile?.approved && profile.available && t.status === "searching"),
   );
+  const historyPages=Math.max(1,Math.ceil(visibleTrips.length/5));
+  const currentHistoryPage=Math.min(historyPage,historyPages-1);
+  const pagedTrips=page==='history'?visibleTrips.slice(currentHistoryPage*5,currentHistoryPage*5+5):visibleTrips;
   function openSignOut() {
     signOutDialog.current?.showModal();
     signOutDialog.current?.focus();
@@ -756,12 +760,12 @@ export function Dashboard({
               {page === "history" && (
                 <div className="history-filters" role="group" aria-label="Filtrar viajes">
                   {([["all","Todos"],["finished","Finalizados"],["cancelled","Cancelados"]] as const).map(([value,label])=>(
-                    <button key={value} type="button" aria-pressed={historyFilter===value} onClick={()=>setHistoryFilter(value)}>{label}</button>
+                    <button key={value} type="button" aria-pressed={historyFilter===value} onClick={()=>{setHistoryFilter(value);setHistoryPage(0);}}>{label}</button>
                   ))}
                 </div>
               )}
               <div className={"cards " + (page === "history" ? "history-list" : "")}>
-                {visibleTrips.map(card)}
+                {pagedTrips.map(card)}
                 {visibleTrips.length === 0 && (
                   <div className="empty">
                     <span className="empty-icon">
@@ -772,6 +776,11 @@ export function Dashboard({
                   </div>
                 )}
               </div>
+              {page==='history'&&visibleTrips.length>5&&<nav className="history-pagination" aria-label="Páginas de viajes">
+                <button type="button" aria-label="Página anterior" disabled={currentHistoryPage===0} onClick={()=>setHistoryPage(currentHistoryPage-1)}><AppIcon name="back"/></button>
+                <span aria-live="polite"><strong>{currentHistoryPage+1}</strong><span> / {historyPages}</span></span>
+                <button type="button" aria-label="Página siguiente" disabled={currentHistoryPage===historyPages-1} onClick={()=>setHistoryPage(currentHistoryPage+1)}><AppIcon name="back"/></button>
+              </nav>}
             </>
           )}
         </section>

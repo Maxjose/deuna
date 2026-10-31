@@ -2192,6 +2192,12 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .history-filters button { min-height: 36px; padding: 0 16px; border-radius: var(--radius-pill); border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; }
 .history-filters button[aria-pressed="true"] { background: #122033; border-color: #122033; color: #fff; font-weight: 700; }
 .cards.history-list { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 16px; max-width: 720px; }
+.history-pagination { display:flex; align-items:center; justify-content:center; gap:20px; width:100%; max-width:720px; margin:20px 0 8px; }
+.history-pagination button { display:grid; place-items:center; width:40px; height:40px; padding:0; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:var(--ink); }
+.history-pagination button:last-child svg { transform:rotate(180deg); }
+.history-pagination button:disabled { opacity:.3; }
+.history-pagination > span { min-width:48px; text-align:center; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.history-pagination strong { color:var(--ink); }
 .shell.history-screen > main > .content { width: 100%; min-width: 0; }
 .shell.driver-home > main > .content { width: 100%; min-width: 0; }
 .history-list .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 14px 16px; box-shadow: none; }
