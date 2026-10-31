@@ -28,6 +28,8 @@ export function AppIcon({ name }: { name: string }) {
     cash: "M3 6h18v12H3ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 9v.01M18 15v.01",
     phone: "M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2ZM11 18h2",
     copy: "M9 9h11v11H9ZM5 15H4V4h11v1",
+    wallet: "M3 7h15a3 3 0 0 1 3 3v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM3 7l12-4v4M16 13h.01",
+    payments: "M3 7h15a3 3 0 0 1 3 3v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM3 7l12-4v4M16 13h.01",
     download: "M12 3v12M7 10l5 5 5-5M4 16v5h16v-5",
     search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-3.5-3.5",
     more: "M5 12h.01M12 12h.01M19 12h.01",

@@ -122,3 +122,9 @@ Migración: supabase/migrations/20261031013000_trip_locations.sql. Tabla public.
 El motorizado envía su posición mientras la app está abierta (cada 4 s con movimiento, latido cada 15 s). El pasajero ve el mapa en vivo, la antigüedad de la señal y un tiempo estimado aproximado. Si la migración no está aplicada, la interfaz oculta la función sin errores.
 
 Verificación: tests/trip-locations.sql (rollback: permisos, escritura directa bloqueada, validación, frecuencia, realtime y borrado) y tests/live-location.test.mjs. Con la app minimizada el navegador detiene el envío; la ubicación en segundo plano requiere el servicio nativo del APK.
+
+## Verificación de pago móvil (Tesoro Pagos)
+
+Migración 20261031070000_payment_verification.sql. El pasajero informa referencia, banco y teléfono de origen y el monto (tolerancia Bs. 1 o 1 %); una referencia no puede usarse en dos viajes. Supabase llama a /api/payments/verify al informar y cada minuto (pg_cron + pg_net, misma clave que el envío push). El servidor inicia sesión en Tesoro Pagos y usa "Confirmar pago" (src/lib/tesoro.ts): verificado, no encontrado (reintenta 15 veces, luego revisión) o ya confirmado antes (revisión). Admin › Pagos lista los pagos, el estado de la conexión y permite aprobar, rechazar o reintentar.
+
+Variables de entorno en Vercel (solo servidor): TESORO_SUCURSAL, TESORO_CAJA, TESORO_CLAVE. Pruebas: tests/payment-verification.sql, tests/tesoro.test.mjs, tests/tesoro-client.test.mjs (servidor simulado).

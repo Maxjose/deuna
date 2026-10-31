@@ -26,3 +26,18 @@ test('pagos: formato de datos y referencia', () => {
   assert.equal(cleanReference('12'), null);
   assert.equal(cleanReference('1'.repeat(21)), null);
 });
+
+test('pagos: estado, teléfono y monto escrito', async () => {
+  const {paymentStatusLabel, cleanPhone, parseBs, bankName} = await import('../src/lib/payments.ts');
+  assert.equal(paymentStatusLabel(null, false).label, 'Esperando referencia');
+  assert.equal(paymentStatusLabel('checking', true).label, 'Verificando pago…');
+  assert.equal(paymentStatusLabel('review', true).tone, 'review');
+  assert.equal(paymentStatusLabel('verified', true).tone, 'ok');
+  assert.equal(cleanPhone('0412-123.45.67'), '04121234567');
+  assert.equal(cleanPhone('4121234567'), null);
+  assert.equal(parseBs('3.680,50'), 3680.5);
+  assert.equal(parseBs('3680.5'), 3680.5);
+  assert.equal(parseBs('Bs. 20,00'), 20);
+  assert.equal(parseBs('abc'), null);
+  assert.equal(bankName('0163'), 'Banco del Tesoro');
+});

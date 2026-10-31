@@ -11,6 +11,7 @@ import { TripSound } from "./trip-sound";
 import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
 import { DriverNavigation } from "./driver-navigation";
 import { PassengerPayment, PaymentSettingsForm, TripPaymentNote } from "./trip-payment";
+import { AdminPayments } from "./admin-payments";
 import type { PaymentSettings } from "@/lib/payments";
 import { DriverSharingStatus, PassengerLiveMap, useDriverLocationSharing } from "./live-location";
 import { AdminRecords } from "./admin-records";
@@ -57,6 +58,8 @@ type Trip = {
   payment_method?: string | null;
   exchange_rate?: number | string | null;
   payment_reference?: string | null;
+  payment_status?: string | null;
+  payment_note?: string | null;
 };
 type Settings = FareConfig & PaymentSettings & {
   id: number;
@@ -130,7 +133,7 @@ export function Dashboard({
       client.from("profiles").select("id,role,approved,available,suspended"),
       client
         .from("trips")
-        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference")
+        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference,payment_status,payment_note")
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
@@ -252,7 +255,7 @@ export function Dashboard({
       const [value, section = "overview"] = window.location.hash.slice(1).split("/");
       const allowed =
         profile?.role === "admin"
-          ? ["home", "history", "settings", "places", "drivers", "users", "notifications", "account"]
+          ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
       setAccountSection(value === "account" && ["info","security","favorites","preferences"].includes(section) ? section : "overview");
@@ -291,6 +294,7 @@ export function Dashboard({
       ? [
           ["home", "Inicio", "Operación"],
           ["history", "Viajes", "Operación"],
+          ["payments", "Pagos", "Operación"],
           ["drivers", "Equipo", "Personas"],
           ["users", "Usuarios", "Personas"],
           ["settings", "Servicio", "Configuración"],
@@ -305,6 +309,7 @@ export function Dashboard({
           ["account", "Cuenta", ""],
         ];
   const moreDescriptions: Record<string, string> = {
+    drivers: "Conductores y aprobaciones",
     users: "Pasajeros registrados",
     settings: "Horario, tarifas y solicitudes",
     places: "Catálogo de destinos",
@@ -322,7 +327,7 @@ export function Dashboard({
   const pageTitle =
     page === "account"
       ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",preferences:"Configuración"}[accountSection] || "Tu espacio")
-      : ({history:"Viajes",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
+      : ({history:"Viajes",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
   const pageContext =
@@ -330,6 +335,8 @@ export function Dashboard({
       ? "Tu cuenta"
       : page === "history"
         ? role === "admin" ? `${trips.length} viajes recientes` : `${ownTrips} ${ownTrips === 1 ? "viaje" : "viajes"}`
+        : page === "payments"
+          ? "Pago móvil · verificación con el banco"
         : ["drivers", "users"].includes(page)
           ? "Personas"
           : ["settings", "places", "notifications"].includes(page)
@@ -630,6 +637,8 @@ export function Dashboard({
               {accountSection==="favorites"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
               {accountSection==="preferences"&&<><PushPreferences /><InstallApp /></>}
             </div>
+          ) : page === "payments" && role === "admin" ? (
+            <AdminPayments onMessage={setMessage} />
           ) : page === "places" && role === "admin" ? (
             <PlacesCatalog />
           ) : page === "notifications" && role === "admin" ? (

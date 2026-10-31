@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { usd } from "@/lib/fare";
-import { bs, bsAmount, cleanReference, formatIdNumber, formatPhone, rateValue, type PaymentSettings } from "@/lib/payments";
+import { bs, bsAmount, cleanPhone, cleanReference, formatIdNumber, formatPhone, parseBs, paymentStatusLabel, rateValue, VE_BANKS, type PaymentSettings } from "@/lib/payments";
 import { AppIcon } from "./app-icon";
 
 export type PaymentTrip = {
@@ -12,6 +12,8 @@ export type PaymentTrip = {
   payment_method?: string | null;
   exchange_rate?: number | string | null;
   payment_reference?: string | null;
+  payment_status?: string | null;
+  payment_note?: string | null;
 };
 
 function Amount({ trip }: { trip: PaymentTrip }) {
@@ -39,12 +41,19 @@ function CopyRow({ label, value, display }: { label: string; value: string; disp
   );
 }
 
-/** Pasajero: datos del pago móvil y envío de la referencia, o recordatorio de efectivo. */
+const ORIGIN_KEY = "de1na-pago-movil-origen";
+
+/** Pasajero: datos del pago móvil y envío de la referencia (con banco y teléfono de origen), o recordatorio de efectivo. */
 export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTrip; settings: PaymentSettings | null; offline: boolean }) {
   const client = useMemo(() => browserClient(), []);
-  const [draft, setDraft] = useState(""), [editing, setEditing] = useState(false), [sending, setSending] = useState(false), [error, setError] = useState(""), [sent, setSent] = useState<string | null>(null);
-  const reference = sent ?? trip.payment_reference ?? null;
-  useEffect(() => { setSent(null); }, [trip.payment_reference]);
+  const expected = trip.fare_cents != null ? bsAmount(trip.fare_cents, trip.exchange_rate) : null;
+  const [draft, setDraft] = useState(""), [bank, setBank] = useState(""), [phone, setPhone] = useState(""), [amount, setAmount] = useState("");
+  const [editing, setEditing] = useState(false), [sending, setSending] = useState(false), [error, setError] = useState(""), [sent, setSent] = useState<{ reference: string; status: string } | null>(null);
+  useEffect(() => {
+    try { const saved = JSON.parse(localStorage.getItem(ORIGIN_KEY) || "{}"); if (saved.bank) setBank(saved.bank); if (saved.phone) setPhone(formatPhone(saved.phone)); } catch { /* sin almacenamiento */ }
+  }, []);
+  useEffect(() => { if (expected != null) setAmount(expected.toFixed(2).replace(".", ",")); }, [expected]);
+  useEffect(() => { setSent(null); }, [trip.payment_reference, trip.payment_status]);
   if (trip.payment_method !== "pago_movil") {
     if (trip.fare_cents == null || !["assigned", "arrived", "ongoing"].includes(trip.status)) return null;
     return (
@@ -63,27 +72,48 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
     );
   }
   if (!["assigned", "arrived", "ongoing", "finished"].includes(trip.status)) return null;
+  const reference = sent?.reference ?? trip.payment_reference ?? null;
+  const status = sent?.status ?? trip.payment_status ?? null;
+  const state = paymentStatusLabel(status, !!reference);
+  const canEdit = status !== "verified";
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const clean = cleanReference(draft);
+    const clean = cleanReference(draft), origin = cleanPhone(phone), paid = parseBs(amount);
     if (!clean) { setError("Escribe el número de referencia (solo números, entre 4 y 20 dígitos)."); return; }
+    if (!bank) { setError("Elige el banco desde el que hiciste el pago."); return; }
+    if (!origin) { setError("Escribe el teléfono desde el que pagaste, por ejemplo 0412-1234567."); return; }
+    if (paid == null) { setError("Escribe el monto que transferiste, por ejemplo 3.680,00."); return; }
     setSending(true); setError("");
-    const { error } = await client.rpc("report_payment", { trip_id: trip.id, reference: clean });
+    const { data, error } = await client.rpc("report_payment", { trip_id: trip.id, reference: clean, bank, phone: origin, amount_bs: paid });
     setSending(false);
-    if (error) { setError(error.message === "Referencia inválida" ? "Esa referencia no es válida. Revísala." : "No pudimos enviar la referencia. Comprueba tu conexión."); return; }
-    setSent(clean); setEditing(false); setDraft("");
+    if (error) {
+      const known: Record<string, string> = {
+        "Referencia inválida": "Esa referencia no es válida. Revísala.",
+        "El monto no coincide con el del viaje": `El monto no coincide con el del viaje${expected != null ? ` (${bs(expected)})` : ""}. Revísalo.`,
+        "Esta referencia ya fue usada en otro viaje": "Esa referencia ya se usó para otro viaje.",
+        "Teléfono inválido": "Revisa el teléfono desde el que pagaste.",
+        "Este pago ya fue verificado": "Este pago ya fue verificado.",
+      };
+      setError(known[error.message] ?? "No pudimos enviar los datos del pago. Comprueba tu conexión.");
+      return;
+    }
+    try { localStorage.setItem(ORIGIN_KEY, JSON.stringify({ bank, phone: origin })); } catch { /* sin almacenamiento */ }
+    setSent({ reference: clean, status: (data as { status?: string } | null)?.status ?? "checking" }); setEditing(false); setDraft("");
   }
   return (
     <section className="payment-panel is-pago-movil" aria-label="Pago móvil">
       <div className="payment-head">
-        <span><small>PAGO MÓVIL</small><strong>{reference && !editing ? "Referencia enviada" : "Transfiere este monto"}</strong></span>
+        <span><small>PAGO MÓVIL</small><strong>{reference && !editing ? state.label : "Transfiere este monto"}</strong></span>
         <Amount trip={trip} />
       </div>
       {reference && !editing ? (
-        <div className="payment-reported" role="status">
-          <AppIcon name="check" />
-          <span>Referencia <strong>{reference}</strong></span>
-          <button type="button" className="text" onClick={() => { setEditing(true); setDraft(reference); }}>Corregir</button>
+        <div className={"payment-reported is-" + state.tone} role="status">
+          <AppIcon name={state.tone === "ok" ? "check" : state.tone === "bad" ? "close" : "history"} />
+          <span>
+            Referencia <strong>{reference}</strong>
+            <small>{state.tone === "ok" ? "Tu pago fue confirmado con el banco." : state.tone === "waiting" ? "Estamos confirmando tu pago con el banco. Puede tardar unos minutos." : state.tone === "bad" ? (trip.payment_note || "La administración rechazó este pago. Corrige los datos o contacta soporte.") : "No pudimos confirmarlo automáticamente. La administración lo revisará."}</small>
+          </span>
+          {canEdit && <button type="button" className="text" onClick={() => { setEditing(true); setDraft(reference); }}>Corregir</button>}
         </div>
       ) : (
         <>
@@ -92,20 +122,36 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
               <CopyRow label="Banco" value={settings.pago_movil_bank} />
               <CopyRow label="Teléfono" value={settings.pago_movil_phone} display={formatPhone(settings.pago_movil_phone)} />
               <CopyRow label="Cédula / RIF" value={settings.pago_movil_id} display={formatIdNumber(settings.pago_movil_id)} />
-              {trip.fare_cents != null && bsAmount(trip.fare_cents, trip.exchange_rate) != null && (
-                <CopyRow label="Monto" value={(bsAmount(trip.fare_cents, trip.exchange_rate) ?? 0).toFixed(2).replace(".", ",")} display={bs(bsAmount(trip.fare_cents, trip.exchange_rate) ?? 0)} />
-              )}
+              {expected != null && <CopyRow label="Monto" value={expected.toFixed(2).replace(".", ",")} display={bs(expected)} />}
             </div>
           ) : (
             <p className="muted">Los datos de pago móvil no están disponibles en este momento. Consulta con soporte.</p>
           )}
           <form className="payment-reference" onSubmit={submit}>
+            <p className="payment-form-title">Cuando hayas transferido, completa estos datos:</p>
+            <label>
+              Banco desde el que pagaste
+              <select value={bank} onChange={(e) => setBank(e.target.value)} required>
+                <option value="">Elige tu banco</option>
+                {VE_BANKS.map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
+              </select>
+            </label>
+            <div className="two">
+              <label>
+                Teléfono desde el que pagaste
+                <input inputMode="tel" autoComplete="tel" placeholder="0412-1234567" maxLength={14} value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </label>
+              <label>
+                Monto transferido (Bs)
+                <input inputMode="decimal" autoComplete="off" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              </label>
+            </div>
             <label>
               Número de referencia
               <input inputMode="numeric" autoComplete="off" placeholder="Ej. 00123456" maxLength={30} value={draft} onChange={(e) => setDraft(e.target.value)} />
             </label>
             {error && <p className="payment-error" role="alert">{error}</p>}
-            <button className="primary" disabled={sending || offline || !draft.trim()}>{sending ? "Enviando…" : "Enviar referencia"}</button>
+            <button className="primary" disabled={sending || offline || !draft.trim()}>{sending ? "Enviando…" : "Enviar pago para verificar"}</button>
             {editing && <button type="button" className="text" onClick={() => { setEditing(false); setError(""); }}>Cancelar</button>}
           </form>
         </>
@@ -123,7 +169,7 @@ export function TripPaymentNote({ trip, viewer }: { trip: PaymentTrip; viewer: "
         <AppIcon name="phone" />
         <span>
           <strong>Pago móvil{viewer === "driver" ? " · no cobres en efectivo" : ""}</strong>
-          <small>{trip.payment_reference ? `Referencia ${trip.payment_reference}` : "Referencia pendiente del pasajero"}</small>
+          <small>{trip.payment_reference ? `${paymentStatusLabel(trip.payment_status, true).label} · Ref. ${trip.payment_reference}` : "Referencia pendiente del pasajero"}</small>
         </span>
       </p>
     );
