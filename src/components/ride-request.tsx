@@ -49,7 +49,7 @@ export function RideRequest({
     [loading, setLoading] = useState(false),
     [moto, setMoto] = useState(false),
     [routeReady, setRouteReady] = useState(false);
-  const [mapReference,setMapReference]=useState<'origin'|'destination'|null>(null);
+  const [mapReferences,setMapReferences]=useState({origin:false,destination:false});
   const [mapCompact,setMapCompact]=useState(false);
   const [mapVisible,setMapVisible]=useState(false);
   const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
@@ -71,9 +71,10 @@ export function RideRequest({
     searchVersion = useRef(0);
   const update = active === "origin" ? setOrigin : setDestination;
   useEffect(() => {
-    if (step !== "home" && !dialog.current?.open) {
-      dialog.current?.showModal();
+    if (step !== "home") {
+      if(!dialog.current?.open)dialog.current?.showModal();
       dialog.current?.focus({ preventScroll: true });
+      if(step==='search')setActive(mapReferences.destination?'destination':mapReferences.origin?'origin':'destination');
     }
     if (step === "home") dialog.current?.close();
   }, [step]);
@@ -109,7 +110,7 @@ export function RideRequest({
   backRef.current = back;
   function edit(kind: "origin" | "destination") {
     setMapCompact(false);
-    setMapReference(null);
+    setMapReferences(previous=>({...previous,[kind]:false}));
     if (kind === "origin") { locationVersion.current++; setLocating(false); }
     searchVersion.current++;
     searchController.current?.abort();
@@ -216,7 +217,7 @@ export function RideRequest({
     searchController.current?.abort();
     const controller=new AbortController();searchController.current=controller;
     if(kind==='origin'){locationVersion.current++;setLocating(false);}
-    setResults([]);setMapReference(kind);setPlace({label:'',point});setLoading(true);setQuote(null);setRouteReady(false);
+    setResults([]);setMapReferences(previous=>({...previous,[kind]:true}));setPlace({label:'',point});setLoading(true);setQuote(null);setRouteReady(false);
     const timer=setTimeout(()=>controller.abort(),6000);
     try{
       const url=new URL('https://photon.komoot.io/reverse');url.search=new URLSearchParams({lat:String(point.lat),lon:String(point.lng),lang:'es',radius:'0.75',limit:'1'}).toString();
@@ -229,7 +230,10 @@ export function RideRequest({
     finally{clearTimeout(timer);if(version===searchVersion.current)setLoading(false);}
   }
   function next() {
-    if(!origin.label.trim()||!destination.label.trim()){setMessage('Escribe una referencia para la recogida y el destino.');return;}
+    if(!origin.label.trim()||!destination.label.trim()){
+      setActive(!origin.label.trim()?'origin':'destination');setMapVisible(true);setMapCompact(false);
+      setMessage('Escribe una referencia para la recogida y el destino.');return;
+    }
     if (!destination.point) {
       setActive("destination");
       setMessage("Selecciona un resultado o fija el destino en el mapa.");
@@ -312,7 +316,7 @@ export function RideRequest({
                     <input
                       aria-label="Punto de recogida"
                       value={origin.label}
-                      onFocus={() => edit("origin")}
+                      onFocus={() => setActive("origin")}
                       onChange={(e) => {
                         edit("origin");
                         setOrigin({ label: e.target.value, point: null });
@@ -333,7 +337,7 @@ export function RideRequest({
                     <input
                       aria-label="Destino"
                       value={destination.label}
-                      onFocus={() => edit("destination")}
+                      onFocus={() => setActive("destination")}
                       onChange={(e) => {
                         edit("destination");
                         setDestination({ label: e.target.value, point: null });
@@ -364,6 +368,7 @@ export function RideRequest({
                           setMapCompact(false);
                           setMapVisible(true);
                           update(place);
+                          setMapReferences(previous=>({...previous,[active]:false}));
                           setResults([]);
                           setMessage("");
                         }}
@@ -391,7 +396,7 @@ export function RideRequest({
                       />
                       {mapCompact&&<button type="button" className="expand-picker-map" onClick={()=>setMapCompact(false)}>Ver mapa</button>}
                     </div>
-                    {mapReference===active&&current.point&&<label className="map-reference">Referencia del punto marcado<input aria-label="Referencia del punto marcado" maxLength={110} value={current.label} disabled={loading} placeholder="Calle, negocio o referencia para llegar" onChange={e=>update({...current,label:e.target.value})}/></label>}</>}
+                    {(mapReferences[active]||!current.label.trim())&&current.point&&<label className="map-reference">Referencia del punto marcado<input aria-label="Referencia del punto marcado" maxLength={110} value={current.label} disabled={loading} placeholder="Calle, negocio o referencia para llegar" onChange={e=>update({...current,label:e.target.value})}/></label>}</>}
                     {!mapVisible&&<button type="button" className="show-picker-map" aria-label="Mostrar mapa" title="Mostrar mapa" onClick={()=>{setMapVisible(true);setMapCompact(false);}}><AppIcon name="map"/></button>}
 
               </div>
