@@ -22,16 +22,19 @@ export function useNotice(scope: string) {
 }
 
 export function Toast({ message,kind }: { message: string;kind?:NoticeKind }) {
-  return message ? <ToastMessage key={message} message={message} kind={kind||noticeKind(message)}/> : null;
+  const [display,setDisplay]=useState(message);
+  useEffect(()=>{if(message)setDisplay(message);},[message]);
+  const onExited=useCallback(()=>setDisplay(''),[]);
+  return display ? <ToastMessage key={display} message={display} kind={kind||noticeKind(display)} active={!!message&&message===display} onExited={onExited}/> : null;
 }
-function ToastMessage({message,kind}:{message:string;kind:NoticeKind}){
- const [closing,setClosing]=useState(false),[hidden,setHidden]=useState(false),[offset,setOffset]=useState(0);
+function ToastMessage({message,kind,active,onExited}:{message:string;kind:NoticeKind;active:boolean;onExited:()=>void}){
+ const [closing,setClosing]=useState(false),[offset,setOffset]=useState(0);
  const start=useRef<{x:number;y:number}|null>(null);
- useEffect(()=>{if(!closing)return;const timer=setTimeout(()=>setHidden(true),220);return()=>clearTimeout(timer);},[closing]);
- if(hidden)return null;
+ useEffect(()=>{if(!active)setClosing(true);},[active]);
+ useEffect(()=>{if(!closing)return;const timer=setTimeout(onExited,260);return()=>clearTimeout(timer);},[closing,onExited]);
  const paths={success:'m5 12 4 4L19 6',warning:'M12 3 2 21h20ZM12 9v5M12 17h.01',error:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9 9l6 6M15 9l-6 6',info:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6M12 7h.01'};
  return <div className={'app-toast toast-'+kind+(closing?' toast-closing':'')} role="status" aria-live="polite" tabIndex={0} aria-label={message+' Desliza hacia arriba o pulsa Escape para descartar.'}
-  style={{transform:`translate(-50%, ${closing?'-140%':`${offset}px`})`}}
+  style={{transform:`translate(-50%, ${closing?'calc(-100% - env(safe-area-inset-top) - 48px)':`${offset}px`})`}}
   onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();setClosing(true);}}}
   onPointerDown={e=>{start.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);}}
   onPointerMove={e=>{if(start.current)setOffset(Math.max(-100,Math.min(0,e.clientY-start.current.y)));}}
