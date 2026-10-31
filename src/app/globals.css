@@ -2115,6 +2115,10 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 
 /* Propuesta visual y de navegación */
 .nav-item { position: relative; }
+.nav-sliding-indicator { display:none; }
+.nav-item > svg { transition:transform 140ms ease-out; }
+.nav-item:active > svg { transform:translateY(1px) scale(.93); }
+@media(prefers-reduced-motion:reduce) { .nav-item > svg { transition:none; } .sidebar nav .nav-sliding-indicator { transition:none; } }
 .nav-group { display: block; margin: 18px 16px 6px; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #8c9bab; }
 .nav-group:first-child { margin-top: 0; }
 .nav-more { display: none; }
@@ -2210,7 +2214,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .history-list .trip-summary-destination strong { font-size: 15px; }
 @media (max-width: 760px) {
   .nav-item.selected svg { background: transparent; box-shadow: none; }
-  .nav-item.selected::before { content: ""; position: absolute; top: -8px; left: 50%; width: 28px; height: 4px; margin-left: -14px; border-radius: 4px; background: var(--lime); }
+  .nav-sliding-indicator { display:block; position:absolute; top:0; left:0; width:28px; height:4px; border-radius:4px; background:var(--lime); pointer-events:none; transition:transform 340ms cubic-bezier(.22,1,.36,1); }
   .ride-screen .content { gap: 18px; }
   .ride-screen .ride-entry { gap: 18px; }
 }

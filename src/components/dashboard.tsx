@@ -5,6 +5,7 @@ import {loadReputation,loadTripContact} from "@/lib/participant-data";
 import {clearParticipantCache} from "@/lib/participant-cache";
 import {TripProgress} from "./trip-progress";
 import { AppIcon } from "./app-icon";
+import { NavIndicator } from "./nav-indicator";
 import { TripChat } from "./trip-chat";
 import { TripSound } from "./trip-sound";
 import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
@@ -494,6 +495,7 @@ export function Dashboard({
               : "MOVERTE SIN COMPLICARTE"}
         </span>
         <nav aria-label="Navegación principal">
+          <NavIndicator page={page}/>
           {tabs.map(([p, label, group], index) => (
             <Fragment key={p}>
               {group && group !== tabs[index - 1]?.[2] && <span className="nav-group">{group}</span>}
