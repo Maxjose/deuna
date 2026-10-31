@@ -399,7 +399,7 @@ export function RideRequest({
                   aria-label="Volver"
                   onClick={back}
                 >
-                  ←
+                  <AppIcon name="back" />
                 </button>
                 <span className="journey-context-destination">{destination.label}</span><span className="journey-map-label">Mapa</span>
               </div>

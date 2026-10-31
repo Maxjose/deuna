@@ -2212,7 +2212,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 
 .journey-flow-screen .journey-context-header { position:absolute; inset:0 0 auto; z-index:600; display:flex; align-items:center; gap:12px; padding:calc(16px + env(safe-area-inset-top)) 18px 12px; background:transparent; margin:0; pointer-events:none; }
 .journey-context-header > * { pointer-events:auto; }
-.journey-context-header .icon-button { width:44px; height:44px; flex-shrink:0; background:white; box-shadow:0 4px 18px #12203318; }
+.journey-context-header .icon-button { width:42px; height:42px; flex-shrink:0; background:#f2f4f5; box-shadow:none; }
 .journey-context-header > span:not(.journey-map-label) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:700; background:#fffffff0; border-radius:16px; padding:10px 12px; }
 .journey-context-header .journey-map-label { margin-left:auto; background:white; padding:8px 12px; border-radius:20px; font-size:12px; font-weight:700; }
 .passenger-route-map { position:relative; flex:1; min-height:180px; overflow:hidden; }
