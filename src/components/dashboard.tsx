@@ -525,12 +525,13 @@ export function Dashboard({
           <a
             className="header-brand"
             href="/dashboard"
-            aria-label="De1na, inicio"
+            aria-label="De1na Beta, inicio"
           >
             <img src="/icons/icon-192.png" width="46" height="46" alt="" />
             <span className="header-wordmark">
               De<span>1</span>na
             </span>
+            <span className="beta-badge">Beta</span>
           </a>
           {role === "admin" && <AdminThemeToggle theme={adminTheme} onToggle={toggleTheme} />}
           <NotificationInbox userId={userId} />
