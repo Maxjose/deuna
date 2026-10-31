@@ -425,7 +425,7 @@ export function Dashboard({
     <div
       data-admin-theme={role === "admin" ? adminTheme : undefined}
       className={
-        "shell " + (role === "driver" && page === "history" ? "driver-history " : "") + (page === "messages" ? "messages-screen " : "") + (role === "admin" ? "admin-shell " : "") +
+        "shell " + (page === "history" ? "history-screen " : "") + (role === "driver" && page === "history" ? "driver-history " : "") + (page === "messages" ? "messages-screen " : "") + (role === "admin" ? "admin-shell " : "") +
         (page === "home" && role === "passenger" ? "ride-screen " : "") + (currentTrip && page !== "home" ? "has-trip-card" : "")
       }
     >
