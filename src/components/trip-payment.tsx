@@ -50,7 +50,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
     return (
       <div className="payment-panel is-cash">
         <AppIcon name="cash" />
-        <p><strong>Pagas en efectivo</strong><span>Entrega {usd(trip.fare_cents)} al motorizado al llegar.</span></p>
+        <p><strong>Pagas en efectivo</strong><span>Entrega {usd(trip.fare_cents)} al conductor al llegar.</span></p>
       </div>
     );
   }
@@ -58,7 +58,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
     return (
       <div className="payment-panel">
         <AppIcon name="phone" />
-        <p><strong>Pago móvil</strong><span>Cuando un motorizado acepte, aquí verás los datos para transferir.</span></p>
+        <p><strong>Pago móvil</strong><span>Cuando un conductor acepte, aquí verás los datos para transferir.</span></p>
       </div>
     );
   }
@@ -114,7 +114,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   );
 }
 
-/** Motorizado y administración: cómo se cobra este viaje. */
+/** Conductor y administración: cómo se cobra este viaje. */
 export function TripPaymentNote({ trip, viewer }: { trip: PaymentTrip; viewer: "driver" | "admin" }) {
   if (trip.fare_cents == null) return null;
   if (trip.payment_method === "pago_movil") {
@@ -131,7 +131,7 @@ export function TripPaymentNote({ trip, viewer }: { trip: PaymentTrip; viewer: "
   return (
     <p className="payment-note">
       <AppIcon name="cash" />
-      <span><strong>{viewer === "driver" ? `Cobra ${usd(trip.fare_cents)} en efectivo` : "Efectivo al motorizado"}</strong></span>
+      <span><strong>{viewer === "driver" ? `Cobra ${usd(trip.fare_cents)} en efectivo` : "Efectivo al conductor"}</strong></span>
     </p>
   );
 }
@@ -160,7 +160,7 @@ export function PaymentSettingsForm({ settings, busy, onSaved }: { settings: Pay
   return (
     <form className="trip-card payment-settings" onSubmit={submit}>
       <h2>Pago móvil y tasa</h2>
-      <p className="muted">Los pasajeros que elijan pago móvil verán estos datos cuando un motorizado acepte su viaje. Si dejas algún campo vacío, el pago móvil no estará disponible.</p>
+      <p className="muted">Los pasajeros que elijan pago móvil verán estos datos cuando un conductor acepte su viaje. Si dejas algún campo vacío, el pago móvil no estará disponible.</p>
       <label>Banco<input name="bank" defaultValue={settings.pago_movil_bank ?? ""} maxLength={80} placeholder="Ej. Banco de Venezuela (0102)" /></label>
       <div className="two">
         <label>Teléfono<input name="phone" inputMode="tel" defaultValue={settings.pago_movil_phone ? formatPhone(settings.pago_movil_phone) : ""} placeholder="0414-1234567" /></label>

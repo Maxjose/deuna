@@ -4,17 +4,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { parseStoredPlace } from "@/lib/journey";
 import type { MapPoint } from "@/lib/destination";
-import { usableFix, refreshNavigationRoute } from "@/lib/navigation";
+import { refreshNavigationRoute } from "@/lib/navigation";
 import {
-  shouldShareFix, shareParams, locationFreshness, ageLabel, etaMinutes,
+  shouldShareFix, shareParams, shareableFix, locationFreshness, ageLabel, etaMinutes,
   type LiveLocation, type SharedFix,
 } from "@/lib/live-location";
 
 const JourneyMap = dynamic(() => import("./journey-map"), { ssr: false });
 
-export type SharingState = "idle" | "starting" | "sharing" | "denied" | "unavailable" | "offline" | "error";
+export type SharingState = "idle" | "starting" | "weak" | "sharing" | "denied" | "unavailable" | "offline" | "error";
 
-/** Comparte la posición del motorizado mientras tiene un viaje activo y la app está abierta. */
+/** Comparte la posición del conductor mientras tiene un viaje activo y la app está abierta. */
 export function useDriverLocationSharing(tripId: string | null) {
   const client = useMemo(() => browserClient(), []);
   const [state, setState] = useState<SharingState>("idle");
@@ -32,7 +32,8 @@ export function useDriverLocationSharing(tripId: string | null) {
       sending = true;
       const now = Date.now();
       try {
-        const { error } = await client.rpc("share_location", shareParams(tripId, fix));
+        // La hora la pone el servidor: evita rechazos si el reloj del teléfono está desfasado.
+        const { error } = await client.rpc("share_location", { ...shareParams(tripId, fix), recorded_at: null });
         if (!alive) return;
         if (error) {
           // Viaje terminado, o la función aún no existe en la base (migración pendiente): se detiene sin alarmar.
@@ -60,10 +61,10 @@ export function useDriverLocationSharing(tripId: string | null) {
           timestamp: position.timestamp, heading: position.coords.heading, speed: position.coords.speed,
         };
         const now = Date.now();
-        if (!usableFix(fix, now)) return;
+        if (!shareableFix(fix, now)) { if (!previous) setState("weak"); return; }
         if (shouldShareFix(previous, fix, now)) void send(fix);
       },
-      (error) => { if (alive) setState(error.code === 1 ? "denied" : "error"); },
+      (error) => { if (alive) setState(error.code === 1 ? "denied" : "weak"); },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
     );
     const online = () => { if (!alive) return; setState(navigator.onLine ? "starting" : "offline"); previous = null; };
@@ -82,6 +83,7 @@ export function useDriverLocationSharing(tripId: string | null) {
 const sharingCopy: Record<SharingState, string> = {
   idle: "",
   starting: "Activando tu ubicación para el pasajero…",
+  weak: "Buscando señal GPS. Sal a un lugar abierto si tarda.",
   sharing: "Tu pasajero ve tu ubicación en tiempo real.",
   denied: "Permite el acceso a tu ubicación para que el pasajero pueda verte llegar.",
   unavailable: "Este dispositivo no permite compartir la ubicación.",
@@ -101,7 +103,7 @@ export function DriverSharingStatus({ state }: { state: SharingState }) {
   );
 }
 
-/** Última posición del motorizado de un viaje (Realtime + respaldo periódico). tripId null = inactivo. */
+/** Última posición del conductor de un viaje (Realtime + respaldo periódico). tripId null = inactivo. */
 export function useTripLiveLocation(tripId: string | null) {
   const client = useMemo(() => browserClient(), []);
   const [location, setLocation] = useState<LiveLocation | null>(null);
@@ -158,20 +160,20 @@ export function useTripLiveLocation(tripId: string | null) {
   return { location, loaded, unsupported, now, freshness, driver };
 }
 
-/** Texto de estado de la ubicación del motorizado para el pasajero. */
+/** Texto de estado de la ubicación del conductor para el pasajero. */
 export function liveHeadline(live: ReturnType<typeof useTripLiveLocation>, status: string, target: MapPoint | null) {
   const eta = live.driver && target && live.freshness !== "lost" ? etaMinutes(live.driver, target) : null;
   return !live.loaded
-    ? "Buscando la ubicación de tu motorizado…"
+    ? "Buscando la ubicación de tu conductor…"
     : !live.location
-      ? "Esperando la ubicación de tu motorizado"
+      ? "Esperando la ubicación de tu conductor"
       : live.freshness === "lost"
-        ? "Sin señal reciente de tu motorizado"
+        ? "Sin señal reciente de tu conductor"
         : status === "arrived"
-          ? "Tu motorizado está en el punto de recogida"
+          ? "Tu conductor está en el punto de recogida"
           : status === "ongoing"
             ? `Llegan a tu destino en aprox. ${eta} min`
-            : `Tu motorizado llega en aprox. ${eta} min`;
+            : `Tu conductor llega en aprox. ${eta} min`;
 }
 
 /** Línea compacta "En vivo · llega en X min · actualizada hace Y". */
@@ -181,12 +183,12 @@ export function LiveDriverStatus({ live, status, target }: { live: ReturnType<ty
     <div className="live-map-header live-inline" role="status">
       <span className={"live-badge " + (live.freshness ?? "waiting")}><i aria-hidden="true" />{live.freshness === "live" ? "En vivo" : live.freshness === "stale" ? "Con retraso" : "Sin señal"}</span>
       <strong>{liveHeadline(live, status, target)}</strong>
-      {live.location ? <small>Ubicación actualizada {ageLabel(live.location.recorded_at, live.now)}</small> : live.loaded && <small>Aparecerá cuando tu motorizado tenga la app abierta.</small>}
+      {live.location ? <small>Ubicación actualizada {ageLabel(live.location.recorded_at, live.now)}</small> : live.loaded && <small>Aparecerá cuando tu conductor tenga la app abierta.</small>}
     </div>
   );
 }
 
-/** Mapa del pasajero con la posición del motorizado en vivo. */
+/** Mapa del pasajero con la posición del conductor en vivo. */
 export function PassengerLiveMap({ tripId, status, origin, destination }: { tripId: string; status: string; origin: string; destination: string }) {
   const live = useTripLiveLocation(tripId);
   const { location } = live;
@@ -211,7 +213,7 @@ export function PassengerLiveMap({ tripId, status, origin, destination }: { trip
 
   if (live.unsupported) return null;
   return (
-    <section className="live-map" aria-label="Ubicación del motorizado en tiempo real">
+    <section className="live-map" aria-label="Ubicación del conductor en tiempo real">
       <LiveDriverStatus live={live} status={status} target={target.point} />
       <div className="live-map-frame">
         <JourneyMap

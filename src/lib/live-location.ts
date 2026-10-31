@@ -68,3 +68,10 @@ export function etaMinutes(from: MapPoint, to: MapPoint) {
   const meters = distanceMeters(from, to) * 1.3;
   return Math.max(1, Math.ceil(meters / (25000 / 60)));
 }
+
+/** Posición aceptable para compartir: más tolerante que la navegación (interiores, GPS frío). */
+export function shareableFix(fix: SharedFix, now: number) {
+  return Number.isFinite(fix.lat) && Math.abs(fix.lat) <= 90 && Number.isFinite(fix.lng) && Math.abs(fix.lng) <= 180
+    && Number.isFinite(fix.accuracy) && fix.accuracy >= 0 && fix.accuracy <= 1000
+    && Number.isFinite(fix.timestamp) && now - fix.timestamp <= 60000 && fix.timestamp <= now + 30000;
+}

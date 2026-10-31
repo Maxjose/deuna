@@ -463,12 +463,12 @@ export function RideRequest({
                     <div className="payment-options" role="radiogroup" aria-label="Método de pago">
                       <button type="button" role="radio" aria-checked={method === "cash"} className={"moto-option payment-option " + (method === "cash" ? "is-selected" : "")} onClick={() => setMethod("cash")}>
                         <span className="service-icon"><AppIcon name="cash" /></span>
-                        <span><strong>Efectivo</strong><small>Le pagas al motorizado al llegar</small></span>
+                        <span><strong>Efectivo</strong><small>Le pagas al conductor al llegar</small></span>
                         <span className="selection-dot" />
                       </button>
                       <button type="button" role="radio" aria-checked={method === "pago_movil"} disabled={!pagoMovil} className={"moto-option payment-option " + (method === "pago_movil" ? "is-selected" : "")} onClick={() => setMethod("pago_movil")}>
                         <span className="service-icon"><AppIcon name="phone" /></span>
-                        <span><strong>Pago móvil</strong><small>{pagoMovil ? "Transfieres cuando un motorizado acepte tu viaje" : "No disponible por ahora"}</small></span>
+                        <span><strong>Pago móvil</strong><small>{pagoMovil ? "Transfieres cuando un conductor acepte tu viaje" : "No disponible por ahora"}</small></span>
                         <span className="selection-dot" />
                       </button>
                     </div>
@@ -499,8 +499,8 @@ export function RideRequest({
                       <AppIcon name={method === "cash" ? "cash" : "phone"} />
                       <p>
                         <small>PAGO</small>
-                        <strong>{method === "cash" ? "Efectivo al motorizado" : "Pago móvil"}</strong>
-                        <span>{method === "cash" ? "Ten el monto listo al llegar." : "Te mostraremos los datos para transferir cuando un motorizado acepte."}</span>
+                        <strong>{method === "cash" ? "Efectivo al conductor" : "Pago móvil"}</strong>
+                        <span>{method === "cash" ? "Ten el monto listo al llegar." : "Te mostraremos los datos para transferir cuando un conductor acepte."}</span>
                       </p>
                       <button type="button" className="text" onClick={() => setStep("payment")}>Cambiar</button>
                     </div>

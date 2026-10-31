@@ -4,7 +4,7 @@ import { browserClient } from '@/lib/supabase/client';
 import { Toast, useNotice } from './toast';
 type Draft={id:string;title:string;body:string;audience:string;devices:number;users:number};
 type Campaign={id:string;title:string;body:string;audience:string;created_at:string;total:number;sent:number;failed:number;skipped:number;pending:number};
-const audiences:Record<string,string>={all:'Todos los suscritos',passenger:'Clientes',driver:'Motorizados'};
+const audiences:Record<string,string>={all:'Todos los suscritos',passenger:'Clientes',driver:'Conductores'};
 export function PushCampaigns() {
   const [title,setTitle]=useState(''),[body,setBody]=useState(''),[audience,setAudience]=useState('passenger'),
     [busy,setBusy]=useState(false),[campaigns,setCampaigns]=useState<Campaign[]>([]),[draft,setDraft]=useState<Draft|null>(null);

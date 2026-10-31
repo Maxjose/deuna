@@ -31,3 +31,10 @@ test('ubicación en vivo: frescura, antigüedad y tiempo estimado', () => {
   assert.equal(etaMinutes({lat: 10.7, lng: -71.6}, {lat: 10.7, lng: -71.6}), 1);
   assert.equal(etaMinutes({lat: 10.7, lng: -71.6}, {lat: 10.72, lng: -71.6}), 7);
 });
+
+test('ubicación en vivo: tolera señal imprecisa al compartir, pero no datos inválidos', async () => {
+  const {shareableFix} = await import('../src/lib/live-location.ts');
+  const now = 100000, fix = {lat: 10.7, lng: -71.6, accuracy: 350, timestamp: now - 30000};
+  assert.equal(shareableFix(fix, now), true, 'interiores: 350 m y 30 s');
+  for (const change of [{accuracy: 1500}, {timestamp: now - 61000}, {lat: 91}, {lng: NaN}, {accuracy: -1}]) assert.equal(shareableFix({...fix, ...change}, now), false);
+});

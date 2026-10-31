@@ -70,9 +70,9 @@ const passengerHeadlines: Record<string, string> = {
   ongoing: "¡Vamos en camino!",
 };
 const labels: Record<string, string> = {
-  searching: "Buscando motorizado",
-  assigned: "Motorizado en camino",
-  arrived: "Motorizado en la recogida",
+  searching: "Buscando conductor",
+  assigned: "Conductor en camino",
+  arrived: "Conductor en la recogida",
   ongoing: "Viaje en curso",
   finished: "Viaje finalizado",
   cancelled: "Cancelado",
@@ -221,7 +221,7 @@ export function Dashboard({
       if (action === 'request') {
         const failure = error as { message?: string; code?: string };
         const messages: Record<string, string> = {
-          'Servicio cerrado': 'El servicio no está disponible en este momento. Fuera del horario habitual necesitamos un motorizado disponible.',
+          'Servicio cerrado': 'El servicio no está disponible en este momento. Fuera del horario habitual necesitamos un conductor disponible.',
           'Solo pasajeros': 'Para solicitar un viaje debes entrar con una cuenta de pasajero.',
           'Cotizacion vencida': 'El precio venció. Actualiza la cotización antes de solicitar.',
           'Cotizacion invalida': 'No pudimos validar el precio. Actualiza la cotización.',
@@ -424,9 +424,9 @@ export function Dashboard({
         {role === "admin" && <TripPaymentNote trip={t} viewer="admin" />}
         {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
         {role==='driver'&&<TripPerson viewerId={userId} tripId={t.id} label="Pasajero"/>}
-        {role==='passenger'&&t.driver_id&&<TripPerson viewerId={userId} tripId={t.id} label="Motorizado"/>}
-        {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="primary trip-chat-button" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Mensaje a mi motorizado</button>}
-        {t.driver_id && role==='admin' && <p className="trip-person"><small>Motorizado</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
+        {role==='passenger'&&t.driver_id&&<TripPerson viewerId={userId} tripId={t.id} label="Conductor"/>}
+        {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="primary trip-chat-button" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Mensaje a mi conductor</button>}
+        {t.driver_id && role==='admin' && <p className="trip-person"><small>Conductor</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
         {role === "driver" && t.status === "searching" && (
           <button
             className="primary"
@@ -442,7 +442,7 @@ export function Dashboard({
           page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
+            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
           )}
         {role === "passenger" &&
           t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/>}
@@ -594,7 +594,7 @@ export function Dashboard({
                   {role === "admin"
                     ? "Administrador"
                     : role === "driver"
-                      ? "Motorizado"
+                      ? "Conductor"
                       : "Pasajero"}
                 </span>
               </article>
@@ -675,7 +675,7 @@ export function Dashboard({
                 </label>
               </div>
               <p className="muted">
-                Hora de Venezuela. Durante este horario el servicio permanece abierto. Fuera de él, abre solo si hay un motorizado disponible y sin viaje activo. Horas iguales representan 24 horas. Deshabilitar las solicitudes pausa todo el servicio.
+                Hora de Venezuela. Durante este horario el servicio permanece abierto. Fuera de él, abre solo si hay un conductor disponible y sin viaje activo. Horas iguales representan 24 horas. Deshabilitar las solicitudes pausa todo el servicio.
               </p>
               <button className="primary" disabled={busy || offline}>
                 Guardar configuración
@@ -783,7 +783,7 @@ export function Dashboard({
             <strong>{role === "passenger" ? passengerHeadlines[currentTrip.status] || labels[currentTrip.status] : labels[currentTrip.status]}</strong>
             <small className={currentTrip.cancel_requested ? "alert" : ""}>
               {currentTrip.cancel_requested
-                ? role === "passenger" ? "Tu motorizado pide cancelar · Revisar" : "Solicitud de cancelación pendiente · Revisar"
+                ? role === "passenger" ? "Tu conductor pide cancelar · Revisar" : "Solicitud de cancelación pendiente · Revisar"
                 : `Hacia ${parseStoredPlace(currentTrip.destination).label.split(",")[0]} · Ver viaje`}
             </small>
           </span>
@@ -839,7 +839,7 @@ export function Dashboard({
         <div className="sheet-handle" />
         <h2>¿Cancelar este viaje?</h2>
         <p className="muted">
-          Tu solicitud dejará de estar disponible para los motorizados.
+          Tu solicitud dejará de estar disponible para los conductores.
         </p>
         <button
           className="primary"

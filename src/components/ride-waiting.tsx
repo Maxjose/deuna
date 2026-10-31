@@ -9,7 +9,7 @@ import {TripPerson,TripCancellation} from './trip-resolution';
 import {useTripLiveLocation,LiveDriverStatus} from './live-location';
 const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
 const headlines:Record<string,string>={searching:'Estamos buscando quién te lleve',assigned:'¡Listo! Ya van por ti',arrived:'¡Tu De1na llegó!',ongoing:'¡Vamos en camino!'};
-const descriptions:Record<string,string>={searching:'Conectando con un motorizado disponible.',assigned:'Tu motorizado se dirige al punto de recogida.',arrived:'Tu motorizado te espera en la recogida.',ongoing:'Tu viaje hacia el destino está en curso.'};
+const descriptions:Record<string,string>={searching:'Conectando con un conductor disponible.',assigned:'Tu conductor se dirige al punto de recogida.',arrived:'Tu conductor te espera en la recogida.',ongoing:'Tu viaje hacia el destino está en curso.'};
 export function RideWaiting({origin,destination,busy,onCancel,fareCents,tripId,status,viewerId,onMessage,cancelPending,onCancellation,payment}:{payment?:React.ReactNode;origin:string;destination:string;busy:boolean;onCancel:()=>void;fareCents?:number|null;tripId:string;status:string;viewerId:string;onMessage:()=>void;cancelPending:boolean;onCancellation:(action:string,approved?:boolean)=>Promise<boolean>}){
  const sheet=useRef<HTMLDialogElement>(null),[opened,setOpened]=useState(true);
  const from=useMemo(()=>parseStoredPlace(origin),[origin]),to=useMemo(()=>parseStoredPlace(destination),[destination]);
@@ -23,7 +23,7 @@ export function RideWaiting({origin,destination,busy,onCancel,fareCents,tripId,s
   <div className="passenger-route-map">{opened&&<JourneyMap origin={from.point} destination={to.point} livePosition={live.driver&&live.location&&live.freshness!=='lost'?{...live.driver,accuracy:Math.min(live.location.accuracy,150)}:null}/>}</div>
   <section className="journey-bottom-sheet passenger-stage-sheet"><div className="sheet-handle"/><div key={status} className="passenger-stage-content">
    <TripProgress status={status} headline={headlines[status]}/><p className="passenger-stage-description" role="status">{descriptions[status]}</p>
-   {assigned?<div className="passenger-driver-card"><span className="passenger-driver-avatar"><AppIcon name="moto"/></span><TripPerson tripId={tripId} viewerId={viewerId} label="Tu motorizado"/></div>:<div className="connecting-progress" aria-hidden="true"><span/><span/><span/></div>}
+   {assigned?<div className="passenger-driver-card"><span className="passenger-driver-avatar"><AppIcon name="moto"/></span><TripPerson tripId={tripId} viewerId={viewerId} label="Tu conductor"/></div>:<div className="connecting-progress" aria-hidden="true"><span/><span/><span/></div>}
    {assigned&&<LiveDriverStatus live={live} status={status} target={target}/>}
    {payment}
    {assigned&&<button className="primary passenger-message" onClick={()=>{sheet.current?.close();onMessage();}}><AppIcon name="messages"/>Mensaje</button>}

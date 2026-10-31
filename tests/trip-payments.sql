@@ -53,7 +53,7 @@ begin
   assert t.payment_method='pago_movil' and t.exchange_rate=40.5,'Rate not stored';
   pm_trip:=t.id;
   -- Antes de que acepten, no se admite referencia.
-  rejected:=false; begin perform public.report_payment(pm_trip,'123456'); exception when raise_exception then rejected:=sqlerrm='Espera a que un motorizado acepte el viaje'; end;
+  rejected:=false; begin perform public.report_payment(pm_trip,'123456'); exception when raise_exception then rejected:=sqlerrm='Espera a que un conductor acepte el viaje'; end;
   assert rejected,'Reference accepted while searching';
   -- Cambiar la tasa después no altera el viaje.
   perform set_config('request.jwt.claim.sub',admin::text,true);
