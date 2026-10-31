@@ -9,6 +9,8 @@ export function PushPreferences() {
   const {message,notify}=useNotice('push-preferences');
   useEffect(()=>{
     let active=true;
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),8000);
     async function load() {
       const available = isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
       if(!active)return;
@@ -16,20 +18,22 @@ export function PushPreferences() {
       if(available) {
         setBlocked(Notification.permission==='denied');
         try {
-          const config=await (await fetch('/api/push/config')).json();
+          const config=await (await fetch('/api/push/config',{signal:controller.signal})).json();
           if(active)setConfigured(!!config.publicKey);
           const registration=await navigator.serviceWorker.getRegistration();
           const subscription=await registration?.pushManager.getSubscription();
+          if(!active)return;
           if(subscription && Notification.permission==='granted') {
             const {data,error}=await browserClient().rpc('push_manage',{action:'info',payload:{endpoint:subscription.endpoint}});
             if(error)throw error;
             if(active && data.enabled){setEndpoint(subscription.endpoint);setPromotions(data.promotions);}
           }
-        } catch {notify('No pudimos consultar tus notificaciones.');}
+        } catch {if(active)notify('No pudimos consultar tus notificaciones.');}
       }
       if(active)setLoading(false);
+      clearTimeout(timeout);
     }
-    void load();return()=>{active=false;};
+    void load();return()=>{active=false;controller.abort();clearTimeout(timeout);};
   },[notify]);
   async function enable() {
     setBusy(true);

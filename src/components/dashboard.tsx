@@ -29,6 +29,7 @@ import { FareSettings } from "./fare-settings";
 import { DriverAvailability, AvailabilitySettings } from "./driver-availability";
 import { usd, type FareSettings as FareConfig } from "@/lib/fare";
 import { useRouter } from "next/navigation";
+import { writeAppHash } from "@/lib/app-navigation";
 
 type Profile = {
   id: string;
@@ -86,7 +87,10 @@ export function Dashboard({
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const moreDialog=useRef<HTMLDialogElement>(null);
   useEffect(()=>{if(moreOpen)moreDialog.current?.showModal();else moreDialog.current?.close();},[moreOpen]);
-  const openSection=(section:string)=>{window.location.hash=section==="overview"?"account":`account/${section}`;};
+  const openSection=(section:string)=>{
+    setPage('account');setAccountSection(section);setMoreOpen(false);
+    writeAppHash(window,section==="overview"?"account":`account/${section}`);
+  };
   const {theme:adminTheme,toggleTheme}=useAdminTheme(userId);
   const client = useMemo(() => browserClient(), []),
     [profile, setProfile] = useState<Profile | null>(null),
@@ -108,7 +112,10 @@ export function Dashboard({
   const [signingOut, setSigningOut] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const { message, notify: setMessage } = useNotice(page === "account" ? `account-${accountSection}` : page);
+  const noticeRef=useRef(setMessage);
+  noticeRef.current=setMessage;
   const load = useCallback(async () => {
+    const notifyFailure=noticeRef.current;
     const [p, t, s] = await Promise.all([
       client.from("profiles").select("id,role,approved,available,suspended"),
       client
@@ -119,7 +126,7 @@ export function Dashboard({
       client.from("service_settings").select("*").eq("id", 1).single(),
     ]);
     if (p.error || t.error || s.error) {
-      setMessage(
+      notifyFailure(
         "No se pudo cargar la operación. Comprueba la conexión y la configuración del servicio.",
       );
       return;
@@ -132,7 +139,7 @@ export function Dashboard({
     setProfile(p.data.find((p) => p.id === userId) || null);
     setTrips(t.data);
     setSettings(s.data);
-  }, [client, userId, setMessage]);
+  }, [client, userId]);
   useEffect(() => {
     let active = true;
     void client.auth.getUser().then(({ data }) => {
@@ -240,7 +247,8 @@ export function Dashboard({
     };
     syncPage();
     window.addEventListener("hashchange", syncPage);
-    return () => window.removeEventListener("hashchange", syncPage);
+    window.addEventListener("popstate", syncPage);
+    return () => {window.removeEventListener("hashchange", syncPage);window.removeEventListener("popstate", syncPage);};
   }, [profile?.role]);
   useEffect(() => {
     const sync = () => {
@@ -259,7 +267,7 @@ export function Dashboard({
     if (cancelId) cancelDialog.current?.showModal();
   }, [cancelId]);
   const navigate = (value: string) => {
-    window.location.hash = value;
+    writeAppHash(window,value);
     setPage(value);
     setAccountSection("overview");
     setMoreOpen(false);
@@ -527,8 +535,8 @@ export function Dashboard({
             Sin conexión. Reconéctate para consultar o actualizar viajes.
           </div>
         )}
+        {profile?.role==='driver'&&profile.approved&&!profile.suspended&&<DriverAvailability available={profile.available} occupied={!!driverActive} onRefresh={load}/>}
         <section className={"content" + (role === "admin" ? ` admin-page-${page}` : "")} key={page} aria-busy={busy}>
-          {profile?.role==='driver'&&profile.approved&&!profile.suspended&&<DriverAvailability available={profile.available} occupied={!!driverActive} onRefresh={load}/>}
           {page === "home" && role === "passenger" && (
             <>
               <span className={"page-context " + (serviceIsOpen(settings) ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
