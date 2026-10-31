@@ -290,6 +290,7 @@ export function Dashboard({
   const inMore = moreTabs.some(([p]) => p === page);
   const driverActive=role==='driver'?trips.find(t=>t.driver_id===userId&&['assigned','arrived','ongoing'].includes(t.status)):undefined;
   const currentTrip = role === "passenger" ? mine : driverActive;
+  const driverDisconnected = role === "driver" && page === "home" && !profile?.available && !driverActive;
   const chatActive = !!currentTrip?.driver_id && ["assigned", "arrived", "ongoing"].includes(currentTrip.status);
   const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceIsOpen(settings) ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
@@ -660,11 +661,6 @@ export function Dashboard({
             <>
               {role === "driver" && page === "home" && !driverActive && (
                 <>
-                  <p className="muted">
-                    {profile.approved
-                      ? "Activa tu disponibilidad para aceptar viajes."
-                      : "Tu perfil está pendiente de aprobación."}
-                  </p>
                   <button
                     className="primary"
                     disabled={busy || offline || !profile.approved || !!driverActive}
@@ -715,10 +711,10 @@ export function Dashboard({
                 {visibleTrips.length === 0 && (
                   <div className="empty">
                     <span className="empty-icon">
-                      <AppIcon name="history" />
+                      <AppIcon name={driverDisconnected ? "power" : "history"} />
                     </span>
-                    <h2>Todo tranquilo por aquí</h2>
-                    <p>Los viajes aparecerán en este espacio.</p>
+                    <h2>{driverDisconnected ? "Estás desconectado" : "Todo tranquilo por aquí"}</h2>
+                    <p>{driverDisconnected ? (profile.approved ? "Activa tu disponibilidad para aceptar viajes." : "Tu perfil está pendiente de aprobación.") : "Los viajes aparecerán en este espacio."}</p>
                   </div>
                 )}
               </div>
