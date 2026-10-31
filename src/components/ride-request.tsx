@@ -419,11 +419,11 @@ export function RideRequest({
                     ? "Elige cómo ir"
                     : "Confirma tu recorrido"}
                 </h2>
-                {quote && <div className="fare-summary" aria-live="polite">
-                  <strong>{usd(quote.fare_cents)}</strong>
-                  <span>{(quote.distance_meters / 1000).toLocaleString('es-VE', { maximumFractionDigits: 2 })} km · {Math.max(1, Math.round(quote.duration_seconds / 60))} min aprox.</span>
+                <div className="fare-summary" aria-live="polite" aria-busy={!quote} aria-label={!quote ? "Calculando precio, distancia y tiempo" : undefined}>
+                  <strong className={!quote ? "fare-placeholder" : undefined} aria-hidden={!quote}>{quote ? usd(quote.fare_cents) : '\u00a0'}</strong>
+                  <span className={!quote ? "fare-placeholder" : undefined} aria-hidden={!quote}>{quote ? `${(quote.distance_meters / 1000).toLocaleString('es-VE', { maximumFractionDigits: 2 })} km · ${Math.max(1, Math.round(quote.duration_seconds / 60))} min aprox.` : '\u00a0'}</span>
                   <small>Pago directo al motorizado · USD</small>
-                </div>}
+                </div>
                 {expired && <button className="secondary" onClick={() => { setQuote(null); setQuoteRevision(n => n + 1); }}>Actualizar precio</button>}
                 {step === "choose" ? (
                   <>
