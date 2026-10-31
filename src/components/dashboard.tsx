@@ -370,6 +370,7 @@ export function Dashboard({
     if (role === "passenger" && page === "home" && ["searching","assigned","arrived","ongoing"].includes(t.status))
       return (
         <RideWaiting
+          payment={<PassengerPayment trip={t} settings={settings} offline={offline} />}
           tripId={t.id} status={t.status} viewerId={userId} onMessage={()=>navigate('messages')} cancelPending={!!t.cancel_requested} onCancellation={(action,approved)=>act(action,{id:t.id,approved})}
             fareCents={t.fare_cents}
           origin={t.origin}

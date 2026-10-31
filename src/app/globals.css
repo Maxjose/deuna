@@ -2385,3 +2385,5 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 /* Hoja "Más": se cierra tocando fuera o deslizando hacia abajo */
 .more-sheet { touch-action: pan-x; transition: transform .2s ease; }
 .more-sheet.is-dragging { transition: none; }
+.live-inline { padding: 10px 0 4px; }
+.passenger-stage-content .payment-panel { margin: 12px 0; }

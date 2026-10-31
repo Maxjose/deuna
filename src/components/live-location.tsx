@@ -101,23 +101,17 @@ export function DriverSharingStatus({ state }: { state: SharingState }) {
   );
 }
 
-/** Mapa del pasajero con la posición del motorizado en vivo (Realtime + respaldo periódico). */
-export function PassengerLiveMap({ tripId, status, origin, destination }: { tripId: string; status: string; origin: string; destination: string }) {
+/** Última posición del motorizado de un viaje (Realtime + respaldo periódico). tripId null = inactivo. */
+export function useTripLiveLocation(tripId: string | null) {
   const client = useMemo(() => browserClient(), []);
   const [location, setLocation] = useState<LiveLocation | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const [routeFrom, setRouteFrom] = useState<MapPoint | null>(null);
-  const lastRoute = useRef<{ point: MapPoint; at: number } | null>(null);
-  const pickup = useMemo(() => parseStoredPlace(origin), [origin]);
-  const dropoff = useMemo(() => parseStoredPlace(destination), [destination]);
-  const target = status === "ongoing" ? dropoff : pickup;
-
   useEffect(() => {
+    setLocation(null); setLoaded(false);
+    if (!tripId) return;
     let alive = true, version = 0;
-    lastRoute.current = null;
-    setLocation(null); setLoaded(false); setRouteFrom(null);
     const accept = (row: LiveLocation | null) => {
       if (!alive) return;
       setLoaded(true);
@@ -132,7 +126,7 @@ export function PassengerLiveMap({ tripId, status, origin, destination }: { trip
         .maybeSingle();
       if (!alive || request !== version) return;
       if (error) {
-        // Tabla aún no creada (migración pendiente): oculta el mapa en lugar de mostrar un error.
+        // Tabla aún no creada (migración pendiente): se oculta la función en lugar de mostrar un error.
         if (error.code === "PGRST205" || error.code === "42P01") setUnsupported(true);
         return;
       }
@@ -159,6 +153,48 @@ export function PassengerLiveMap({ tripId, status, origin, destination }: { trip
       window.removeEventListener("online", resume);
     };
   }, [client, tripId]);
+  const freshness = location ? locationFreshness(location.recorded_at, now) : null;
+  const driver = location ? { lat: location.latitude, lng: location.longitude } : null;
+  return { location, loaded, unsupported, now, freshness, driver };
+}
+
+/** Texto de estado de la ubicación del motorizado para el pasajero. */
+export function liveHeadline(live: ReturnType<typeof useTripLiveLocation>, status: string, target: MapPoint | null) {
+  const eta = live.driver && target && live.freshness !== "lost" ? etaMinutes(live.driver, target) : null;
+  return !live.loaded
+    ? "Buscando la ubicación de tu motorizado…"
+    : !live.location
+      ? "Esperando la ubicación de tu motorizado"
+      : live.freshness === "lost"
+        ? "Sin señal reciente de tu motorizado"
+        : status === "arrived"
+          ? "Tu motorizado está en el punto de recogida"
+          : status === "ongoing"
+            ? `Llegan a tu destino en aprox. ${eta} min`
+            : `Tu motorizado llega en aprox. ${eta} min`;
+}
+
+/** Línea compacta "En vivo · llega en X min · actualizada hace Y". */
+export function LiveDriverStatus({ live, status, target }: { live: ReturnType<typeof useTripLiveLocation>; status: string; target: MapPoint | null }) {
+  if (live.unsupported) return null;
+  return (
+    <div className="live-map-header live-inline" role="status">
+      <span className={"live-badge " + (live.freshness ?? "waiting")}><i aria-hidden="true" />{live.freshness === "live" ? "En vivo" : live.freshness === "stale" ? "Con retraso" : "Sin señal"}</span>
+      <strong>{liveHeadline(live, status, target)}</strong>
+      {live.location ? <small>Ubicación actualizada {ageLabel(live.location.recorded_at, live.now)}</small> : live.loaded && <small>Aparecerá cuando tu motorizado tenga la app abierta.</small>}
+    </div>
+  );
+}
+
+/** Mapa del pasajero con la posición del motorizado en vivo. */
+export function PassengerLiveMap({ tripId, status, origin, destination }: { tripId: string; status: string; origin: string; destination: string }) {
+  const live = useTripLiveLocation(tripId);
+  const { location } = live;
+  const [routeFrom, setRouteFrom] = useState<MapPoint | null>(null);
+  const lastRoute = useRef<{ point: MapPoint; at: number } | null>(null);
+  const pickup = useMemo(() => parseStoredPlace(origin), [origin]);
+  const dropoff = useMemo(() => parseStoredPlace(destination), [destination]);
+  const target = status === "ongoing" ? dropoff : pickup;
 
   const driver = location ? { lat: location.latitude, lng: location.longitude } : null;
   useEffect(() => {
@@ -173,29 +209,10 @@ export function PassengerLiveMap({ tripId, status, origin, destination }: { trip
   }, [location?.recorded_at]);
   useEffect(() => { lastRoute.current = null; setRouteFrom(driver); }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const freshness = location ? locationFreshness(location.recorded_at, now) : null;
-  const eta = driver && target.point && freshness !== "lost" ? etaMinutes(driver, target.point) : null;
-  const headline = !loaded
-    ? "Buscando la ubicación de tu motorizado…"
-    : !location
-      ? "Esperando la ubicación de tu motorizado"
-      : freshness === "lost"
-        ? "Sin señal reciente de tu motorizado"
-        : status === "arrived"
-          ? "Tu motorizado está en el punto de recogida"
-          : status === "ongoing"
-            ? `Llegan a tu destino en aprox. ${eta} min`
-            : `Tu motorizado llega en aprox. ${eta} min`;
-
-  if (unsupported) return null;
+  if (live.unsupported) return null;
   return (
     <section className="live-map" aria-label="Ubicación del motorizado en tiempo real">
-      <div className="live-map-header">
-        <span className={"live-badge " + (freshness ?? "waiting")}><i aria-hidden="true" />{freshness === "live" ? "En vivo" : freshness === "stale" ? "Con retraso" : "Sin señal"}</span>
-        <strong>{headline}</strong>
-        {location && <small>Ubicación actualizada {ageLabel(location.recorded_at, now)}</small>}
-        {!location && loaded && <small>Aparecerá aquí cuando tu motorizado abra la app.</small>}
-      </div>
+      <LiveDriverStatus live={live} status={status} target={target.point} />
       <div className="live-map-frame">
         <JourneyMap
           navigation
