@@ -2172,10 +2172,13 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .history-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
 .history-filters button { min-height: 36px; padding: 0 16px; border-radius: var(--radius-pill); border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; }
 .history-filters button[aria-pressed="true"] { background: #122033; border-color: #122033; color: #fff; font-weight: 700; }
-.cards.history-list { grid-template-columns: 1fr; gap: 10px; margin-top: 16px; max-width: 720px; }
+.cards.history-list { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 16px; max-width: 720px; }
 .history-list .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 14px 16px; box-shadow: none; }
 .history-list .trip-card > .row { grid-column: 1 / -1; }
 .history-list .trip-card > p { margin: 0; }
+.history-list .trip-card > * { min-width: 0; }
+.history-list .trip-summary-destination { grid-column: 1; }
+.history-list .trip-card > .trip-person { grid-column: 1 / -1; }
 .history-list .trip-summary-destination small { display: none; }
 .history-list .trip-summary-destination strong { font-size: 15px; }
 @media (max-width: 760px) {

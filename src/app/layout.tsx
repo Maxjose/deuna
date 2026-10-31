@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { PwaRegistration } from "@/components/pwa-registration";
 import { LaunchScreen } from "@/components/launch-screen";
+import { HapticFeedback } from "@/components/haptic-feedback";
 const manrope = localFont({ src: "./fonts/manrope-latin.woff2", weight: "200 800", display: "swap", variable: "--font-brand" });
 export const metadata: Metadata = {
   title: "De1na · Movilidad sin complicaciones",
@@ -34,6 +35,7 @@ export default function RootLayout({
     <html lang="es" className={manrope.variable}>
       <body>
         <PwaRegistration />
+        <HapticFeedback />
         <LaunchScreen>{children}</LaunchScreen>
       </body>
     </html>
