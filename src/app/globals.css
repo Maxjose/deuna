@@ -2481,3 +2481,20 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .app-update-card .app-update-help { color: var(--muted); }
 .app-update-card small { font-size: 12px; color: var(--muted); }
 .app-update-download svg { width: 20px; height: 20px; }
+/* Pantalla completa para actualizaciones opcionales y obligatorias. */
+.app-update-screen { position:fixed; inset:0; margin:0; width:100%; max-width:none; height:100dvh; max-height:none; padding:calc(32px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom)); border:0; border-radius:0; overflow-y:auto; background:#122033; color:#fff; overscroll-behavior:contain; }
+.app-update-screen::backdrop { background:#122033; }
+.app-update-screen[open] { display:flex; align-items:center; justify-content:center; }
+.app-update-content { width:100%; max-width:420px; margin:auto; display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px; }
+.app-update-logo { border-radius:26px; box-shadow:0 18px 44px #0004; }
+.app-update-eyebrow { margin-top:12px; font-size:10px; font-weight:800; letter-spacing:1.5px; color:#b4f36a; }
+.app-update-content h1 { margin:0; font-size:34px; line-height:1.15; letter-spacing:-1px; }
+.app-update-content > p { margin:0; max-width:340px; color:#becbd8; font-size:14px; line-height:1.7; }
+.app-update-release { display:flex; align-items:flex-start; gap:12px; padding:18px; border-radius:18px; background:#ffffff0a; border:1px solid #ffffff12; text-align:left; width:100%; }
+.app-update-release svg { flex-shrink:0; color:#b4f36a; width:22px; }
+.app-update-release p { margin:0; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+.app-update-screen-actions { display:grid; gap:10px; width:100%; margin-top:6px; }
+.app-update-screen-actions .primary { justify-content:center; gap:10px; background:#b4f36a; color:#122033; border:0; border-radius:16px; text-decoration:none; }
+.app-update-screen-actions .text { color:#c9d3dd; min-height:44px; font-size:13px; }
+.app-update-content small { color:#91a3b6; font-size:11px; }
+.app-update-content .app-update-help { font-size:13px; line-height:1.7; color:#c9d3dd; }

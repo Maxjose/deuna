@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { detectTwa } from "@/lib/twa";
 import { readInstalledVersion, updateNeed, type AppRelease, type UpdateNeed } from "@/lib/app-update";
 import { AppIcon } from "./app-icon";
@@ -13,6 +13,17 @@ export function AppUpdate() {
   const [installed, setInstalled] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const dialog=useRef<HTMLDialogElement>(null);
+  const visible=need!=='none'&&!!release&&!(need==='optional'&&dismissed);
+  useLayoutEffect(()=>{
+    if(visible&&!dialog.current?.open)dialog.current?.showModal();
+    if(visible)dialog.current?.focus({preventScroll:true});
+  },[visible]);
+  function dismiss(){
+    if(need!=='optional'||!release)return;
+    try{sessionStorage.setItem(DISMISS_KEY,String(release.versionCode));}catch{/* sin almacenamiento */}
+    setDismissed(true);
+  }
 
   useEffect(() => {
     if (!detectTwa()) return;
@@ -51,36 +62,18 @@ export function AppUpdate() {
       Cuando termine la descarga, ábrela desde la notificación y toca <strong>Actualizar</strong>. Tu sesión se mantiene.
     </p>
   );
-  if (need === "required") {
-    return (
-      <div className="app-update-required" role="alertdialog" aria-modal="true" aria-labelledby="app-update-title">
-        <div className="app-update-card">
-          <img src="/icons/icon-192.png" width="72" height="72" alt="" />
-          <h2 id="app-update-title">Actualiza De1na para continuar</h2>
-          <p>Esta versión de la app ya no es compatible. La nueva versión {release.versionCode} trae mejoras necesarias para tus viajes.</p>
-          {release.notes && <p className="app-update-notes">{release.notes}</p>}
-          {download}
-          {help}
-          <small>Versión instalada: {installed || "anterior"}</small>
-        </div>
-      </div>
-    );
-  }
   return (
-    <aside className="app-update-banner" role="status" aria-label="Actualización disponible">
-      <span className="app-update-icon"><AppIcon name="download" /></span>
-      <div className="app-update-text">
-        <strong>Nueva versión de De1na</strong>
-        <span>{release.notes || "Mejoras y correcciones para tus viajes."}</span>
+    <dialog ref={dialog} tabIndex={-1} className="app-update-screen" aria-labelledby="app-update-title" onCancel={event=>{event.preventDefault();dismiss();}}>
+      <div className="app-update-content">
+        <img className="app-update-logo" src="/icons/icon-512.png" width="104" height="104" alt="De1na"/>
+        <span className="app-update-eyebrow">{need==='required'?'ACTUALIZACIÓN NECESARIA':'UNA MEJOR VUELTA TE ESPERA'}</span>
+        <h1 id="app-update-title">{need==='required'?'Actualiza para seguir viajando':'De1na sigue mejorando'}</h1>
+        <p>{need==='required'?'Necesitas instalar la nueva versión para continuar usando De1na.':'Tenemos una nueva versión con mejoras para acompañarte en cada viaje.'}</p>
+        {release.notes&&<div className="app-update-release"><AppIcon name="download"/><p>{release.notes}</p></div>}
+        <div className="app-update-screen-actions">{download}{need==='optional'&&<button type="button" className="text" onClick={dismiss}>Ahora no</button>}</div>
         {help}
+        <small>Versión instalada: {installed||'anterior'} · Nueva versión: {release.versionCode}</small>
       </div>
-      <div className="app-update-actions">
-        {download}
-        <button type="button" className="text" onClick={() => {
-          try { sessionStorage.setItem(DISMISS_KEY, String(release.versionCode)); } catch { /* sin almacenamiento */ }
-          setDismissed(true);
-        }}>Ahora no</button>
-      </div>
-    </aside>
+    </dialog>
   );
 }
