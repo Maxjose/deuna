@@ -13,3 +13,11 @@ test('rechaza distancias y tarifas ausentes o inválidas', () => {
   for (const distance of [NaN, Infinity, -1, 0, 2000001]) assert.throws(() => fareCents(distance, settings));
   for (const per_km_cents of [null, 0, -10, 0.5]) assert.throws(() => fareCents(1000, { ...settings, per_km_cents }));
 });
+test('redondea hacia arriba al siguiente medio dolar despues de aplicar el minimo',()=>{
+ const settings={base_cents:0,per_km_cents:100,minimum_cents:0,rounding_cents:50};
+ for(const [meters,expected] of [[1000,100],[1200,150],[1500,150],[1600,200],[1800,200],[1900,200],[2000,200],[2100,250]])assert.equal(fareCents(meters,settings),expected);
+ assert.equal(fareCents(1200,{...settings,minimum_cents:180}),200);
+ assert.equal(fareCents(1200,{...settings,rounding_cents:100}),200);
+ assert.equal(fareCents(1200,{...settings,rounding_cents:1}),120);
+ for(const rounding_cents of [0,25,-50,NaN,null])assert.throws(()=>fareCents(1000,{...settings,rounding_cents}));
+});

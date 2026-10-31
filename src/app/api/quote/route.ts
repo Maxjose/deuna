@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     if (!origin?.point || !destination?.point || !validPoint(origin.point) || !validPoint(destination.point) ||
         typeof origin.label !== 'string' || typeof destination.label !== 'string' || origin.label.length > 110 || destination.label.length > 110)
       return Response.json({ error: 'Confirma la recogida y el destino.' }, { status: 400, headers });
-    const { data: settings } = await client.from('service_settings').select('base_cents,per_km_cents,minimum_cents').eq('id', 1).single();
+    const { data: settings } = await client.from('service_settings').select('base_cents,per_km_cents,minimum_cents,rounding_cents').eq('id', 1).single();
     if (!settings?.per_km_cents) return Response.json({ error: 'Las tarifas todavía no están configuradas.' }, { status: 409, headers });
     const secret = process.env.FARE_SIGNING_KEY;
     if (!secret) throw Error();
