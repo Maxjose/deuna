@@ -2,6 +2,10 @@ name: APK de pruebas (TWA)
 
 on:
   workflow_dispatch:
+    inputs:
+      notas:
+        description: "Novedades que verán los usuarios en el aviso de actualización"
+        required: false
   push:
     branches: [main]
     paths:
@@ -65,6 +69,19 @@ jobs:
           EXPECTED=$(jq -r '.[0].target.sha256_cert_fingerprints[0]' public/.well-known/assetlinks.json | tr -d ':' | tr 'A-Z' 'a-z')
           grep -q "$EXPECTED" "$RUNNER_TEMP/certs.txt" || { echo "::error::La huella del APK no coincide con assetlinks.json"; exit 1; }
 
+      - name: Generar version.json (aviso de actualización en la app)
+        if: steps.keys.outputs.ready == 'true'
+        env:
+          NOTES_INPUT: ${{ github.event.inputs.notas }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          NOTES="${NOTES_INPUT:-$(printf '%s' "$COMMIT_MESSAGE" | head -n1)}"
+          jq -n --argjson v ${{ github.run_number }} --arg notes "${NOTES:-Mejoras y correcciones}" \
+            --arg url "https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na-pruebas.apk" \
+            --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg sha "$GITHUB_SHA" \
+            '{versionCode: $v, apkUrl: $url, notes: ($notes | .[0:200]), builtAt: $at, commit: $sha}' > "$RUNNER_TEMP/version.json"
+          cat "$RUNNER_TEMP/version.json"
+
       - uses: actions/upload-artifact@v4
         if: steps.keys.outputs.ready == 'true'
         with:
@@ -77,7 +94,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete apk-pruebas --yes --cleanup-tag 2>/dev/null || true
-          gh release create apk-pruebas "$RUNNER_TEMP/de1na-pruebas.apk" \
+          gh release create apk-pruebas "$RUNNER_TEMP/de1na-pruebas.apk" "$RUNNER_TEMP/version.json" \
             --prerelease --target "$GITHUB_SHA" \
             --title "De1na Pruebas (compilación ${{ github.run_number }})" \
             --notes "APK de pruebas generado automáticamente. Abre https://deuna-five.vercel.app a pantalla completa. No es la app oficial."

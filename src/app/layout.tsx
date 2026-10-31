@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { PwaRegistration } from "@/components/pwa-registration";
+import { AppUpdate } from "@/components/app-update";
 import { LaunchScreen } from "@/components/launch-screen";
 import { HapticFeedback } from "@/components/haptic-feedback";
 import { InstallGate } from "@/components/install-gate";
@@ -37,7 +38,7 @@ export default function RootLayout({
       <body>
         <PwaRegistration />
         <HapticFeedback />
-        <LaunchScreen><InstallGate>{children}</InstallGate></LaunchScreen>
+        <LaunchScreen><InstallGate><AppUpdate />{children}</InstallGate></LaunchScreen>
       </body>
     </html>
   );

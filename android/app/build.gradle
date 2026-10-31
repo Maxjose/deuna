@@ -3,9 +3,11 @@ plugins {
 }
 
 // Datos de la TWA de pruebas. La app oficial tendrá su propio paquete, dominio y clave.
+def appVersion = Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
+
 def twa = [
     host        : "deuna-five.vercel.app",
-    launchUrl   : "/dashboard?source=twa",
+    launchUrl   : "/dashboard?source=twa&app_version=" + appVersion,
     name        : "De1na Pruebas",
     themeColor  : "#122033",
     background  : "#F5F7F8",
@@ -19,8 +21,8 @@ android {
         applicationId "com.de1na.app.pruebas"
         minSdk 23
         targetSdk 35
-        versionCode Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
-        versionName "0.1." + (System.getenv("VERSION_CODE") ?: "1")
+        versionCode appVersion
+        versionName "0.1." + appVersion
 
         resValue "string", "app_name", twa.name
         resValue "string", "launch_url", "https://" + twa.host + twa.launchUrl

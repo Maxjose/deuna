@@ -28,6 +28,7 @@ export function AppIcon({ name }: { name: string }) {
     cash: "M3 6h18v12H3ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 9v.01M18 15v.01",
     phone: "M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2ZM11 18h2",
     copy: "M9 9h11v11H9ZM5 15H4V4h11v1",
+    download: "M12 3v12M7 10l5 5 5-5M4 16v5h16v-5",
     search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM20 20l-3.5-3.5",
     more: "M5 12h.01M12 12h.01M19 12h.01",
     drivers: "M8 17a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm14 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM5 17l4-7h5l5 7M9 10l4 7H5M14 10l-2-5h4M7 7h3",

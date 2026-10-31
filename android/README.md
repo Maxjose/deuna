@@ -30,3 +30,11 @@ La web, dentro de la TWA, muestra el botón "Mantener ubicación activa": pide u
 (`issue_tracking_token`) y abre `de1na-tracking://start` (`TrackingActivity`), que solicita los permisos
 y arranca el servicio. El servicio se detiene solo cuando el viaje termina, se cancela o se reasigna
 (el servidor rechaza el token), o con el botón "Detener" del aviso.
+
+## Actualizaciones
+
+Cada compilación publica junto al APK un `version.json` (número de versión = número de ejecución de
+GitHub Actions y novedades = título del commit, o el texto "notas" al lanzarla a mano). La app abre la web
+con `?app_version=N`; la web consulta `/api/app-version` y, si hay una versión más nueva, muestra un aviso
+para descargarla e instalarla encima. Para obligar a actualizar, sube `minVersionCode` en
+`src/lib/app-update-policy.json` (se aplica al publicar la web, sin recompilar el APK).
