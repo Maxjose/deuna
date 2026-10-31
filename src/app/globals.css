@@ -2103,6 +2103,9 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 
 .journey-search-body .journey-picker-map { position:relative; flex:1 1 0; transition:flex-grow 320ms ease,flex-basis 320ms ease,min-height 320ms ease; }
 .journey-search-body .place-results { min-height:0; transition:flex-grow 320ms ease,max-height 320ms ease; }
+.journey-search-body.map-is-hidden { position:relative; padding-bottom:76px; }
+.journey-search-body.map-is-hidden .place-results { flex:1 1 0; max-height:100%; }
+.show-picker-map { position:absolute; right:20px; bottom:16px; display:grid; place-items:center; width:48px; height:48px; padding:0; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink); box-shadow:0 3px 12px #12203312; }
 .journey-search-body.map-is-compact .place-results { flex:1 1 0; max-height:100%; }
 .journey-search-body.map-is-compact .journey-picker-map { flex:0 0 36px; min-height:36px; border-radius:12px; }
 .map-is-compact .journey-picker-map .journey-map { min-height:0; }

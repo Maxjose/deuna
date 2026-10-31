@@ -51,6 +51,7 @@ export function RideRequest({
     [routeReady, setRouteReady] = useState(false);
   const [mapReference,setMapReference]=useState<'origin'|'destination'|null>(null);
   const [mapCompact,setMapCompact]=useState(false);
+  const [mapVisible,setMapVisible]=useState(false);
   const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
   const quotePlaces = useMemo(() => ({ origin, destination }), [origin, destination]);
   const { message, notify: setMessage } = useNotice(step);
@@ -90,6 +91,7 @@ export function RideRequest({
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   function open() {
+    setMapVisible(false);
     setMapCompact(false);
     setStep("search");
     setActive("destination");
@@ -126,6 +128,7 @@ export function RideRequest({
       return;
     }
     const version = ++searchVersion.current;
+    setMapVisible(false);
     setMapCompact(true);
     searchController.current?.abort();
     const controller = new AbortController();
@@ -349,7 +352,7 @@ export function RideRequest({
                   </button>
                 </form>
               </div>
-              <div className={"journey-search-body"+(mapCompact?' map-is-compact':'')}>
+              <div className={"journey-search-body"+(mapCompact?' map-is-compact':'')+(!mapVisible?' map-is-hidden':'')}>
                   <div className="place-results">
                     {results.map((place, i) => (
                       <button
@@ -359,6 +362,7 @@ export function RideRequest({
                           searchController.current?.abort();
                           setLoading(false);
                           setMapCompact(false);
+                          setMapVisible(true);
                           update(place);
                           setResults([]);
                           setMessage("");
@@ -374,7 +378,7 @@ export function RideRequest({
                       </button>
                     ))}
                   </div>
-                    <div className="point-picker-label">
+                    {mapVisible&&<><div className="point-picker-label">
                       Toca el mapa para fijar{" "}
                       {active === "origin" ? "la recogida" : "el destino"}
                     </div>
@@ -387,7 +391,8 @@ export function RideRequest({
                       />
                       {mapCompact&&<button type="button" className="expand-picker-map" onClick={()=>setMapCompact(false)}>Ver mapa</button>}
                     </div>
-                    {mapReference===active&&current.point&&<label className="map-reference">Referencia del punto marcado<input aria-label="Referencia del punto marcado" maxLength={110} value={current.label} disabled={loading} placeholder="Calle, negocio o referencia para llegar" onChange={e=>update({...current,label:e.target.value})}/></label>}
+                    {mapReference===active&&current.point&&<label className="map-reference">Referencia del punto marcado<input aria-label="Referencia del punto marcado" maxLength={110} value={current.label} disabled={loading} placeholder="Calle, negocio o referencia para llegar" onChange={e=>update({...current,label:e.target.value})}/></label>}</>}
+                    {!mapVisible&&<button type="button" className="show-picker-map" aria-label="Mostrar mapa" title="Mostrar mapa" onClick={()=>{setMapVisible(true);setMapCompact(false);}}><AppIcon name="map"/></button>}
 
               </div>
               <div className="journey-bottom-action">

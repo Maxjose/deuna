@@ -1,5 +1,6 @@
 export function AppIcon({ name }: { name: string }) {
   const paths: Record<string, string> = {
+    map: "m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3ZM9 3v15M15 6v15",
     power: "M12 2v10M6.3 5.3a9 9 0 1 0 11.4 0",
     back: "m15 5-7 7 7 7",
     brush: "m14 3 7 7-7 7-7-7ZM7 10l7 7-3 4H3v-8ZM7 15v6M11 18v3",
