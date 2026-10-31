@@ -26,6 +26,7 @@ import { Toast, useNotice } from "./toast";
 import { serviceIsOpen } from "@/lib/service-hours";
 import { parseStoredPlace } from "@/lib/journey";
 import { FareSettings } from "./fare-settings";
+import { DriverAvailability, AvailabilitySettings } from "./driver-availability";
 import { usd, type FareSettings as FareConfig } from "@/lib/fare";
 import { useRouter } from "next/navigation";
 
@@ -527,6 +528,7 @@ export function Dashboard({
           </div>
         )}
         <section className={"content" + (role === "admin" ? ` admin-page-${page}` : "")} key={page} aria-busy={busy}>
+          {profile?.role==='driver'&&profile.approved&&!profile.suspended&&<DriverAvailability available={profile.available} occupied={!!driverActive} onRefresh={load}/>}
           {page === "home" && role === "passenger" && (
             <>
               <span className={"page-context " + (serviceIsOpen(settings) ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
@@ -598,6 +600,7 @@ export function Dashboard({
             <div className="account-stack">
 
             <FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />
+            <AvailabilitySettings />
             <form
               className="trip-card"
               onSubmit={(e) => {

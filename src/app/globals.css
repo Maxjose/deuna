@@ -1663,6 +1663,7 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
 .driver-nav-header small { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
 .driver-nav-header strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
 .driver-nav-header .icon-button { width:42px; height:42px; flex-shrink:0; background:#f2f4f5; box-shadow:none; }
+.availability-notice { padding:12px 16px; border-radius:14px; background:var(--surface); border:1px solid var(--line); font-size:13px; }
 .driver-nav-footer .trip-cancellation { text-align:right; }
 .driver-nav-footer .trip-cancellation > button.text { color:var(--danger); font-weight:700; padding:10px 0; width:auto; }
 .driver-nav-map { flex: 1; min-height: 180px; position: relative; }
