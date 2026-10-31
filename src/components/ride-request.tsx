@@ -6,7 +6,7 @@ import { PromoBanners } from "./promo-banners";
 import type { Favorite } from './favorite-places';
 import { Toast, useNotice } from "./toast";
 import { usd, type FareQuote } from "@/lib/fare";
-import { type Place, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
+import { type Place, placeDistanceMeters, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
 import { decodeCatalogPlaces } from "@/lib/catalog";
 import { browserClient } from "@/lib/supabase/client";
 import {selectedPointLabel} from '@/lib/journey';
@@ -129,22 +129,30 @@ export function RideRequest({
     setMessage("");
     setResults([]);
     try {
-      const endpoint = placeSearchUrl(
-        process.env.NEXT_PUBLIC_GEOCODING_URL ||
-          "https://photon.komoot.io/api/",
-        query, origin.point,
-      );
       let catalog:Place[]=[],external:Place[]=[];
-      const publish=()=>{if(version===searchVersion.current)setResults(mergeSearchPlaces(catalog,external));};
+      const publish=()=>{if(version===searchVersion.current)setResults(mergeSearchPlaces(catalog,external,center));};
       const center=searchCenter(origin.point);
       const sources=await Promise.allSettled([
         browserClient().rpc('catalog_search',{search_query:query,center_lat:center.lat,center_lng:center.lng}).abortSignal(controller.signal).then(({data,error})=>{
           if(error)throw error;catalog=decodeCatalogPlaces(data);publish();
         }),
-        fetch(endpoint,{signal:controller.signal}).then(async r=>{if(!r.ok)throw Error();external=localPlaces(await r.json(),origin.point);publish();})
+        (async()=>{
+          let succeeded=false;
+          for(const radius of [5,20,80,undefined]){
+            if(controller.signal.aborted||version!==searchVersion.current)break;
+            try{
+              const endpoint=placeSearchUrl(process.env.NEXT_PUBLIC_GEOCODING_URL||"https://photon.komoot.io/api/",query,center,radius);
+              const response=await fetch(endpoint,{signal:controller.signal});if(!response.ok)throw Error();
+              external=mergeSearchPlaces(external,localPlaces(await response.json(),center),center);succeeded=true;publish();
+              const found=mergeSearchPlaces(catalog,external,center);
+              if(!radius||found.filter(place=>place.point&&placeDistanceMeters(place.point,center)<=radius*1000).length>=6)break;
+            }catch{if(controller.signal.aborted)break;}
+          }
+          if(!succeeded)throw Error();
+        })()
       ]);
       if (version !== searchVersion.current) return;
-      const places=mergeSearchPlaces(catalog,external);
+      const places=mergeSearchPlaces(catalog,external,center);
       if(sources.every(source=>source.status==='rejected'))throw Error();
       if(!places.length&&sources.some(source=>source.status==='rejected'))throw Error();
       if (!places.length) {

@@ -1,15 +1,17 @@
 import type { MapPoint } from "./destination";
 export type Place = { label: string; point: MapPoint | null };
-export function mergeSearchPlaces(catalog:Place[],external:Place[]) {
+export function placeDistanceMeters(point:MapPoint,center:MapPoint){return Math.hypot((point.lat-center.lat)*111320,(point.lng-center.lng)*111320*Math.cos(center.lat*Math.PI/180));}
+export function mergeSearchPlaces(catalog:Place[],external:Place[],center:MapPoint|null=null) {
   const merged:Place[]=[];
   const key=(label:string)=>label.split(',')[0].normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
   for(const place of [...catalog,...external]){
     if(!place.point||!validPoint(place.point))continue;
     if(merged.some(existing=>existing.point&&key(existing.label)===key(place.label)&&
       Math.hypot((existing.point.lat-place.point!.lat)*111320,(existing.point.lng-place.point!.lng)*111320*Math.cos(place.point!.lat*Math.PI/180))<100))continue;
-    merged.push(place);if(merged.length===8)break;
+    merged.push(place);
   }
-  return merged;
+  if(center&&validPoint(center))merged.sort((a,b)=>placeDistanceMeters(a.point!,center)-placeDistanceMeters(b.point!,center));
+  return merged.slice(0,8);
 }
 export function validPoint(p: MapPoint) {
   return (
@@ -82,12 +84,13 @@ function inRegion(p: MapPoint) {
   return validPoint(p) && p.lng >= bounds.west && p.lng <= bounds.east && p.lat >= bounds.south && p.lat <= bounds.north;
 }
 export function searchCenter(point: MapPoint | null) { return point && inRegion(point) ? point : fallback; }
-export function placeSearchUrl(base: string, query: string, point: MapPoint | null) {
+export function placeSearchUrl(base: string, query: string, point: MapPoint | null,radiusKm?:number) {
   const center = searchCenter(point), url = new URL(base);
   url.searchParams.set('q', query);
   url.searchParams.set('lat', String(center.lat));
   url.searchParams.set('lon', String(center.lng));
-  url.searchParams.set('bbox', `${bounds.west},${bounds.south},${bounds.east},${bounds.north}`);
+  const latRange=radiusKm?radiusKm/111.32:null,lngRange=latRange?latRange/Math.cos(center.lat*Math.PI/180):null;
+  url.searchParams.set('bbox',latRange&&lngRange?`${Math.max(bounds.west,center.lng-lngRange)},${Math.max(bounds.south,center.lat-latRange)},${Math.min(bounds.east,center.lng+lngRange)},${Math.min(bounds.north,center.lat+latRange)}`:`${bounds.west},${bounds.south},${bounds.east},${bounds.north}`);
   url.searchParams.set('countrycode', 'VE');
   url.searchParams.set('location_bias_scale', '0.1');
   url.searchParams.set('zoom', '12');
