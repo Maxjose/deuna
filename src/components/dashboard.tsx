@@ -517,7 +517,10 @@ export function Dashboard({
               <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}.` : "Hola."}</h1>
             </>
           )}
-          {!(page === "home" && role === "passenger") && page !== "messages" && <>
+          {page === "account" && accountSection !== "overview" ? <div className="account-section-heading">
+            <button type="button" className="account-back" aria-label="Volver a tu cuenta" onClick={()=>openSection("overview")}><AppIcon name="back" /></button>
+            <div><span className="page-context">{pageContext}</span><h1>{pageTitle}</h1></div>
+          </div> : !(page === "home" && role === "passenger") && page !== "messages" && <>
           <span className={"page-context " + (page === "home" && role === "admin" && serviceIsOpen(settings) || page === "home" && role === "driver" && profile?.available ? "is-open" : "")}>{page === "home" && role !== "passenger" && <i />}{pageContext}</span>
           <h1>{pageTitle}</h1>
           </>}
@@ -537,7 +540,6 @@ export function Dashboard({
             <TripChat userId={userId} refresh={trips} offline={offline}/>
           ) : page === "account" ? (
             <div className={"account-stack " + (accountSection === "overview" ? "account-overview" : "account-subsection")}>
-              {accountSection!=="overview"&&<button type="button" className="account-back secondary" onClick={()=>openSection("overview")}>Volver</button>}
               {accountSection==="overview"&&<>
               <article className="trip-card account-card">
                 <div className="avatar">{(displayName || email)[0]?.toUpperCase()}</div>

@@ -2055,7 +2055,10 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .account-menu-item > svg:first-child { width: 24px; height: 24px; flex-shrink: 0; }
 .account-menu-item > span { flex: 1; font-size: 14px; }
 .account-menu-item > svg:last-child { width: 18px; height: 18px; color: var(--muted); }
-.account-back.secondary { width: fit-content; min-height: 42px; padding: 10px 20px; border-radius: 14px; text-align: center; font-size: 13px; margin: 0; border: 1px solid var(--line); }
+.account-section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.account-section-heading > div { min-width: 0; }
+.account-section-heading h1 { margin: 4px 0 0; }
+.account-section-heading .account-back { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink); }
 .account-overview .account-card { padding: 22px; }
 .account-overview .account-card .avatar { width: 56px; height: 56px; font-size: 24px; }
 .account-overview .account-card h2 { margin: 10px 0 4px; }
