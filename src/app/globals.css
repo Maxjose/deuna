@@ -2387,3 +2387,13 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .more-sheet.is-dragging { transition: none; }
 .live-inline { padding: 10px 0 4px; }
 .passenger-stage-content .payment-panel { margin: 12px 0; }
+
+/* Hojas inferiores del viaje: si el contenido no cabe, se desliza dentro de la hoja (el mapa queda visible arriba). */
+.passenger-journey .passenger-stage-sheet,
+.journey-preparation-sheet.journey-bottom-sheet {
+  max-height: 72dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
