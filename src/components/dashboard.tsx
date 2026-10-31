@@ -103,6 +103,7 @@ export function Dashboard({
   useEffect(()=>{if(acceptTrip)acceptDialog.current?.showModal();},[acceptTrip]);
   const signOutDialog = useRef<HTMLDialogElement>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const { message, notify: setMessage } = useNotice(page === "account" ? `account-${accountSection}` : page);
   const load = useCallback(async () => {
     const [p, t, s] = await Promise.all([
@@ -663,12 +664,18 @@ export function Dashboard({
                 <>
                   <button
                     className="primary"
-                    disabled={busy || offline || !profile.approved || !!driverActive}
-                    onClick={() =>
-                      void act("available", { available: !profile.available })
-                    }
+                    disabled={connecting || busy || offline || !profile.approved || !!driverActive}
+                    aria-busy={connecting}
+                    aria-label={connecting ? "Conectando" : undefined}
+                    onClick={async () => {
+                      if (connecting) return;
+                      if (profile.available) { void act("available", { available: false }); return; }
+                      setConnecting(true);
+                      try { await Promise.all([act("available", { available: true }), new Promise(resolve=>setTimeout(resolve,1000))]); }
+                      finally { setConnecting(false); }
+                    }}
                   >
-                    {profile.available ? "Desconectarme" : "Conectarme"}
+                    {connecting ? <span className="refreshing" role="status" aria-label="Conectando"><AppIcon name="refresh" /></span> : profile.available ? "Desconectarme" : "Conectarme"}
                   </button>
                 </>
               )}
