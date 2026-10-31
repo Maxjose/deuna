@@ -257,18 +257,10 @@ export function RideRequest({
           ))}
         </div>
       </section>
-      <section className="home-services" aria-labelledby="services-title">
-        <h2 id="services-title">Elige tu tipo de viaje</h2>
-        <button className="home-service-main" onClick={open}>
-          <span className="home-service-icon"><AppIcon name="moto" /></span>
-          <span className="home-service-text"><strong>De1na Moto</strong><small>Viajes individuales</small></span>
-          <span className={"home-service-badge " + (enabled ? "" : "is-closed")}>{enabled ? "Disponible" : "Fuera de horario"}</span>
-        </button>
         <div className="home-services-soon" aria-label="Servicios próximamente">
           <span><AppIcon name="package" />Envíos · Pronto</span>
           <span><AppIcon name="calendar" />Programar · Pronto</span>
         </div>
-      </section>
       <PromoBanners hidden={step !== "home"} />
       <dialog
         ref={dialog}

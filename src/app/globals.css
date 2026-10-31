@@ -1360,9 +1360,6 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
 .inbox-heading { position: sticky; top: 0; z-index: 1; background: var(--paper); padding-top: 12px; touch-action: pan-x; }
 .inbox-heading .sheet-handle { display: block; margin-bottom: 8px; }
 .inbox-heading h2 { margin: 8px 0 16px; }
-.inbox-clear { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-bottom: 16px; }
-.inbox-clear .secondary { width: auto; margin: 0; padding: 9px 14px; }
-.inbox-clear span { flex-basis: 100%; font-size: 13px; }
 .inbox-notice { display: flex; align-items: flex-start; gap: 8px; border-top: 1px solid var(--line); padding: 18px 0; touch-action: pan-y; }
 .inbox-notice > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .inbox-notice strong { font-size: 14px; }
@@ -2166,14 +2163,6 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .home-place-text { min-width: 0; display: flex; flex-direction: column; }
 .home-place-text strong { font-size: 14px; }
 .home-place-text small { font-size: 12px; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.home-service-main { width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px; border: 0; border-radius: var(--radius); background: #122033; color: #fff; text-align: left; }
-.home-service-main .home-service-icon { width: 52px; height: 52px; flex-shrink: 0; border-radius: 16px; background: var(--lime); color: #122033; }
-.home-service-main .home-service-icon svg { width: 28px; height: 28px; }
-.home-service-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.home-service-text strong { font-size: 17px; }
-.home-service-text small { font-size: 13px; color: #c9d3dd; }
-.home-service-badge { flex-shrink: 0; font-size: 12px; font-weight: 700; border-radius: var(--radius-pill); padding: 5px 10px; background: var(--lime); color: #122033; }
-.home-service-badge.is-closed { background: #2b3a4b; color: #e7edf5; }
 .home-services-soon { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .home-services-soon span { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted); }
 .home-services-soon svg { width: 16px; height: 16px; }
@@ -2195,3 +2184,20 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .ride-screen .content { gap: 18px; }
   .ride-screen .ride-entry { gap: 18px; }
 }
+.shell .inbox-sheet.action-sheet { inset:auto 0 0; margin:0 auto; width:100%; max-width:560px; height:min(75dvh,680px); max-height:calc(100dvh - 12px); padding:0; border-radius:28px 28px 0 0; overflow:hidden; background:var(--surface); transition:height 260ms ease; }
+.shell .inbox-sheet[open] { display:flex; flex-direction:column; }
+.shell .inbox-sheet:focus { outline:none; }
+.shell .inbox-sheet.is-expanded { height:calc(100dvh - 12px); }
+.shell .inbox-heading { position:relative; flex-shrink:0; width:100%; background:var(--paper); padding:12px 20px 14px; touch-action:none; }
+.shell .inbox-heading h2 { margin:8px 0; }
+.inbox-header-actions { display:flex; align-items:center; gap:8px; }
+.inbox-confirm { background:var(--lime); color:#122033; }
+.inbox-confirm-label { font-size:12px; color:var(--muted); margin:8px 0 0; }
+.shell .inbox-list { min-height:0; flex:1; overflow-y:auto; overscroll-behavior:contain; padding:0 20px max(20px,env(safe-area-inset-bottom)); }
+.inbox-sheet > p[role='alert'] { padding:0 20px; font-size:12px; }
+.shell .inbox-sheet.is-closing { animation:inbox-exit 220ms ease-in forwards; pointer-events:none; }
+@keyframes inbox-exit { from { transform:translateY(0); } to { transform:translateY(100%); } }
+.admin-shell[data-admin-theme='dark'] .inbox-heading { background:var(--surface); }
+@media(prefers-reduced-motion:reduce) { .shell .inbox-sheet.action-sheet { transition:none; } .shell .inbox-sheet[open] { animation:none; } }
+
+.inbox-heading { user-select:none; -webkit-user-select:none; }

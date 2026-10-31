@@ -1,5 +1,8 @@
 export function AppIcon({ name }: { name: string }) {
   const paths: Record<string, string> = {
+    brush: "m14 3 7 7-7 7-7-7ZM7 10l7 7-3 4H3v-8ZM7 15v6M11 18v3",
+    check: "m5 12 4 4L19 6",
+    close: "m6 6 12 12M18 6 6 18",
     messages: "M21 11a8 8 0 0 1-8 8H7l-4 3V11a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8ZM7 10h10M7 14h6",
     users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 4a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87",
     places: "M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
