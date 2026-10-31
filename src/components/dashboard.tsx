@@ -3,6 +3,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { browserClient } from "@/lib/supabase/client";
 import {loadReputation,loadTripContact} from "@/lib/participant-data";
 import {clearParticipantCache} from "@/lib/participant-cache";
+import {TripProgress} from "./trip-progress";
 import { AppIcon } from "./app-icon";
 import { TripChat } from "./trip-chat";
 import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
@@ -53,37 +54,12 @@ type Settings = FareConfig & {
   open_time: string;
   close_time: string;
 };
-const progressSteps: [string, string][] = [
-  ["searching", "Buscando"],
-  ["assigned", "Asignado"],
-  ["arrived", "Llegó"],
-  ["ongoing", "En camino"],
-  ["finished", "Finalizado"],
-];
 const passengerHeadlines: Record<string, string> = {
   searching: "Estamos buscando quién te lleve",
   assigned: "¡Listo! Ya van por ti",
   arrived: "¡Tu DeUna llegó!",
   ongoing: "¡Vamos en camino!",
 };
-function TripProgress({ status, headline }: { status: string; headline?: string }) {
-  const current = progressSteps.findIndex(([key]) => key === status);
-  if (current < 0) return null;
-  return (
-    <div className="trip-progress">
-      <span className="trip-progress-step">Paso {current + 1} de {progressSteps.length} · {labels[status]}</span>
-      {headline && <strong className="trip-progress-title">{headline}</strong>}
-      <ol aria-label="Estado del viaje">
-        {progressSteps.map(([key, label], index) => (
-          <li key={key} className={index < current ? "done" : index === current ? "current" : ""} aria-current={index === current ? "step" : undefined}>
-            <span aria-hidden="true" />
-            {label}
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
 const labels: Record<string, string> = {
   searching: "Buscando motorizado",
   assigned: "Motorizado en camino",
@@ -362,9 +338,10 @@ export function Dashboard({
   }
   function card(t: Trip) {
     const destinationName = parseStoredPlace(t.destination).label;
-    if (role === "passenger" && page === "home" && t.status === "searching")
+    if (role === "passenger" && page === "home" && ["searching","assigned","arrived","ongoing"].includes(t.status))
       return (
         <RideWaiting
+          tripId={t.id} status={t.status} viewerId={userId} onMessage={()=>navigate('messages')} cancelPending={!!t.cancel_requested} onCancellation={(action,approved)=>act(action,{id:t.id,approved})}
             fareCents={t.fare_cents}
           origin={t.origin}
           destination={t.destination}

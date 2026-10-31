@@ -2201,3 +2201,51 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 @media(prefers-reduced-motion:reduce) { .shell .inbox-sheet.action-sheet { transition:none; } .shell .inbox-sheet[open] { animation:none; } }
 
 .inbox-heading { user-select:none; -webkit-user-select:none; }
+
+.journey-flow-screen .journey-context-header { position:absolute; inset:0 0 auto; z-index:600; display:flex; align-items:center; gap:12px; padding:calc(16px + env(safe-area-inset-top)) 18px 12px; background:transparent; margin:0; pointer-events:none; }
+.journey-context-header > * { pointer-events:auto; }
+.journey-context-header .icon-button { width:44px; height:44px; flex-shrink:0; background:white; box-shadow:0 4px 18px #12203318; }
+.journey-context-header > span:not(.journey-map-label) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:700; background:#fffffff0; border-radius:16px; padding:10px 12px; }
+.journey-context-header .journey-map-label { margin-left:auto; background:white; padding:8px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+.passenger-route-map { position:relative; flex:1; min-height:180px; overflow:hidden; }
+.passenger-route-map > .journey-map { position:absolute; inset:0; }
+.passenger-stage-sheet.journey-bottom-sheet { border-radius:28px 28px 0 0; padding:12px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow:0 -5px 24px #1220330c; }
+.passenger-journey .passenger-stage-sheet { max-height:60dvh; }
+.passenger-stage-sheet .trip-progress { padding:0; border:0; margin:0; }
+.passenger-stage-sheet .trip-progress-title { font-size:25px; line-height:1.15; letter-spacing:-.8px; margin:10px 0 12px; }
+.passenger-stage-sheet .trip-progress-step { color:#476b23; font-size:12px; font-weight:650; }
+.passenger-stage-description { color:var(--muted); font-size:13px; margin:10px 0 16px; }
+.passenger-driver-card { display:flex; align-items:center; gap:12px; border-radius:20px; background:var(--paper); padding:14px; margin:14px 0; }
+.passenger-driver-avatar { width:46px; height:46px; display:grid; place-items:center; border-radius:50%; background:var(--ink); color:var(--lime); flex-shrink:0; }
+.passenger-driver-card .trip-person { min-width:0; flex:1; }
+.passenger-driver-card .trip-person small { display:none; }
+.passenger-driver-card .trip-person > strong { font-size:16px; }
+.passenger-driver-card .reputation { margin:4px 0 0; font-size:12px; color:var(--muted); }
+.passenger-message.primary { display:flex; justify-content:center; align-items:center; gap:10px; margin:12px 0; border-radius:24px; }
+.passenger-message svg { color:var(--lime); }
+.passenger-stops { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
+.passenger-stops p { margin:10px 0; min-width:0; }
+.passenger-stops small { display:block; font-size:9px; color:var(--muted); }
+.passenger-stops strong { display:block; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.passenger-stage-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid var(--line); margin-top:6px; padding-top:10px; }
+.passenger-stage-footer p { margin:0; color:var(--muted); font-size:12px; }
+.passenger-stage-footer strong { color:var(--ink); margin-left:5px; }
+.passenger-stage-footer .trip-cancel-link { width:auto; font-size:12px; flex-shrink:0; }
+.journey-preparation-steps { display:flex; gap:10px; font-size:11px; margin:0 0 14px; color:var(--muted); }
+.journey-preparation-steps span { border-top:3px solid var(--line); flex:1; padding-top:6px; }
+.journey-preparation-steps .current { color:#476b23; border-color:var(--lime); font-weight:750; }
+.journey-preparation-steps .done { border-color:var(--ink); }
+.passenger-stage-content { animation:passenger-stage-enter 180ms ease-out; }
+@keyframes passenger-stage-enter { from { opacity:.55; transform:translateY(5px); } to { opacity:1; transform:none; } }
+@media(prefers-reduced-motion:reduce) { .passenger-stage-content { animation:none; } }
+
+.passenger-journey .leaflet-top .leaflet-control-zoom, .journey-context-header ~ .journey-map .leaflet-control-zoom { margin-top:84px; }
+@media(max-height:700px) {
+ .passenger-stage-sheet.journey-bottom-sheet { padding:10px 16px calc(12px + env(safe-area-inset-bottom)); }
+ .passenger-stage-sheet .sheet-handle { margin-bottom:10px; }
+ .passenger-stage-sheet .trip-progress-title { font-size:22px; margin:8px 0; }
+ .passenger-stage-description { margin:8px 0 10px; font-size:12px; }
+ .passenger-driver-card { padding:10px; margin:10px 0; }
+ .passenger-stops p { margin:6px 0; }
+ .passenger-stage-footer { padding-top:8px; }
+}

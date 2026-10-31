@@ -1,5 +1,6 @@
 export function AppIcon({ name }: { name: string }) {
   const paths: Record<string, string> = {
+    back: "m15 5-7 7 7 7",
     brush: "m14 3 7 7-7 7-7-7ZM7 10l7 7-3 4H3v-8ZM7 15v6M11 18v3",
     check: "m5 12 4 4L19 6",
     close: "m6 6 12 12M18 6 6 18",

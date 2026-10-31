@@ -381,7 +381,7 @@ export function RideRequest({
             </>
           ) : (
             <>
-              <div className="journey-map-top">
+              <div className="journey-map-top journey-context-header">
                 <button
                   className="icon-button"
                   aria-label="Volver"
@@ -389,7 +389,7 @@ export function RideRequest({
                 >
                   ←
                 </button>
-                <span>{destination.label}</span>
+                <span className="journey-context-destination">{destination.label}</span><span className="journey-map-label">Mapa</span>
               </div>
               <JourneyMap
                 key={quoteRevision}
@@ -399,8 +399,9 @@ export function RideRequest({
                 quotePlaces={quotePlaces}
                 onQuote={setQuote}
               />
-              <section className="journey-bottom-sheet">
+              <section className="journey-bottom-sheet passenger-stage-sheet">
                 <div className="sheet-handle" />
+                <div className="journey-preparation-steps" aria-label="Preparación del viaje"><span className={step==='choose'?'current':'done'}>1 · Transporte</span><span className={step==='confirm'?'current':''}>2 · Confirmar</span></div>
                 <h2>
                   {step === "choose"
                     ? "Elige cómo ir"
