@@ -87,7 +87,9 @@ export class TesoroClient {
   static fromEnv() {
     const sucursal = process.env.TESORO_SUCURSAL, caja = process.env.TESORO_CAJA, clave = process.env.TESORO_CLAVE;
     if (!sucursal || !caja || !clave) return null;
-    return new TesoroClient(sucursal, caja, clave);
+    // TESORO_BASE_URL solo se usa en desarrollo/pruebas (servidor simulado); en producción siempre es el banco.
+    const base = process.env.NODE_ENV !== 'production' && process.env.TESORO_BASE_URL ? process.env.TESORO_BASE_URL : TESORO_BASE;
+    return new TesoroClient(sucursal, caja, clave, base);
   }
   private readonly sucursal: string;
   private readonly caja: string;
