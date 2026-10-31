@@ -2177,6 +2177,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .history-filters button[aria-pressed="true"] { background: #122033; border-color: #122033; color: #fff; font-weight: 700; }
 .cards.history-list { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 16px; max-width: 720px; }
 .shell.history-screen > main > .content { width: 100%; min-width: 0; }
+.shell.driver-home > main > .content { width: 100%; min-width: 0; }
 .history-list .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 14px 16px; box-shadow: none; }
 .history-list .trip-card > .row { grid-column: 1 / -1; }
 .history-list .trip-card > p { margin: 0; }
