@@ -2264,7 +2264,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
  .passenger-journey .passenger-message { min-height:44px; padding:10px; margin:8px 0; }
 }
 
-.journey-addresses .pickup-address .locate-button { top:auto; bottom:10px; height:43px; display:grid; place-items:center; padding:0; }
+
 .journey-addresses .pickup-address input { display:block; }
 
 .journey-preparation-sheet.journey-bottom-sheet { overflow:hidden; max-height:none; flex:0 0 auto; }
@@ -2281,3 +2281,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
  .journey-preparation-sheet .confirmation-stops p { margin:0; }
  .journey-preparation-sheet > .primary { margin-top:10px; min-height:46px; }
 }
+
+.journey-addresses .address-input { display:block; position:relative; margin:4px 0 10px; }
+.journey-addresses .address-input input { margin:0; }
+.journey-addresses .pickup-address .address-input .locate-button { top:50%; bottom:auto; transform:translateY(-50%); height:43px; display:grid; place-items:center; padding:0; }

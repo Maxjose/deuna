@@ -299,6 +299,7 @@ export function RideRequest({
                   <label className="pickup-address">
                     <span className="address-dot" />
                     Recogida
+                    <span className="address-input">
                     <input
                       aria-label="Punto de recogida"
                       value={origin.label}
@@ -314,10 +315,12 @@ export function RideRequest({
                     <button type="button" className="locate-button" onClick={()=>locate()} disabled={locating} aria-label="Usar mi ubicación actual" title="Usar mi ubicación actual">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></svg>
                     </button>
+                    </span>
                   </label>
                   <label className="pickup-address">
                     <span className="address-dot destination" />
                     Destino
+                    <span className="address-input">
                     <input
                       aria-label="Destino"
                       value={destination.label}
@@ -333,6 +336,7 @@ export function RideRequest({
                     {destination.label && <button type="button" className="locate-button" aria-label="Limpiar destino" title="Limpiar destino" onClick={() => { edit("destination"); setDestination({label:"",point:null}); }}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
                     </button>}
+                    </span>
                   </label>
                   <button className="address-search-button" disabled={loading}>
                     {loading ? "Buscando…" : "Buscar dirección"}
