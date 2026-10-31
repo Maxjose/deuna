@@ -2265,3 +2265,4 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 }
 
 .journey-addresses .pickup-address .locate-button { top:auto; bottom:10px; height:43px; display:grid; place-items:center; padding:0; }
+.journey-addresses .pickup-address input { display:block; }
