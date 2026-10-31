@@ -77,14 +77,28 @@ textarea,
   transform: translateX(-50%);
   z-index: 100;
   max-width: calc(100% - 32px);
-  width: max-content;
+  width: min(520px, calc(100% - 32px));
   padding: 14px 20px;
   border-radius: 16px;
   background: var(--ink);
   color: white;
   box-shadow: 0 8px 30px #12203330;
-  pointer-events: none;
+  pointer-events: auto;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-height:72px;
+  touch-action:none;
+  transition:transform 220ms ease-out,opacity 220ms ease-out;
 }
+.toast-icon { display:grid; place-items:center; flex:0 0 26px; color:#b4f36a; }
+.toast-icon svg { width:26px; height:26px; }
+.toast-warning .toast-icon { color:#ffd47a; }
+.toast-error .toast-icon { color:#ff9ca9; }
+.toast-info .toast-icon { color:#b4d9ff; }
+.toast-text { min-width:0; overflow-wrap:anywhere; font-size:14px; line-height:1.5; }
+.app-toast.toast-closing { opacity:0; }
+@media(prefers-reduced-motion:reduce) { .app-toast { transition:none; } }
 .push-preview { background: var(--paper); padding: 18px; border-radius: 18px; margin: 16px 0; }
 .push-preview small { display: block; font-size: 12px; color: var(--muted); letter-spacing: 1px; margin-bottom: 10px; }
 .push-preview strong { display: block; overflow-wrap: anywhere; }
