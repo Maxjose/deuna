@@ -16,6 +16,7 @@ import { FavoritePlaces, useFavoritePlaces } from "./favorite-places";
 import { AdminThemeToggle, useAdminTheme } from "./admin-theme-toggle";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
+import { ChangePassword } from "./change-password";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { PushPreferences } from "./push-preferences";
@@ -596,7 +597,7 @@ export function Dashboard({
                 </label>
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>}
-              {accountSection==="security"&&<PasskeySecurity />}
+              {accountSection==="security"&&<><ChangePassword /><PasskeySecurity /></>}
               {accountSection==="favorites"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
               {accountSection==="preferences"&&<><PushPreferences /><InstallApp /></>}
             </div>
