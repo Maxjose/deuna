@@ -290,7 +290,7 @@ export function RideRequest({
                   onClick={back}
                   aria-label="Volver"
                 >
-                  ←
+                  <AppIcon name="back" />
                 </button>
                 <strong>Tu recorrido</strong>
               </header>
