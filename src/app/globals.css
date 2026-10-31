@@ -2293,3 +2293,27 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .journey-addresses .address-input { display:block; position:relative; margin:4px 0 10px; }
 .journey-addresses .address-input input { margin:0; }
 .journey-addresses .pickup-address .address-input .locate-button { top:50%; bottom:auto; transform:translateY(-50%); height:43px; display:grid; place-items:center; padding:0; }
+
+/* Ubicación en vivo */
+.live-map { margin: 4px 0 16px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.live-map-header { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; }
+.live-map-header strong { font-size: 16px; line-height: 1.3; }
+.live-map-header small { font-size: 12px; color: var(--muted); }
+.live-badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; border-radius: var(--radius-pill); padding: 3px 10px; background: var(--paper); color: var(--muted); }
+.live-badge i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.live-badge.live { background: var(--success-soft); color: var(--lime-text); }
+.live-badge.live i { animation: live-pulse 1.6s ease-in-out infinite; }
+.live-badge.stale { background: #fff1de; color: #8a4b00; }
+.live-badge.lost { background: #fde9ed; color: #a52b3c; }
+.live-map-frame { position: relative; height: 240px; }
+.live-map-frame > .journey-map { position: absolute; inset: 0; min-height: 0; }
+.sharing-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 14px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--paper); font-size: 13px; font-weight: 600; color: var(--ink); }
+.sharing-status i { width: 8px; height: 8px; border-radius: 50%; background: #9aa6b2; flex-shrink: 0; }
+.sharing-status small { flex-basis: 100%; padding-left: 16px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.sharing-status.is-ok { background: var(--success-soft); }
+.sharing-status.is-ok i { background: #5c9a16; animation: live-pulse 1.6s ease-in-out infinite; }
+.sharing-status.is-warning { background: #fff1de; color: #6b3a00; }
+.sharing-status.is-warning i { background: #c96a00; }
+@keyframes live-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .live-badge.live i, .sharing-status.is-ok i { animation: none; } }
+.admin-shell[data-admin-theme='dark'] .live-badge, .admin-shell[data-admin-theme='dark'] .sharing-status { background: var(--paper); }

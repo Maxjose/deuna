@@ -8,6 +8,7 @@ import { AppIcon } from "./app-icon";
 import { TripChat } from "./trip-chat";
 import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
 import { DriverNavigation } from "./driver-navigation";
+import { DriverSharingStatus, PassengerLiveMap, useDriverLocationSharing } from "./live-location";
 import { AdminRecords } from "./admin-records";
 import { NotificationInbox } from "./notification-inbox";
 import { FavoritePlaces, useFavoritePlaces } from "./favorite-places";
@@ -290,6 +291,7 @@ export function Dashboard({
   const moreTabs = role === "admin" ? tabs.slice(3) : [];
   const inMore = moreTabs.some(([p]) => p === page);
   const driverActive=role==='driver'?trips.find(t=>t.driver_id===userId&&['assigned','arrived','ongoing'].includes(t.status)):undefined;
+  const sharing = useDriverLocationSharing(driverActive && profile?.approved && !profile.suspended ? driverActive.id : null);
   const currentTrip = role === "passenger" ? mine : driverActive;
   const driverDisconnected = role === "driver" && page === "home" && !profile?.available && !driverActive;
   const chatActive = !!currentTrip?.driver_id && ["assigned", "arrived", "ongoing"].includes(currentTrip.status);
@@ -359,6 +361,12 @@ export function Dashboard({
       <article className="trip-card" key={t.id}>
         {page === "home" && role !== "admin" && ["assigned", "arrived", "ongoing"].includes(t.status) && (
           <TripProgress status={t.status} headline={role === "passenger" ? passengerHeadlines[t.status] : undefined} />
+        )}
+        {page === "home" && role === "passenger" && t.passenger_id === userId && t.driver_id && ["assigned", "arrived", "ongoing"].includes(t.status) && (
+          <PassengerLiveMap tripId={t.id} status={t.status} origin={t.origin} destination={t.destination} />
+        )}
+        {page === "home" && role === "driver" && t.driver_id === userId && ["assigned", "arrived", "ongoing"].includes(t.status) && (
+          <DriverSharingStatus state={sharing.state} />
         )}
         <div className="row">
           <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>

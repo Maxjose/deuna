@@ -114,3 +114,11 @@ POST /api/quote requiere sesión verificada, consulta la ruta de OSRM desde el s
 Las cotizaciones se firman con HMAC y duran cinco minutos. FARE_SIGNING_KEY es exclusiva del servidor, coincide con private.fare_key y se configura como variable sensible en Vercel producción; nunca usar prefijo NEXT_PUBLIC_. No copiar esta clave a previews. La migración genera la clave privada; provisionarla de forma segura fuera de Git. Las solicitudes verifican firma, usuario y vencimiento. Un identificador único impide reutilizar una cotización. El importe, moneda, distancia y duración quedan guardados en el viaje y no cambian con nuevas tarifas. Los viajes anteriores conservan precios nulos.
 
 Verificación: npm run build, npm test y supabase/tests/route_fares.sql (fixtures con rollback: firma alterada, otro pasajero, solicitud sin cotización, vencimiento, reutilización, importe guardado y permisos de tarifas). Falta una prueba completa con sesión de pasajero y tarifas reales en un teléfono.
+
+## Ubicación en vivo del motorizado
+
+Migración: supabase/migrations/20261031010000_trip_locations.sql. Tabla public.trip_locations con la última posición por viaje; solo se escribe con share_location (motorizado asignado, aprobado, viaje assigned/arrived/ongoing, validación de coordenadas y hora, máximo una escritura cada 2 s). RLS: lee el motorizado, el pasajero de ese viaje y la administración. La fila se borra al finalizar, cancelar o reasignar el viaje. Publicada en supabase_realtime.
+
+El motorizado envía su posición mientras la app está abierta (cada 4 s con movimiento, latido cada 15 s). El pasajero ve el mapa en vivo, la antigüedad de la señal y un tiempo estimado aproximado. Si la migración no está aplicada, la interfaz oculta la función sin errores.
+
+Verificación: tests/trip-locations.sql (rollback: permisos, escritura directa bloqueada, validación, frecuencia, realtime y borrado) y tests/live-location.test.mjs. Con la app minimizada el navegador detiene el envío; la ubicación en segundo plano requiere el servicio nativo del APK.
