@@ -69,6 +69,18 @@ export function RideRequest({
     if (step === "home") dialog.current?.close();
   }, [step]);
   useEffect(() => () => { searchController.current?.abort(); locationVersion.current++; }, []);
+  const stepRef = useRef(step), backRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    stepRef.current = step;
+    const state = window.history.state as { rideStep?: boolean } | null;
+    if (step !== "home" && !state?.rideStep) window.history.pushState({ ...state, rideStep: true }, "");
+    if (step === "home" && state?.rideStep) window.history.back();
+  }, [step]);
+  useEffect(() => {
+    const onPop = () => { if (stepRef.current !== "home") backRef.current(); };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   function open() {
     setMapCompact(false);
     setStep("search");
@@ -84,6 +96,7 @@ export function RideRequest({
       step === "confirm" ? "choose" : step === "choose" ? "search" : "home",
     );
   }
+  backRef.current = back;
   function edit(kind: "origin" | "destination") {
     setMapCompact(false);
     setMapReference(null);

@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 import { PwaRegistration } from "@/components/pwa-registration";
 import { LaunchScreen } from "@/components/launch-screen";
+const manrope = localFont({ src: "./fonts/manrope-latin.woff2", weight: "200 800", display: "swap", variable: "--font-brand" });
 export const metadata: Metadata = {
   title: "De1na · Movilidad sin complicaciones",
   description: "Tu viaje en moto en Mara, Zulia.",
@@ -29,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" className={manrope.variable}>
       <body>
         <PwaRegistration />
         <LaunchScreen>{children}</LaunchScreen>

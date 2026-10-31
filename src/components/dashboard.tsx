@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import {loadReputation,loadTripContact} from "@/lib/participant-data";
 import {clearParticipantCache} from "@/lib/participant-cache";
@@ -53,6 +53,37 @@ type Settings = FareConfig & {
   open_time: string;
   close_time: string;
 };
+const progressSteps: [string, string][] = [
+  ["searching", "Buscando"],
+  ["assigned", "Asignado"],
+  ["arrived", "Llegó"],
+  ["ongoing", "En camino"],
+  ["finished", "Finalizado"],
+];
+const passengerHeadlines: Record<string, string> = {
+  searching: "Estamos buscando quién te lleve",
+  assigned: "¡Listo! Ya van por ti",
+  arrived: "¡Tu DeUna llegó!",
+  ongoing: "¡Vamos en camino!",
+};
+function TripProgress({ status, headline }: { status: string; headline?: string }) {
+  const current = progressSteps.findIndex(([key]) => key === status);
+  if (current < 0) return null;
+  return (
+    <div className="trip-progress">
+      <span className="trip-progress-step">Paso {current + 1} de {progressSteps.length} · {labels[status]}</span>
+      {headline && <strong className="trip-progress-title">{headline}</strong>}
+      <ol aria-label="Estado del viaje">
+        {progressSteps.map(([key, label], index) => (
+          <li key={key} className={index < current ? "done" : index === current ? "current" : ""} aria-current={index === current ? "step" : undefined}>
+            <span aria-hidden="true" />
+            {label}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 const labels: Record<string, string> = {
   searching: "Buscando motorizado",
   assigned: "Motorizado en camino",
@@ -72,7 +103,10 @@ export function Dashboard({
   const savedPlaces=useFavoritePlaces(userId);
   const [setupHome,setSetupHome]=useState(false);
   const [accountSection,setAccountSection]=useState("overview");
-  useEffect(()=>{if(setupHome)setAccountSection("favorites");},[setupHome]);
+  const [moreOpen,setMoreOpen]=useState(false);
+  const moreDialog=useRef<HTMLDialogElement>(null);
+  useEffect(()=>{if(moreOpen)moreDialog.current?.showModal();else moreDialog.current?.close();},[moreOpen]);
+  const openSection=(section:string)=>{window.location.hash=section==="overview"?"account":`account/${section}`;};
   const {theme:adminTheme,toggleTheme}=useAdminTheme(userId);
   const client = useMemo(() => browserClient(), []),
     [profile, setProfile] = useState<Profile | null>(null),
@@ -214,12 +248,14 @@ export function Dashboard({
     );
   useEffect(() => {
     const syncPage = () => {
-      const value = window.location.hash.slice(1);
+      const [value, section = "overview"] = window.location.hash.slice(1).split("/");
       const allowed =
         profile?.role === "admin"
           ? ["home", "history", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
+      setAccountSection(value === "account" && ["info","security","favorites","preferences"].includes(section) ? section : "overview");
+      setMoreOpen(false);
     };
     syncPage();
     window.addEventListener("hashchange", syncPage);
@@ -242,41 +278,63 @@ export function Dashboard({
     if (cancelId) cancelDialog.current?.showModal();
   }, [cancelId]);
   const navigate = (value: string) => {
-    if(value!=="account")setAccountSection("overview");
     window.location.hash = value;
     setPage(value);
+    setAccountSection("overview");
+    setMoreOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
-  const tabs =
-    role === "passenger"
+  const tabs: [string, string, string][] =
+    role === "admin"
       ? [
-          ["home", "Inicio"],
-          ["history", "Viajes"],
-          ["messages", "Mensajes"],
-          ["account", "Cuenta"],
+          ["home", "Inicio", "Operación"],
+          ["history", "Viajes", "Operación"],
+          ["drivers", "Equipo", "Personas"],
+          ["users", "Usuarios", "Personas"],
+          ["settings", "Servicio", "Configuración"],
+          ["places", "Lugares", "Configuración"],
+          ["notifications", "Avisos", "Configuración"],
+          ["account", "Cuenta", "Tu cuenta"],
         ]
       : [
-          [
-            "home",
-            role === "admin"
-              ? "Inicio"
-              : role === "driver"
-                ? "Solicitudes"
-                : "Viajar",
-          ],
-          ["history", "Viajes"],
-          ...(role === "admin"
-            ? [
-                ["drivers", "Equipo"],
-                ["users", "Usuarios"],
-                ["settings", "Servicio"],
-                ["places", "Lugares"],
-                ["notifications", "Avisos"],
-              ]
-            : [["messages", "Mensajes"]]),
-          ["account", "Cuenta"],
+          ["home", role === "driver" ? "Solicitudes" : "Inicio", ""],
+          ["history", "Viajes", ""],
+          ["messages", "Mensajes", ""],
+          ["account", "Cuenta", ""],
         ];
+  const moreDescriptions: Record<string, string> = {
+    users: "Pasajeros registrados",
+    settings: "Horario, tarifas y solicitudes",
+    places: "Catálogo de destinos",
+    notifications: "Notificaciones y campañas",
+    account: displayName || email,
+  };
+  const moreTabs = role === "admin" ? tabs.slice(3) : [];
+  const inMore = moreTabs.some(([p]) => p === page);
   const driverActive=role==='driver'?trips.find(t=>t.driver_id===userId&&['assigned','arrived','ongoing'].includes(t.status)):undefined;
+  const currentTrip = role === "passenger" ? mine : driverActive;
+  const chatActive = !!currentTrip?.driver_id && ["assigned", "arrived", "ongoing"].includes(currentTrip.status);
+  const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceIsOpen(settings) ? "Servicio abierto" : "Fuera de horario";
+  const pageTitle =
+    page === "account"
+      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",preferences:"Configuración"}[accountSection] || "Tu espacio")
+      : ({history:"Viajes",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
+        (role === "driver" ? "Solicitudes" : "Inicio");
+  const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
+  const pageContext =
+    page === "account"
+      ? "Tu cuenta"
+      : page === "history"
+        ? role === "admin" ? `${trips.length} viajes recientes` : `${ownTrips} ${ownTrips === 1 ? "viaje" : "viajes"}`
+        : ["drivers", "users"].includes(page)
+          ? "Personas"
+          : ["settings", "places", "notifications"].includes(page)
+            ? "Configuración"
+            : role === "admin"
+              ? `Operaciones · ${serviceLabel}`
+              : role === "driver"
+                ? profile?.available ? "Conectado · Recibiendo solicitudes" : "Desconectado"
+                : serviceLabel;
   const visibleTrips = trips.filter((t) =>
     page === "history"
       ? role === "admin" || t.passenger_id === userId || t.driver_id === userId
@@ -315,6 +373,9 @@ export function Dashboard({
       );
     return (
       <article className="trip-card" key={t.id}>
+        {page === "home" && role !== "admin" && ["assigned", "arrived", "ongoing"].includes(t.status) && (
+          <TripProgress status={t.status} headline={role === "passenger" ? passengerHeadlines[t.status] : undefined} />
+        )}
         <div className="row">
           <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>
           <small>#{t.id.slice(0, 6)}</small>
@@ -387,7 +448,7 @@ export function Dashboard({
       data-admin-theme={role === "admin" ? adminTheme : undefined}
       className={
         "shell " + (role === "driver" && page === "history" ? "driver-history " : "") + (page === "messages" ? "messages-screen " : "") + (role === "admin" ? "admin-shell " : "") +
-        (page === "home" && role === "passenger" ? "ride-screen" : "")
+        (page === "home" && role === "passenger" ? "ride-screen " : "") + (currentTrip && page !== "home" ? "has-trip-card" : "")
       }
     >
       <aside className="sidebar">
@@ -409,20 +470,35 @@ export function Dashboard({
               : "MOVERTE SIN COMPLICARTE"}
         </span>
         <nav aria-label="Navegación principal">
-          {tabs.map(([p, label]) => (
-            <button
-              key={p}
-              className={
-                "nav-item " +
-                (page === p ? "selected " : "")
-              }
-              aria-current={page === p ? "page" : undefined}
-              onClick={() => {if(p==="account")setAccountSection("overview");navigate(p);}}
-            >
-              <AppIcon name={p} />
-              <span>{label}</span>
-            </button>
+          {tabs.map(([p, label, group], index) => (
+            <Fragment key={p}>
+              {group && group !== tabs[index - 1]?.[2] && <span className="nav-group">{group}</span>}
+              <button
+                className={
+                  "nav-item " +
+                  (page === p ? "selected " : "") +
+                  (moreTabs.some(([extra]) => extra === p) ? "nav-extra " : "")
+                }
+                aria-current={page === p ? "page" : undefined}
+                onClick={() => navigate(p)}
+              >
+                <AppIcon name={p} />
+                <span>{label}</span>
+                {p === "messages" && chatActive && <i className="nav-dot" aria-label="Conversación activa" />}
+              </button>
+            </Fragment>
           ))}
+          {role === "admin" && (
+            <button
+              className={"nav-item nav-more " + (inMore ? "selected" : "")}
+              aria-haspopup="dialog"
+              aria-current={inMore ? "page" : undefined}
+              onClick={() => setMoreOpen(true)}
+            >
+              <AppIcon name="more" />
+              <span>Más</span>
+            </button>
+          )}
         </nav>
         <div className="sidebar-bottom">
           <span className="live-dot" />
@@ -434,7 +510,7 @@ export function Dashboard({
           {role === "admin" && <div className="admin-desktop-header">
             <div className="admin-header-title"><span>DE1NA / OPERACIONES</span><strong>Panel de administración</strong></div>
             <div className="admin-header-actions">
-              <span className={"admin-service-status " + (serviceIsOpen(settings) ? "is-open" : "")}><i />{!settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceIsOpen(settings) ? "Servicio abierto" : "Fuera de horario"}</span>
+              <span className={"admin-service-status " + (serviceIsOpen(settings) ? "is-open" : "")}><i />{serviceLabel}</span>
               <button className="admin-user-button" onClick={()=>navigate('account')} aria-label="Abrir mi cuenta"><span className="admin-user-avatar">{(displayName || email)[0]?.toUpperCase()}</span><span>{displayName || email}</span><AppIcon name="account" /></button>
             </div>
           </div>}
@@ -451,7 +527,6 @@ export function Dashboard({
           {role === "admin" && <AdminThemeToggle theme={adminTheme} onToggle={toggleTheme} />}
           <NotificationInbox userId={userId} />
         </header>
-        {role==='passenger'&&mine?.cancel_requested&&page!=='home'&&<button className="secondary" onClick={()=>navigate('home')}>Tu motorizado solicita cancelar. Revisar solicitud</button>}
         {offline && (
           <div className="connection-banner" role="status">
             Sin conexión. Reconéctate para consultar o actualizar viajes.
@@ -459,31 +534,14 @@ export function Dashboard({
         )}
         <section className={"content" + (role === "admin" ? ` admin-page-${page}` : "")} key={page} aria-busy={busy}>
           {page === "home" && role === "passenger" && (
-            <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}` : "Hola"}</h1>
+            <>
+              <span className={"page-context " + (serviceIsOpen(settings) ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
+              <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}` : "Hola"}</h1>
+            </>
           )}
           {!(page === "home" && role === "passenger") && page !== "messages" && <>
-          <span className="eyebrow">MOVERTE SIN COMPLICARTE</span>
-          <h1>
-            {page === "account"
-              ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",preferences:"Configuración"}[accountSection] || "Tu espacio")
-              : page === "places"
-                ? "Lugares que nos conectan."
-              : page === "notifications"
-                ? "Comunica de una."
-              : page === "settings"
-                ? "Cerca, a tu manera."
-                : page === "messages"
-                  ? "Mensajes"
-                : page === "users"
-                  ? "Nuestros usuarios."
-                : page === "drivers"
-                  ? "Personas que nos mueven."
-                  : page === "history"
-                    ? "Cada vuelta cuenta"
-                    : role === "passenger"
-                      ? "¿Pa’ dónde vamos?"
-                      : "Vamos de una."}
-          </h1>
+          <span className={"page-context " + (page === "home" && role === "admin" && serviceIsOpen(settings) || page === "home" && role === "driver" && profile?.available ? "is-open" : "")}>{page === "home" && role !== "passenger" && <i />}{pageContext}</span>
+          <h1>{pageTitle}</h1>
           </>}
           {!profile ? (
             <div
@@ -501,7 +559,7 @@ export function Dashboard({
             <TripChat userId={userId} refresh={trips} offline={offline}/>
           ) : page === "account" ? (
             <div className={"account-stack " + (accountSection === "overview" ? "account-overview" : "account-subsection")}>
-              {accountSection!=="overview"&&<button type="button" className="account-back secondary" onClick={()=>setAccountSection("overview")}>Volver</button>}
+              {accountSection!=="overview"&&<button type="button" className="account-back secondary" onClick={()=>openSection("overview")}>Volver</button>}
               {accountSection==="overview"&&<>
               <article className="trip-card account-card">
                 <div className="avatar">{(displayName || email)[0]?.toUpperCase()}</div>
@@ -517,7 +575,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],["favorites","Lugares favoritos","places"],["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>setAccountSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],["favorites","Lugares favoritos","places"],["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={()=>signOutDialog.current?.showModal()}>Cerrar sesión</button>
               </>}
@@ -602,7 +660,7 @@ export function Dashboard({
                 home={savedPlaces.favorites.find(place=>place.kind==='home')}
                 homeLoading={savedPlaces.loading}
                 homeError={savedPlaces.error}
-                onSetupHome={()=>{setSetupHome(true);navigate('account');}}
+                onSetupHome={()=>{setSetupHome(true);openSection('favorites');}}
                 enabled={serviceIsOpen(settings)}
                 busy={busy}
                 offline={offline}
@@ -675,6 +733,34 @@ export function Dashboard({
           )}
         </section>
       </main>
+      {currentTrip && page !== "home" && !profile?.suspended && (
+        <button type="button" className="active-trip-card" onClick={() => navigate("home")}>
+          <span className="active-trip-icon"><AppIcon name="moto" /></span>
+          <span className="active-trip-text">
+            <strong>{role === "passenger" ? passengerHeadlines[currentTrip.status] || labels[currentTrip.status] : labels[currentTrip.status]}</strong>
+            <small className={currentTrip.cancel_requested ? "alert" : ""}>
+              {currentTrip.cancel_requested
+                ? role === "passenger" ? "Tu motorizado pide cancelar · Revisar" : "Solicitud de cancelación pendiente · Revisar"
+                : `Hacia ${parseStoredPlace(currentTrip.destination).label.split(",")[0]} · Ver viaje`}
+            </small>
+          </span>
+          <AppIcon name="arrow" />
+        </button>
+      )}
+      {role === "admin" && (
+        <dialog ref={moreDialog} className="action-sheet more-sheet" aria-label="Más secciones" onClose={() => setMoreOpen(false)}>
+          <div className="sheet-handle" />
+          {moreTabs.map(([p, label, group], index) => (
+            <Fragment key={p}>
+              {group !== moreTabs[index - 1]?.[2] && <span className="more-group">{group}</span>}
+              <button type="button" className={"more-item " + (page === p ? "selected" : "")} aria-current={page === p ? "page" : undefined} onClick={() => navigate(p)}>
+                <span className="more-icon"><AppIcon name={p} /></span>
+                <span><strong>{label}</strong><small>{moreDescriptions[p]}</small></span>
+              </button>
+            </Fragment>
+          ))}
+        </dialog>
+      )}
       <Toast message={message} />
       {role!=='admin'&&!profile?.suspended&&<TripCompletion refresh={trips} onDone={()=>navigate('home')}/>}
       <dialog ref={acceptDialog} className="action-sheet" aria-labelledby="accept-title" onClose={()=>setAcceptTrip(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
