@@ -2065,6 +2065,10 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .account-menu-item > svg:last-child { width: 18px; height: 18px; color: var(--muted); }
 .account-section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
 .account-section-heading > div { min-width: 0; }
+.account-email-field { display:block; position:relative; margin:6px 0 14px; }
+.shell .account-email-field input { margin:0; padding-right:54px; text-overflow:ellipsis; }
+.email-verified { position:absolute; right:14px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:var(--success-soft); color:var(--lime-text); pointer-events:none; }
+.email-verified svg { width:18px; height:18px; }
 .account-section-heading h1 { margin: 4px 0 0; }
 .account-section-heading .account-back { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); }
 .account-overview .account-card { padding: 22px; }

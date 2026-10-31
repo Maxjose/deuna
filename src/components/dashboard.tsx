@@ -112,6 +112,7 @@ export function Dashboard({
   const signOutDialog = useRef<HTMLDialogElement>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [emailVerified,setEmailVerified]=useState(false);
   const { message, notify: setMessage } = useNotice(page === "account" ? `account-${accountSection}` : page);
   const noticeRef=useRef(setMessage);
   noticeRef.current=setMessage;
@@ -146,6 +147,7 @@ export function Dashboard({
     void client.auth.getUser().then(({ data }) => {
       if (!active) return;
       const meta = data.user?.user_metadata;
+      setEmailVerified(!!data.user?.email_confirmed_at);
       const name = typeof meta?.display_name === "string" ? meta.display_name : "";
       setDisplayName(name);
       setDraftName(name);
@@ -591,6 +593,12 @@ export function Dashboard({
                 <h2>Tus datos</h2>
                 <label>Nombre
                   <input name="name" autoComplete="name" value={draftName} onChange={(e) => setDraftName(e.target.value)} required maxLength={80} />
+                </label>
+                <label>Correo electrónico
+                  <span className="account-email-field">
+                    <input type="email" autoComplete="email" value={email} readOnly aria-describedby={emailVerified?'account-email-verified':undefined}/>
+                    {emailVerified&&<span id="account-email-verified" className="email-verified" role="img" aria-label="Correo verificado" title="Correo verificado"><AppIcon name="check"/></span>}
+                  </span>
                 </label>
                 <label>Teléfono de contacto
                   <input name="phone" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
