@@ -73,9 +73,9 @@ jobs:
         if: steps.keys.outputs.ready == 'true'
         env:
           NOTES_INPUT: ${{ github.event.inputs.notas }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          NOTES="${NOTES_INPUT:-$(printf '%s' "$COMMIT_MESSAGE" | head -n1)}"
+          # Texto genérico: nunca se muestran los cambios concretos (salvo notas escritas a mano al lanzar).
+          NOTES="${NOTES_INPUT:-Actualización con mejoras de rendimiento y estabilidad.}"
           jq -n --argjson v ${{ github.run_number }} --arg notes "${NOTES:-Mejoras y correcciones}" \
             --arg url "https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na-pruebas.apk" \
             --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg sha "$GITHUB_SHA" \
