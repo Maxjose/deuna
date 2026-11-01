@@ -2604,6 +2604,6 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 @media (prefers-reduced-motion: no-preference) {
   .action-sheet:not(.inbox-sheet)[open] { animation: sheet-in .32s cubic-bezier(.22,1,.36,1); }
   .action-sheet:not(.inbox-sheet)[open]::backdrop { animation: backdrop-in .25s ease-out; }
-  .action-sheet.is-closing { animation: sheet-out .24s cubic-bezier(.55,0,.75,.2) forwards; }
-  .action-sheet.is-closing::backdrop { animation: backdrop-out .24s ease-in forwards; }
+  .action-sheet:not(.inbox-sheet).is-closing[open] { animation: sheet-out .24s cubic-bezier(.55,0,.75,.2) forwards; }
+  .action-sheet:not(.inbox-sheet).is-closing[open]::backdrop { animation: backdrop-out .24s ease-in forwards; }
 }
