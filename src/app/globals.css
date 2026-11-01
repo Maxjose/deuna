@@ -2565,3 +2565,10 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .trip-contact-row > :first-child { flex: 1; min-width: 0; margin: 0; }
 .trip-call-button { flex: 0 0 auto; width: 48px; min-width: 48px; height: 48px; padding: 0; border-radius: 50%; display: inline-grid; place-items: center; margin: 0; align-self: center; }
 .action-sheet a.primary, .action-sheet a.secondary { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+
+/* Mensajes rápidos del chat */
+.chat-quick { display: flex; gap: 8px; overflow-x: auto; padding: 8px 12px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.chat-quick::-webkit-scrollbar { display: none; }
+.chat-quick button { flex: 0 0 auto; white-space: nowrap; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 14px; font-weight: 600; min-height: 36px; cursor: pointer; }
+.chat-quick button:active { background: var(--success-soft); border-color: var(--lime); }
+.chat-quick button:disabled { opacity: .5; }

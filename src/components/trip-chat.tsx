@@ -20,12 +20,12 @@ export function TripChat({userId,refresh,offline,role}:{userId:string;refresh:un
  const canChat=!!trip&&['assigned','arrived','ongoing'].includes(trip.status);
  const lastMessage=messages.at(-1)?.id;
  useEffect(()=>{if(nearBottom.current&&list.current)list.current.scrollTop=list.current.scrollHeight;},[lastMessage]);
- async function send(e:React.FormEvent){
-  e.preventDefault();if(!canChat||!trip||!draft.trim()||sending||offline)return;
-  const body=draft.trim(),tripId=trip.id;
+ async function send(e:React.FormEvent|null,quick?:string){
+  e?.preventDefault();const text=(quick??draft).trim();if(!canChat||!trip||!text||sending||offline)return;
+  const body=text,tripId=trip.id;
   if(!pending.current||pending.current.body!==body||pending.current.trip!==tripId)pending.current={id:crypto.randomUUID(),body,trip:tripId};
   setSending(true);setError('');
-  try{const {error}=await client.rpc('trip_chat',{action:'send',trip_id:tripId,message:body,client_message_id:pending.current.id});if(error)throw error;pending.current=null;setDraft('');nearBottom.current=true;await load();}
+  try{const {error}=await client.rpc('trip_chat',{action:'send',trip_id:tripId,message:body,client_message_id:pending.current.id});if(error)throw error;pending.current=null;if(quick===undefined)setDraft('');nearBottom.current=true;await load();}
   catch{await load();setError('No pudimos enviar el mensaje. Reintenta; si el viaje terminó, el chat se cerrará.');}
   finally{setSending(false);}
  }
@@ -39,7 +39,18 @@ export function TripChat({userId,refresh,offline,role}:{userId:string;refresh:un
     {messages.length===200&&<p className="chat-hint">Últimos 200 mensajes del viaje.</p>}
     {messages.map(message=><article key={message.id} className={'chat-bubble '+(message.sender_id===userId?'mine':'')}><p>{message.body}</p><time dateTime={message.created_at}>{new Date(message.created_at).toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'})}</time></article>)}
    </div>
+   {canChat&&<div className="chat-quick" role="group" aria-label="Mensajes rápidos">{quickReplies(role==='driver',trip.status).map(text=><button key={text} type="button" disabled={sending||offline} onClick={()=>void send(null,text)}>{text}</button>)}</div>}
    <form className="chat-compose" onSubmit={send}><input aria-label="Mensaje" value={draft} onChange={e=>setDraft(e.target.value)} maxLength={1000} disabled={!canChat||sending} placeholder={canChat?'Escribe un mensaje…':'Esperando conductor…'}/><button className="primary" aria-label="Enviar mensaje" disabled={!draft.trim()||!canChat||sending||offline}><AppIcon name="arrow"/></button></form>
   </>}
  </section>;
+}
+
+/** Mensajes rápidos según quién escribe y el paso del viaje. */
+function quickReplies(driver:boolean,status:string){
+ if(driver)return status==='assigned'?['Voy en camino 🏍️','Llego en 5 minutos','Hay tráfico, llego en unos minutos','¿Me confirmas el punto exacto?']
+  :status==='arrived'?['Ya llegué, te espero aquí','Estoy afuera','¿Te falta mucho?','¿Dónde estás exactamente?']
+  :['Ya vamos en camino','Llegamos en unos minutos','¿Te dejo aquí?','Gracias por viajar con De1na 🙌'];
+ return status==='assigned'?['¡Gracias! Te espero','Ya estoy en el punto de recogida','Llego al punto en 5 minutos','¿Cuánto te falta?']
+  :status==='arrived'?['Ya salgo','Dame 2 minutos, por favor','¿Dónde estás exactamente?','No te veo, ¿qué color es tu moto?']
+  :['¿Cuánto falta para llegar?','Déjame aquí, por favor','Ve con cuidado, por favor','¡Gracias por el viaje! 🙌'];
 }
