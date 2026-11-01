@@ -2559,3 +2559,9 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .launch-screen { display: none; }
   .app-content.is-opening { opacity: 1; transform: none; animation: none; visibility: visible; }
 }
+
+/* Chat + botón redondo de teléfono */
+.trip-contact-row { display: flex; gap: 10px; align-items: stretch; }
+.trip-contact-row > :first-child { flex: 1; min-width: 0; margin: 0; }
+.trip-call-button { flex: 0 0 auto; width: 48px; min-width: 48px; height: 48px; padding: 0; border-radius: 50%; display: inline-grid; place-items: center; margin: 0; align-self: center; }
+.action-sheet a.primary, .action-sheet a.secondary { display: flex; align-items: center; justify-content: center; text-decoration: none; }

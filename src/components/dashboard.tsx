@@ -8,7 +8,7 @@ import { AppIcon } from "./app-icon";
 import { NavIndicator } from "./nav-indicator";
 import { TripChat } from "./trip-chat";
 import { TripSound } from "./trip-sound";
-import { TripCancellation,TripCompletion,DriverReputation,TripPerson } from './trip-resolution';
+import { TripCancellation,TripCompletion,DriverReputation,TripPerson,TripContactButton } from './trip-resolution';
 import { DriverNavigation } from "./driver-navigation";
 import { PassengerPayment, PaymentSettingsForm, TripPaymentNote } from "./trip-payment";
 import { AdminPayments } from "./admin-payments";
@@ -437,7 +437,7 @@ export function Dashboard({
         {t.passenger_name && <p className="trip-person"><small>Solicitado por</small><strong>{t.passenger_name}</strong></p>}
         {role==='driver'&&<TripPerson viewerId={userId} tripId={t.id} label="Pasajero"/>}
         {role==='passenger'&&t.driver_id&&<TripPerson viewerId={userId} tripId={t.id} label="Conductor"/>}
-        {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<button className="primary trip-chat-button" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Mensaje a mi conductor</button>}
+        {role==='passenger'&&t.passenger_id===userId&&['assigned','arrived','ongoing'].includes(t.status)&&<div className="trip-contact-row"><button className="primary trip-chat-button" onClick={()=>navigate('messages')}><AppIcon name="messages"/>Mensaje a mi conductor</button><TripContactButton tripId={t.id} viewerId={userId}/></div>}
         {t.driver_id && role==='admin' && <p className="trip-person"><small>Conductor</small><strong>{t.driver_name || `#${t.driver_id.slice(0, 8)}`}</strong></p>}
         {role === "driver" && t.status === "searching" && (
           <button
@@ -454,7 +454,7 @@ export function Dashboard({
           page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <DriverNavigation origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
+            <DriverNavigation contact={<TripContactButton tripId={t.id} viewerId={userId}/>} origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
           )}
         {role === "passenger" &&
           t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/>}
