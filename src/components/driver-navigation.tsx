@@ -9,7 +9,7 @@ const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
 export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpenChat,children}:{origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void;onOpenChat:()=>void;children?:ReactNode}){
  const pickup=useMemo(()=>parseStoredPlace(origin),[origin]),dropoff=useMemo(()=>parseStoredPlace(destination),[destination]);
  const target=status==='ongoing'?dropoff:pickup;
- const dialog=useRef<HTMLDialogElement>(null),lastRoute=useRef<{point:MapPoint;at:number}|null>(null);
+ const dialog=useRef<HTMLDialogElement>(null),lastRoute=useRef<{point:MapPoint;at:number;accuracy:number}|null>(null);
  const [opened,setOpened]=useState(true),[fix,setFix]=useState<NavigationFix|null>(null),[routeOrigin,setRouteOrigin]=useState<MapPoint|null>(null),[follow,setFollow]=useState(true),[gpsError,setGpsError]=useState(''),[retry,setRetry]=useState(0),[now,setNow]=useState(0),[awake,setAwake]=useState(true),[wakeActive,setWakeActive]=useState(false),[offline,setOffline]=useState(false);
  useEffect(()=>{if(opened){dialog.current?.showModal();dialog.current?.focus({preventScroll:true});}},[opened]);
  useEffect(()=>{
@@ -21,10 +21,10 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
    if(!alive)return;
    const next={lat:position.coords.latitude,lng:position.coords.longitude,accuracy:position.coords.accuracy,timestamp:position.timestamp};
    const time=Date.now();setNow(time);
-   if(!usableFix(next,time)){setGpsError('Señal GPS imprecisa o antigua. Esperando una ubicación más precisa.');return;}
+   if(!usableFix(next,time)){setGpsError('Señal GPS muy imprecisa o antigua. Activa la ubicación precisa del teléfono.');return;}
    setFix(next);setGpsError('');
    if(navigator.onLine&&refreshNavigationRoute(lastRoute.current,next,time)){
-    const point={lat:next.lat,lng:next.lng};lastRoute.current={point,at:time};setRouteOrigin(point);
+    const point={lat:next.lat,lng:next.lng};lastRoute.current={point,at:time,accuracy:next.accuracy};setRouteOrigin(point);
    }
   },error=>{if(alive)setGpsError(error.code===1?'Permite el acceso a tu ubicación para seguir la ruta.':'No recibimos una posición GPS reciente. Revisa la señal.');},{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
   const timer=setInterval(()=>setNow(Date.now()),5000);
@@ -53,7 +53,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
    <div className="driver-nav-map">{opened&&<JourneyMap extraPoint={status!=='ongoing'?dropoff.point:null} navigation origin={routeOrigin} destination={target.point} livePosition={fix} follow={follow}/>}<button className="driver-follow secondary" aria-pressed={follow} onClick={()=>setFollow(value=>!value)}>{follow?'Explorar mapa':'Seguir mi ubicación'}</button></div>
    <footer className="driver-nav-footer">
     <button type="button" className="secondary driver-chat-button" onClick={()=>{dialog.current?.close();onOpenChat();}}><AppIcon name="messages"/>Abrir chat del viaje</button>
-    <p className="driver-gps" role="status">{offline?'Sin conexión: la ruta no puede actualizarse.':gpsError||(!fix?'Buscando tu ubicación…':!fresh?'GPS sin actualizar. Esperando señal…':`GPS activo · precisión ${Math.round(fix.accuracy)} m`)}</p>
+    <p className="driver-gps" role="status">{offline?'Sin conexión: la ruta no puede actualizarse.':gpsError||(!fix?'Buscando tu ubicación…':!fresh?'GPS sin actualizar. Esperando señal…':fix.accuracy>100?`Señal GPS baja (±${Math.round(fix.accuracy)} m). Activa la ubicación precisa para mejorarla.`:`GPS activo · precisión ${Math.round(fix.accuracy)} m`)}</p>
     {gpsError&&<button className="text" onClick={()=>setRetry(n=>n+1)}>Reintentar GPS</button>}
     {!target.point&&<p role="alert">Este viaje no tiene un punto guardado. Consulta la dirección con el pasajero.</p>}
     <label className="check"><input type="checkbox" checked={awake} onChange={e=>setAwake(e.target.checked)}/>Mantener pantalla encendida {awake&&<small>{wakeActive?'· Activo':'· No disponible ahora'}</small>}</label>

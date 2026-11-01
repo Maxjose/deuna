@@ -4,7 +4,7 @@ import {usableFix,refreshNavigationRoute} from '../src/lib/navigation.ts';
 test('navegación descarta posiciones antiguas, imprecisas o inválidas',()=>{
  const now=100000,fix={lat:11,lng:-71,accuracy:15,timestamp:now};
  assert.equal(usableFix(fix,now),true);
- for(const change of [{accuracy:101},{timestamp:now-21000},{timestamp:now+6000},{lat:91},{lng:Infinity},{accuracy:NaN}])assert.equal(usableFix({...fix,...change},now),false);
+ for(const change of [{accuracy:1501},{timestamp:now-31000},{timestamp:now+6000},{lat:91},{lng:Infinity},{accuracy:NaN}])assert.equal(usableFix({...fix,...change},now),false);
 });
 test('ruta se recalcula al moverse y limita peticiones a una cada 30 segundos',()=>{
  const start={lat:11,lng:-71},previous={point:start,at:1000},moved={lat:11.001,lng:-71};
