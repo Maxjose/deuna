@@ -133,7 +133,8 @@ Variables de entorno en Vercel (solo servidor): TESORO_SUCURSAL, TESORO_CAJA, TE
 
 Toda hoja, submenú o ventana emergente debe abrir y cerrar con una animación sutil, para que la app se sienta nativa y premium. Nunca deben aparecer ni desaparecer de golpe.
 
-- Usa `<dialog className="action-sheet">` para hojas y ventanas emergentes. `SheetMotion` (montado en `src/app/layout.tsx`) y los estilos de `globals.css` hacen que entren deslizándose hacia arriba y salgan deslizándose hacia abajo, tanto si se cierran con `dialog.close()` como con el botón o gesto de atrás, Escape o un toque fuera.
+- Usa `<dialog className="action-sheet">` para hojas y ventanas emergentes. Las transiciones de `globals.css` (`@starting-style` + `overlay`/`display` con `allow-discrete`) hacen que entren deslizándose hacia arriba y salgan hacia abajo, se cierren con `dialog.close()`, con atrás/Escape o tocando fuera.
+- No retrases `dialog.close()` con temporizadores para animar: mientras el diálogo modal sigue abierto la página no responde a toques y se siente trabada. Ciérralo de inmediato y deja que la transición CSS haga la salida.
 - Para cerrar al tocar fuera, usa `onClick={closeOnBackdrop}` (`src/lib/dialog.ts`).
 - Otros elementos que aparecen o desaparecen (paneles que se despliegan, avisos, menús) también llevan una transición corta, de 150 a 320 ms y con desaceleración.
 - Respeta siempre `prefers-reduced-motion: reduce`.

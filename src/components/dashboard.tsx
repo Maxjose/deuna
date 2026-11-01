@@ -264,7 +264,7 @@ export function Dashboard({
           ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
-      setAccountSection(value === "account" && ["info","security","favorites","preferences"].includes(section) ? section : "overview");
+      setAccountSection(value === "account" && ["info","security","favorites","payout","preferences"].includes(section) ? section : "overview");
       setMoreOpen(false);
     };
     syncPage();

@@ -2596,14 +2596,17 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .trip-detail-date { margin: 0 0 4px; text-transform: capitalize; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Movimiento de hojas y ventanas emergentes (ver README › Animaciones). Entrada hacia arriba, salida hacia abajo. */
-@keyframes sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
-@keyframes sheet-out { from { transform: translateY(0); } to { transform: translateY(100%); } }
-@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+/* Movimiento de hojas y ventanas emergentes (ver README › Animaciones).
+   Animación nativa con transiciones: al cerrar, el diálogo deja de bloquear la página al instante
+   (no queda "trabada") mientras la hoja termina de bajar. Entrada hacia arriba, salida hacia abajo. */
 @media (prefers-reduced-motion: no-preference) {
-  .action-sheet:not(.inbox-sheet)[open] { animation: sheet-in .32s cubic-bezier(.22,1,.36,1); }
-  .action-sheet:not(.inbox-sheet)[open]::backdrop { animation: backdrop-in .25s ease-out; }
-  .action-sheet:not(.inbox-sheet).is-closing[open] { animation: sheet-out .24s cubic-bezier(.55,0,.75,.2) forwards; }
-  .action-sheet:not(.inbox-sheet).is-closing[open]::backdrop { animation: backdrop-out .24s ease-in forwards; }
+  .action-sheet:not(.inbox-sheet) {
+    transform: translateY(100%);
+    transition: transform .22s cubic-bezier(.55,0,.75,.2), overlay .22s allow-discrete, display .22s allow-discrete;
+  }
+  .action-sheet:not(.inbox-sheet)[open] { transform: none; transition: transform .32s cubic-bezier(.22,1,.36,1), overlay .32s allow-discrete, display .32s allow-discrete; }
+  @starting-style { .action-sheet:not(.inbox-sheet)[open] { transform: translateY(100%); } }
+  .action-sheet:not(.inbox-sheet)::backdrop { opacity: 0; transition: opacity .22s ease-in, overlay .22s allow-discrete, display .22s allow-discrete; }
+  .action-sheet:not(.inbox-sheet)[open]::backdrop { opacity: 1; transition: opacity .28s ease-out, overlay .28s allow-discrete, display .28s allow-discrete; }
+  @starting-style { .action-sheet:not(.inbox-sheet)[open]::backdrop { opacity: 0; } }
 }
