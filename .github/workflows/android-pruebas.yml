@@ -96,5 +96,5 @@ jobs:
           gh release delete apk-pruebas --yes --cleanup-tag 2>/dev/null || true
           gh release create apk-pruebas "$RUNNER_TEMP/de1na-pruebas.apk" "$RUNNER_TEMP/version.json" \
             --prerelease --target "$GITHUB_SHA" \
-            --title "De1na Pruebas (compilación ${{ github.run_number }})" \
+            --title "De1na (compilación ${{ github.run_number }})" \
             --notes "APK de pruebas generado automáticamente. Abre https://deuna-five.vercel.app a pantalla completa. No es la app oficial."

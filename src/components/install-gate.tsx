@@ -3,6 +3,7 @@ import {useEffect,useState,type ReactNode} from 'react';
 import {installPlatform,requiresInstallation} from '@/lib/install-platform';
 import {detectTwa} from '@/lib/twa';
 import {AppIcon} from './app-icon';
+const APK_URL='https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na-pruebas.apk';
 type InstallPrompt=Event&{prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 
 export function InstallGate({children}:{children:ReactNode}){
@@ -37,14 +38,9 @@ export function InstallGate({children}:{children:ReactNode}){
      <p>Instálala desde Safari en unos pasos:</p>
      <ol><li><span>1</span><div>Abre el menú de Safari y toca <strong>Compartir</strong> <ShareIcon/>.</div></li><li><span>2</span><div>Elige <strong>Añadir a pantalla de inicio</strong>.</div></li><li><span>3</span><div>Si aparece, activa <strong>Abrir como app web</strong> y toca <strong>Añadir</strong>. Luego abre De1na desde su icono.</div></li></ol>
     </>:<>
-     <p>Instálala en tu pantalla de inicio y entra directamente a tu próxima vuelta.</p>
-     <button className="primary install-gate-button" disabled={busy} onClick={async()=>{
-      if(!prompt){setManual(true);return;}
-      setBusy(true);
-      try{await prompt.prompt();const choice=await prompt.userChoice;if(choice.outcome!=='accepted')setManual(true);}
-      catch{setManual(true);}finally{setPrompt(null);setBusy(false);}
-     }}><DownloadIcon/>{busy?'Abriendo instalación…':'Instalar De1na'}<AppIcon name="arrow"/></button>
-     {manual&&<div className="install-manual" role="status">En Chrome, abre el menú <strong>⋮</strong> y elige <strong>Instalar aplicación</strong> o <strong>Añadir a pantalla de inicio</strong>. Si ya la instalaste, ábrela desde su icono. Si estás dentro de otra app, abre este sitio en Chrome.</div>}
+     <p>Descarga la app para Android e instálala en tu teléfono.</p>
+     <a className="primary install-gate-button" href={APK_URL} onClick={()=>setManual(true)}><DownloadIcon/>Descargar app para Android<AppIcon name="arrow"/></a>
+     {manual&&<div className="install-manual" role="status">Cuando termine la descarga, ábrela desde la notificación y toca <strong>Instalar</strong>. Si Android lo pide, permite instalar apps de esta fuente. Luego abre De1na desde su icono.</div>}
     </>}
    </div>
    <footer>¿Vamos? <strong>¡De una!</strong></footer>
