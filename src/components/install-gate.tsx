@@ -35,8 +35,8 @@ export function InstallGate({children}:{children:ReactNode}){
    <div className="install-gate-card">
     <h2>{installed?'De1na ya está instalada':mode==='ios'?'De1na en tu iPhone':'Viaja desde la app'}</h2>
     {installed?<p>Busca el icono de De1na en tu teléfono y abre la aplicación para viajar.</p>:mode==='ios'?<>
-     <p>Instálala desde Safari en unos pasos:</p>
-     <ol><li><span>1</span><div>Abre el menú de Safari y toca <strong>Compartir</strong> <ShareIcon/>.</div></li><li><span>2</span><div>Elige <strong>Añadir a pantalla de inicio</strong>.</div></li><li><span>3</span><div>Si aparece, activa <strong>Abrir como app web</strong> y toca <strong>Añadir</strong>. Luego abre De1na desde su icono.</div></li></ol>
+     <p>Instálala desde tu navegador en unos pasos:</p>
+     <ol><li><span>1</span><div>Toca el botón <strong>Compartir</strong> <ShareIcon/> de tu navegador (en la barra o en el menú).</div></li><li><span>2</span><div>Elige <strong>Añadir a pantalla de inicio</strong>.</div></li><li><span>3</span><div>Si aparece, activa <strong>Abrir como app web</strong> y toca <strong>Añadir</strong>. Luego abre De1na desde su icono.</div></li></ol>
     </>:<>
      <p>Descarga la app para Android e instálala en tu teléfono.</p>
      <a className="primary install-gate-button" href={APK_URL} onClick={()=>setManual(true)}><DownloadIcon/>Descargar app para Android<AppIcon name="arrow"/></a>
