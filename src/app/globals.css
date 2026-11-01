@@ -2595,3 +2595,15 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .trip-detail-sheet .trip-card { box-shadow: none; border: 1px solid var(--line); }
 .trip-detail-date { margin: 0 0 4px; text-transform: capitalize; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Movimiento de hojas y ventanas emergentes (ver README › Animaciones). Entrada hacia arriba, salida hacia abajo. */
+@keyframes sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes sheet-out { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .action-sheet:not(.inbox-sheet)[open] { animation: sheet-in .32s cubic-bezier(.22,1,.36,1); }
+  .action-sheet:not(.inbox-sheet)[open]::backdrop { animation: backdrop-in .25s ease-out; }
+  .action-sheet.is-closing { animation: sheet-out .24s cubic-bezier(.55,0,.75,.2) forwards; }
+  .action-sheet.is-closing::backdrop { animation: backdrop-out .24s ease-in forwards; }
+}

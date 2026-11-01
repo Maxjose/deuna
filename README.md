@@ -128,3 +128,12 @@ Verificación: tests/trip-locations.sql (rollback: permisos, escritura directa b
 Migración 20261031070000_payment_verification.sql. El pasajero informa referencia, banco y teléfono de origen y el monto (tolerancia Bs. 1 o 1 %); una referencia no puede usarse en dos viajes. Supabase llama a /api/payments/verify al informar y cada minuto (pg_cron + pg_net, misma clave que el envío push). El servidor inicia sesión en Tesoro Pagos y usa "Confirmar pago" (src/lib/tesoro.ts): verificado, no encontrado (reintenta 15 veces, luego revisión) o ya confirmado antes (revisión). Admin › Pagos lista los pagos, el estado de la conexión y permite aprobar, rechazar o reintentar. Una sola sesión a la vez (migración 20261031090000_payment_session_window.sql): el verificador inicia sesión una vez, la mantiene hasta 50 s recogiendo pagos nuevos y reintentos (cada 30 s los 5 primeros, luego cada 2 min) y siempre cierra sesión. Pagos › Configuración: interruptor y horario de la verificación automática (migración 20261031080000_payment_schedule.sql); desactivada o fuera de horario no se conecta al banco y los pagos quedan en revisión manual.
 
 Variables de entorno en Vercel (solo servidor): TESORO_SUCURSAL, TESORO_CAJA, TESORO_CLAVE. Pruebas: tests/payment-verification.sql, tests/tesoro.test.mjs, tests/tesoro-client.test.mjs (servidor simulado).
+
+## Animaciones (regla de diseño)
+
+Toda hoja, submenú o ventana emergente debe abrir y cerrar con una animación sutil, para que la app se sienta nativa y premium. Nunca deben aparecer ni desaparecer de golpe.
+
+- Usa `<dialog className="action-sheet">` para hojas y ventanas emergentes. `SheetMotion` (montado en `src/app/layout.tsx`) y los estilos de `globals.css` hacen que entren deslizándose hacia arriba y salgan deslizándose hacia abajo, tanto si se cierran con `dialog.close()` como con el botón o gesto de atrás, Escape o un toque fuera.
+- Para cerrar al tocar fuera, usa `onClick={closeOnBackdrop}` (`src/lib/dialog.ts`).
+- Otros elementos que aparecen o desaparecen (paneles que se despliegan, avisos, menús) también llevan una transición corta, de 150 a 320 ms y con desaceleración.
+- Respeta siempre `prefers-reduced-motion: reduce`.

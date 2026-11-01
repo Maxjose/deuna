@@ -6,6 +6,7 @@ import { AppUpdate } from "@/components/app-update";
 import { LaunchScreen } from "@/components/launch-screen";
 import { HapticFeedback } from "@/components/haptic-feedback";
 import { InstallGate } from "@/components/install-gate";
+import { SheetMotion } from "@/components/sheet-motion";
 const manrope = localFont({ src: "./fonts/manrope-latin.woff2", weight: "200 800", display: "swap", variable: "--font-brand" });
 export const metadata: Metadata = {
   title: "De1na · Movilidad sin complicaciones",
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body>
         <PwaRegistration />
         <HapticFeedback />
+        <SheetMotion />
         <LaunchScreen><InstallGate><AppUpdate />{children}</InstallGate></LaunchScreen>
       </body>
     </html>
