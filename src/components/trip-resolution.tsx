@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useMemo,useRef,useState,useSyncExternalStore,useCallback} from 'react';
 import {browserClient} from '@/lib/supabase/client';
+import {closeOnBackdrop} from '@/lib/dialog';
 import {parseStoredPlace} from '@/lib/journey';
 import {participantKey,readParticipant,subscribeParticipant} from '@/lib/participant-cache';
 import {loadReputation,loadTripContact,type Reputation,type TripContact} from '@/lib/participant-data';
@@ -40,7 +41,7 @@ export function TripContactButton({tripId,viewerId}:{tripId:string;viewerId:stri
   <button type="button" className="secondary trip-call-button" aria-label="Llamar o escribir por teléfono" onClick={()=>{sheet.current?.showModal();sheet.current?.focus({preventScroll:true});}}>
    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg>
   </button>
-  <dialog ref={sheet} tabIndex={-1} className="action-sheet" aria-labelledby={'contact-title-'+tripId}>
+  <dialog ref={sheet} tabIndex={-1} className="action-sheet" aria-labelledby={'contact-title-'+tripId} onClick={closeOnBackdrop}>
    <div className="sheet-handle"/>
    <h2 id={'contact-title-'+tripId}>Contactar a {person?.name||'la otra persona'}</h2>
    {phone?<>

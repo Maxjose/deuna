@@ -28,6 +28,7 @@ import { PushCampaigns } from "./push-campaigns";
 import { PlacesCatalog } from "./places-catalog";
 import { disconnectPushDevice } from "@/lib/push-device";
 import { Toast, useNotice } from "./toast";
+import { closeOnBackdrop } from "@/lib/dialog";
 import { parseStoredPlace } from "@/lib/journey";
 import { FareSettings } from "./fare-settings";
 import { DriverAvailability, AvailabilitySettings } from "./driver-availability";
@@ -863,12 +864,12 @@ export function Dashboard({
         <button className="secondary" disabled={busy} onClick={()=>acceptDialog.current?.close()}>Volver a solicitudes</button>
         <Toast message={message}/>
       </dialog>
-      <dialog ref={detailDialog} tabIndex={-1} className="action-sheet trip-detail-sheet" aria-label="Detalle del viaje" onClose={() => setDetailTrip(null)}>
+      <dialog ref={detailDialog} tabIndex={-1} className="action-sheet trip-detail-sheet" aria-label="Detalle del viaje" onClick={closeOnBackdrop} onClose={() => setDetailTrip(null)}>
         <div className="sheet-handle" />
         {(() => { const t = trips.find(x => x.id === detailTrip); return t ? <>{t.created_at && <p className="muted trip-detail-date">{new Date(t.created_at).toLocaleString("es-VE", { dateStyle: "full", timeStyle: "short" })}</p>}{card(t, true)}</> : null; })()}
         <button className="secondary" onClick={() => detailDialog.current?.close()}>Cerrar</button>
       </dialog>
-      <dialog ref={dateDialog} tabIndex={-1} className="action-sheet" aria-labelledby="history-date-title">
+      <dialog ref={dateDialog} tabIndex={-1} className="action-sheet" aria-labelledby="history-date-title" onClick={closeOnBackdrop}>
         <div className="sheet-handle" />
         <h2 id="history-date-title">Buscar por fecha</h2>
         <label>Fecha del viaje<input type="date" value={historyDate} max={localDay(new Date().toISOString())} onChange={e => setHistoryDate(e.target.value)} /></label>
