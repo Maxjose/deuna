@@ -586,7 +586,7 @@ export function Dashboard({
             <div><span className="page-context">{pageContext}</span><h1>{pageTitle}</h1></div>
           </div> : !(page === "home" && role === "passenger") && page !== "messages" && <>
           <span className={"page-context " + (page === "home" && role === "admin" && serviceOpen || page === "home" && role === "driver" && profile?.available ? "is-open" : "")}>{page === "home" && role !== "passenger" && <i />}{pageContext}</span>
-          {page === "history" ? <div className="history-title-row"><h1>{pageTitle}</h1><button type="button" className={"history-calendar" + (historyDate ? " is-active" : "")} aria-label={historyDate ? `Filtrando por ${dayTitle(historyDate)}. Cambiar fecha` : "Buscar viajes por fecha"} onClick={() => dateDialog.current?.showModal()}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button></div> : <h1>{pageTitle}</h1>}
+          {page === "history" ? <div className="history-title-row"><h1>{pageTitle}</h1><button type="button" className={"history-calendar" + (historyDate ? " is-active" : "")} aria-label={historyDate ? `Filtrando por ${dayTitle(historyDate)}. Cambiar fecha` : "Buscar viajes por fecha"} onClick={() => { dateDialog.current?.showModal(); dateDialog.current?.focus({ preventScroll: true }); }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button></div> : <h1>{pageTitle}</h1>}
           {page === "history" && historyDate && <button type="button" className="history-date-chip" onClick={() => setHistoryDate("")}>{dayTitle(historyDate)} <span aria-hidden="true">✕</span><span className="sr-only">Quitar filtro de fecha</span></button>}
           </>}
           {!profile ? (
@@ -789,7 +789,7 @@ export function Dashboard({
                   <section key={day} className="history-day">
                     <h2>{dayTitle(day)}</h2>
                     {items.map(t => (
-                      <button key={t.id} type="button" className="history-row" onClick={() => { setDetailTrip(t.id); requestAnimationFrame(() => detailDialog.current?.showModal()); }}>
+                      <button key={t.id} type="button" className="history-row" onClick={() => { setDetailTrip(t.id); requestAnimationFrame(() => { detailDialog.current?.showModal(); detailDialog.current?.focus({ preventScroll: true }); }); }}>
                         <span className={"history-dot " + (t.status === "cancelled" ? "is-cancelled" : t.status === "finished" ? "is-done" : "")} aria-hidden="true" />
                         <span className="history-row-main">
                           <strong>{role === "admin" ? (t.passenger_name || "Pasajero") : <PeerName tripId={t.id} viewerId={userId} fallback={role === "driver" ? "Pasajero" : "Conductor"} />}</strong>
