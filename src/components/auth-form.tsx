@@ -39,7 +39,7 @@ export function AuthForm({
         router.replace("/dashboard");
         router.refresh();
       } else if (mode === "register") {
-        const { error } = await client.auth.signUp({
+        const { data, error } = await client.auth.signUp({
           email,
           password,
           options: {
@@ -47,8 +47,13 @@ export function AuthForm({
           },
         });
         if (error) throw error;
+        // Con confirmación por correo, Supabase no da error si el correo ya existe: devuelve un usuario sin identidades.
+        if (data.user && data.user.identities?.length === 0) {
+          setMessage("Este correo ya está registrado. Inicia sesión o recupera tu contraseña.");
+          return;
+        }
         setMessage(
-          "Si el registro procede, recibirás un correo para confirmar tu cuenta.",
+          "Te enviamos un correo para confirmar tu cuenta. Revisa también la carpeta de spam.",
         );
       } else {
         const { error } = await client.auth.resetPasswordForEmail(email, {
