@@ -53,7 +53,7 @@ export function AuthForm({
           return;
         }
         setMessage(
-          "Te enviamos un correo para confirmar tu cuenta. Revisa también la carpeta de spam.",
+          "¡Registro exitoso! Verifica tu correo electrónico para validar tu cuenta (revisa también la carpeta de spam).",
         );
       } else {
         const { error } = await client.auth.resetPasswordForEmail(email, {
