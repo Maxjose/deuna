@@ -1,8 +1,8 @@
 "use client";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { browserClient } from "@/lib/supabase/client";
-import {loadReputation,loadTripContact} from "@/lib/participant-data";
-import {clearParticipantCache} from "@/lib/participant-cache";
+import {loadReputation,loadTripContact,type TripContact} from "@/lib/participant-data";
+import {clearParticipantCache,participantKey,readParticipant,subscribeParticipant} from "@/lib/participant-cache";
 import {TripProgress} from "./trip-progress";
 import { AppIcon } from "./app-icon";
 import { NavIndicator } from "./nav-indicator";
@@ -44,6 +44,7 @@ type Profile = {
 };
 type Trip = {
   id: string;
+  created_at?: string;
   origin: string;
   destination: string;
   zone: string | null;
@@ -95,6 +96,9 @@ export function Dashboard({
   const [moreOpen,setMoreOpen]=useState(false);
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const [historyPage,setHistoryPage]=useState(0);
+  const [historyDate,setHistoryDate]=useState("");
+  const [detailTrip,setDetailTrip]=useState<string|null>(null);
+  const detailDialog=useRef<HTMLDialogElement>(null),dateDialog=useRef<HTMLDialogElement>(null);
   const moreDialog=useRef<HTMLDialogElement>(null);
   const dragStart=useRef<number|null>(null);
   useEffect(()=>{if(moreOpen)moreDialog.current?.showModal();else moreDialog.current?.close();},[moreOpen]);
@@ -133,7 +137,7 @@ export function Dashboard({
       client.from("profiles").select("id,role,approved,available,suspended"),
       client
         .from("trips")
-        .select("id,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference,payment_status,payment_note")
+        .select("id,created_at,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference,payment_status,payment_note")
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
@@ -348,7 +352,7 @@ export function Dashboard({
                 : serviceLabel;
   const visibleTrips = trips.filter((t) =>
     page === "history"
-      ? (role === "admin" || t.passenger_id === userId || t.driver_id === userId) && (historyFilter === "all" || t.status === historyFilter)
+      ? (role === "admin" || t.passenger_id === userId || t.driver_id === userId) && (historyFilter === "all" || t.status === historyFilter) && (!historyDate || localDay(t.created_at) === historyDate)
       : driverActive ? t.id===driverActive.id : role === "admin" ||
         (t.driver_id === userId &&
           !["finished", "cancelled"].includes(t.status)) ||
@@ -377,7 +381,8 @@ export function Dashboard({
     } catch { setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo."); }
     finally { setSigningOut(false); signOutDialog.current?.close(); }
   }
-  function card(t: Trip) {
+  function card(t: Trip, detail = false) {
+    const compact = page === "history" && !detail;
     const destinationName = parseStoredPlace(t.destination).label;
     if (role === "passenger" && page === "home" && ["searching","assigned","arrived","ongoing"].includes(t.status))
       return (
@@ -406,7 +411,7 @@ export function Dashboard({
           <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>
           <small>#{t.id.slice(0, 6)}</small>
         </div>
-        {page === "history" ? (
+        {compact ? (
           <div className="trip-summary-destination">
             <small>DESTINO</small>
             <strong title={destinationName}>{destinationName.split(",")[0]}</strong>
@@ -427,8 +432,8 @@ export function Dashboard({
             </span>
           </div>
         </div>}
-        {page !== "history" && t.zone && <p className="muted">{t.zone}</p>}
-        {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{page !== "history" && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
+        {!compact && t.zone && <p className="muted">{t.zone}</p>}
+        {t.fare_cents != null && <p>{t.status === "cancelled" ? <del className="cancelled-fare" aria-label={`Precio cancelado: ${usd(t.fare_cents)}`}>{usd(t.fare_cents)}</del> : <strong>{usd(t.fare_cents)}</strong>}{!compact && <> · {((t.distance_meters || 0) / 1000).toFixed(2)} km</>}</p>}
         {role === "passenger" && t.passenger_id === userId && (page === "home" || (page === "history" && t.status === "finished" && t.payment_method === "pago_movil" && !t.payment_reference)) && (
           <PassengerPayment trip={t} settings={settings} offline={offline} />
         )}
@@ -579,7 +584,8 @@ export function Dashboard({
             <div><span className="page-context">{pageContext}</span><h1>{pageTitle}</h1></div>
           </div> : !(page === "home" && role === "passenger") && page !== "messages" && <>
           <span className={"page-context " + (page === "home" && role === "admin" && serviceOpen || page === "home" && role === "driver" && profile?.available ? "is-open" : "")}>{page === "home" && role !== "passenger" && <i />}{pageContext}</span>
-          <h1>{pageTitle}</h1>
+          {page === "history" ? <div className="history-title-row"><h1>{pageTitle}</h1><button type="button" className={"history-calendar" + (historyDate ? " is-active" : "")} aria-label={historyDate ? `Filtrando por ${dayTitle(historyDate)}. Cambiar fecha` : "Buscar viajes por fecha"} onClick={() => dateDialog.current?.showModal()}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button></div> : <h1>{pageTitle}</h1>}
+          {page === "history" && historyDate && <button type="button" className="history-date-chip" onClick={() => setHistoryDate("")}>{dayTitle(historyDate)} <span aria-hidden="true">✕</span><span className="sr-only">Quitar filtro de fecha</span></button>}
           </>}
           {!profile ? (
             <div
@@ -776,7 +782,21 @@ export function Dashboard({
                 </div>
               )}
               <div className={"cards " + (page === "history" ? "history-list" : "")}>
-                {pagedTrips.map(card)}
+                {page === "history" ? groupByDay(visibleTrips).map(([day, items]) => (
+                  <section key={day} className="history-day">
+                    <h2>{dayTitle(day)}</h2>
+                    {items.map(t => (
+                      <button key={t.id} type="button" className="history-row" onClick={() => { setDetailTrip(t.id); requestAnimationFrame(() => detailDialog.current?.showModal()); }}>
+                        <span className={"history-dot " + (t.status === "cancelled" ? "is-cancelled" : t.status === "finished" ? "is-done" : "")} aria-hidden="true" />
+                        <span className="history-row-main">
+                          <strong>{role === "admin" ? (t.passenger_name || "Pasajero") : <PeerName tripId={t.id} viewerId={userId} fallback={role === "driver" ? "Pasajero" : "Conductor"} />}</strong>
+                          <small>{labels[t.status]} · {t.created_at ? new Date(t.created_at).toLocaleTimeString("es-VE", { hour: "numeric", minute: "2-digit" }) : ""}</small>
+                        </span>
+                        <span className="history-row-price">{t.fare_cents != null ? (t.status === "cancelled" ? <del>{usd(t.fare_cents)}</del> : usd(t.fare_cents)) : "—"}</span>
+                      </button>
+                    ))}
+                  </section>
+                )) : pagedTrips.map(t => card(t))}
                 {visibleTrips.length === 0 && (
                   <div className="empty">
                     <span className="empty-icon">
@@ -787,7 +807,7 @@ export function Dashboard({
                   </div>
                 )}
               </div>
-              {page==='history'&&visibleTrips.length>5&&<nav className="history-pagination" aria-label="Páginas de viajes">
+              {false&&<nav className="history-pagination" aria-label="Páginas de viajes">
                 <button type="button" aria-label="Página anterior" disabled={currentHistoryPage===0} onClick={()=>setHistoryPage(currentHistoryPage-1)}><AppIcon name="back"/></button>
                 <span aria-live="polite"><strong>{currentHistoryPage+1}</strong><span> / {historyPages}</span></span>
                 <button type="button" aria-label="Página siguiente" disabled={currentHistoryPage===historyPages-1} onClick={()=>setHistoryPage(currentHistoryPage+1)}><AppIcon name="back"/></button>
@@ -843,6 +863,18 @@ export function Dashboard({
         <button className="secondary" disabled={busy} onClick={()=>acceptDialog.current?.close()}>Volver a solicitudes</button>
         <Toast message={message}/>
       </dialog>
+      <dialog ref={detailDialog} tabIndex={-1} className="action-sheet trip-detail-sheet" aria-label="Detalle del viaje" onClose={() => setDetailTrip(null)}>
+        <div className="sheet-handle" />
+        {(() => { const t = trips.find(x => x.id === detailTrip); return t ? <>{t.created_at && <p className="muted trip-detail-date">{new Date(t.created_at).toLocaleString("es-VE", { dateStyle: "full", timeStyle: "short" })}</p>}{card(t, true)}</> : null; })()}
+        <button className="secondary" onClick={() => detailDialog.current?.close()}>Cerrar</button>
+      </dialog>
+      <dialog ref={dateDialog} tabIndex={-1} className="action-sheet" aria-labelledby="history-date-title">
+        <div className="sheet-handle" />
+        <h2 id="history-date-title">Buscar por fecha</h2>
+        <label>Fecha del viaje<input type="date" value={historyDate} max={localDay(new Date().toISOString())} onChange={e => setHistoryDate(e.target.value)} /></label>
+        <button className="primary" onClick={() => dateDialog.current?.close()}>Ver viajes</button>
+        {historyDate && <button className="text" onClick={() => { setHistoryDate(""); dateDialog.current?.close(); }}>Mostrar todas las fechas</button>}
+      </dialog>
       <dialog ref={signOutDialog} tabIndex={-1} className="action-sheet" aria-labelledby="signout-title" onCancel={e => { if (signingOut) e.preventDefault(); }}>
         <div className="sheet-handle" />
         <h2 id="signout-title">¿Cerrar sesión?</h2>
@@ -879,4 +911,31 @@ export function Dashboard({
       </dialog>
     </div>
   );
+}
+
+/** Día local (AAAA-MM-DD) de una fecha. */
+function localDay(value?: string) {
+  if (!value) return "";
+  const d = new Date(value);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function dayTitle(day: string) {
+  if (!day) return "Sin fecha";
+  const today = localDay(new Date().toISOString()), yesterday = localDay(new Date(Date.now() - 86400000).toISOString());
+  if (day === today) return "Hoy";
+  if (day === yesterday) return "Ayer";
+  const [y, m, d] = day.split("-").map(Number);
+  const text = new Date(y, m - 1, d).toLocaleDateString("es-VE", { weekday: "long", day: "numeric", month: "long", ...(y !== new Date().getFullYear() ? { year: "numeric" } : {}) });
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+function groupByDay<T extends { created_at?: string }>(items: T[]) {
+  const groups = new Map<string, T[]>();
+  for (const item of items) { const day = localDay(item.created_at); groups.set(day, [...(groups.get(day) || []), item]); }
+  return [...groups];
+}
+function PeerName({ tripId, viewerId, fallback }: { tripId: string; viewerId: string; fallback: string }) {
+  const key = participantKey(viewerId, "trip", tripId);
+  const person = useSyncExternalStore(useCallback((l: () => void) => subscribeParticipant(key, l), [key]), useCallback(() => readParticipant<TripContact>(key), [key]), () => null);
+  useEffect(() => { void loadTripContact(browserClient(), viewerId, tripId).catch(() => {}); }, [viewerId, tripId]);
+  return <>{person?.name || fallback}</>;
 }
