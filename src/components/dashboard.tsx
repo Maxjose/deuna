@@ -25,6 +25,7 @@ import { DriverPayout } from "./driver-payout";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { PushPreferences } from "./push-preferences";
+import { PaymentPreferences } from './payment-preferences';
 import { PushCampaigns } from "./push-campaigns";
 import { PlacesCatalog } from "./places-catalog";
 import { disconnectPushDevice } from "@/lib/push-device";
@@ -264,7 +265,7 @@ export function Dashboard({
           ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
-      setAccountSection(value === "account" && ["info","security","favorites","payout","preferences"].includes(section) ? section : "overview");
+      setAccountSection(value === "account" && ["info","security","favorites","payout","payment-data","preferences"].includes(section) ? section : "overview");
       setMoreOpen(false);
     };
     syncPage();
@@ -332,7 +333,7 @@ export function Dashboard({
   const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceOpen ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
     page === "account"
-      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",preferences:"Configuración"}[accountSection] || "Tu espacio")
+      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
       : ({history:"Viajes",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
@@ -620,7 +621,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["favorites","Lugares favoritos","places"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -643,6 +644,7 @@ export function Dashboard({
               </form>}
               {accountSection==="security"&&<><ChangePassword /><PasskeySecurity /></>}
               {accountSection==="payout"&&role==="driver"&&<DriverPayout />}
+              {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
               {accountSection==="favorites"&&role==="passenger"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
               {accountSection==="preferences"&&<><PushPreferences /><InstallApp /></>}
             </div>

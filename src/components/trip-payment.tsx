@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { usd } from "@/lib/fare";
 import { bs, bsAmount, cleanPhone, cleanReference, formatIdNumber, formatPhone, parseBs, paymentStatusLabel, rateValue, VE_BANKS, type PaymentSettings } from "@/lib/payments";
 import { AppIcon } from "./app-icon";
+import {loadPaymentPreferences} from '@/lib/payment-preferences';
 
 export type PaymentTrip = {
   id: string;
@@ -41,7 +42,6 @@ function CopyRow({ label, value, display }: { label: string; value: string; disp
   );
 }
 
-const ORIGIN_KEY = "de1na-pago-movil-origen";
 
 /** Pasajero: datos del pago móvil y envío de la referencia (con banco y teléfono de origen), o recordatorio de efectivo. */
 export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTrip; settings: PaymentSettings | null; offline: boolean }) {
@@ -50,6 +50,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   const [draft, setDraft] = useState(""), [bank, setBank] = useState(""), [phone, setPhone] = useState(""), [amount, setAmount] = useState("");
   const [editing, setEditing] = useState(false), [sending, setSending] = useState(false), [error, setError] = useState(""), [sent, setSent] = useState<{ reference: string; status: string } | null>(null);
   const [pasting,setPasting]=useState(false);
+  const bankEdited=useRef(false),phoneEdited=useRef(false);
   const updateReference=(value:string)=>{setDraft(value.replace(/\D/g,'').slice(-6));setError('');};
   async function pasteReference(){
     setPasting(true);
@@ -58,8 +59,15 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
     finally{setPasting(false);}
   }
   useEffect(() => {
-    try { const saved = JSON.parse(localStorage.getItem(ORIGIN_KEY) || "{}"); if (saved.bank) setBank(saved.bank); if (saved.phone) setPhone(formatPhone(saved.phone)); } catch { /* sin almacenamiento */ }
-  }, []);
+    if(trip.payment_method!=='pago_movil')return;
+    let active=true;
+    void loadPaymentPreferences(client).then(saved=>{
+      if(!active)return;
+      if(!bankEdited.current)setBank(saved.bank);
+      if(!phoneEdited.current)setPhone(formatPhone(saved.phone));
+    }).catch(()=>{if(active)setError('No pudimos cargar tus datos guardados. Puedes completar el banco y el teléfono aquí.');});
+    return()=>{active=false;};
+  }, [client,trip.payment_method]);
   useEffect(() => { if (expected != null) setAmount(expected.toFixed(2).replace(".", ",")); }, [expected]);
   useEffect(() => { setSent(null); }, [trip.payment_reference, trip.payment_status]);
   if (trip.payment_method !== "pago_movil") {
@@ -105,7 +113,6 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
       setError(known[error.message] ?? "No pudimos enviar los datos del pago. Comprueba tu conexión.");
       return;
     }
-    try { localStorage.setItem(ORIGIN_KEY, JSON.stringify({ bank, phone: origin })); } catch { /* sin almacenamiento */ }
     setSent({ reference: clean, status: (data as { status?: string } | null)?.status ?? "checking" }); setEditing(false); setDraft("");
   }
   return (
@@ -139,7 +146,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
             <p className="payment-form-title">Cuando hayas transferido, completa estos datos:</p>
             <label>
               Banco desde el que pagaste
-              <select value={bank} onChange={(e) => setBank(e.target.value)} required>
+              <select value={bank} onChange={(e) => {bankEdited.current=true;setBank(e.target.value);}} required>
                 <option value="">Elige tu banco</option>
                 {VE_BANKS.map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
               </select>
@@ -147,7 +154,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
             <div className="two">
               <label>
                 Teléfono desde el que pagaste
-                <input inputMode="tel" autoComplete="tel" placeholder="0412-1234567" maxLength={14} value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <input inputMode="tel" autoComplete="tel" placeholder="0412-1234567" maxLength={14} value={phone} onChange={(e) => {phoneEdited.current=true;setPhone(e.target.value);}} />
               </label>
               <label>
                 Monto transferido (Bs)
