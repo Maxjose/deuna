@@ -2630,3 +2630,10 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .pending-balance-amount { font-size: 34px; line-height: 1; font-weight: 800; }
 .pending-balance-trip { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
 .driver-advance-blocked { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fff4dc; color: #7a5300; font-size: 14px; font-weight: 600; }
+.balance-alert { display: flex; align-items: center; gap: 12px; width: 100%; margin: 4px 0 14px; padding: 12px 14px; border: 1px solid #f0c9cf; border-radius: 18px; background: #fdf0f2; color: var(--ink); font: inherit; text-align: left; cursor: pointer; animation: balance-alert-in .3s cubic-bezier(.22,1,.36,1); }
+.balance-alert > span:nth-child(2) { flex: 1; display: grid; gap: 2px; }
+.balance-alert strong { font-size: 15px; }
+.balance-alert small { color: var(--muted); font-size: 13px; }
+.balance-alert-icon { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--danger); color: #fff; font-weight: 800; }
+@keyframes balance-alert-in { from { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .balance-alert { animation: none; } }

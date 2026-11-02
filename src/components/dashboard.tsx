@@ -598,6 +598,13 @@ export function Dashboard({
             <>
               <span className={"page-context " + (serviceOpen ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
               <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}.` : "Hola."}</h1>
+              {balance.amount_cents > 0 && (
+                <button type="button" className="balance-alert" onClick={() => { openSection("balance"); window.scrollTo({ top: 0, behavior: "instant" }); }}>
+                  <span className="balance-alert-icon" aria-hidden="true">!</span>
+                  <span><strong>Tienes un saldo pendiente de {usd(balance.amount_cents)}</strong><small>Solvéntalo para seguir disfrutando del servicio.</small></span>
+                  <AppIcon name="arrow" />
+                </button>
+              )}
             </>
           )}
           {page === "account" && accountSection !== "overview" ? <div className="account-section-heading">
@@ -732,8 +739,6 @@ export function Dashboard({
           ) : page === "home" && role === "passenger" ? (
             mine ? (
               card(mine)
-            ) : balance.amount_cents > 0 ? (
-              pendingBalance()
             ) : (
               <RideRequest
                 home={savedPlaces.favorites.find(place=>place.kind==='home')}
