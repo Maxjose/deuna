@@ -13,7 +13,7 @@ export function TripCancellation({pending,passenger,busy,onAction}:{pending:bool
  return <div className="trip-cancellation">
   {pending?<><p>{passenger?'Tu conductor solicita cancelar este viaje.':'Cancelación solicitada. El viaje continúa activo hasta que el cliente autorice.'}</p>{passenger&&<button className="secondary" disabled={busy} onClick={open}>Responder solicitud</button>}</>
    :<button className="text" disabled={busy} onClick={open}>Cancelar viaje</button>}
-  <dialog ref={sheet} tabIndex={-1} className="action-sheet" aria-labelledby="trip-cancel-title" onCancel={e=>{if(busy)e.preventDefault();}}>
+  <dialog ref={sheet} tabIndex={-1} className="action-sheet trip-cancel-sheet" aria-labelledby="trip-cancel-title" onCancel={e=>{if(busy)e.preventDefault();}}>
    <div className="sheet-handle"/>
    {passenger?<>
     <h2 id="trip-cancel-title">¿Autorizar la cancelación?</h2>

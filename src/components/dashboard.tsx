@@ -887,7 +887,7 @@ export function Dashboard({
       </dialog>
       <dialog
         ref={cancelDialog}
-        className="action-sheet"
+        className="action-sheet trip-cancel-sheet"
         aria-label="Confirmar cancelación del viaje"
         onClose={() => setCancelId(null)}
       >

@@ -18,7 +18,7 @@ export function RideWaiting({origin,destination,busy,onCancel,fareCents,tripId,s
  const live=useTripLiveLocation(assigned?tripId:null);
  const target=status==='ongoing'?to.point:from.point;
  return <><article className="trip-card passenger-trip-summary"><TripProgress status={status} headline={headlines[status]}/><p>{to.label}</p><button className="primary" onClick={()=>setOpened(true)}>Ver mi viaje</button>{assigned&&<div className="trip-contact-row"><button className="secondary" onClick={onMessage}><AppIcon name="messages"/>Mensaje</button><TripContactButton tripId={tripId} viewerId={viewerId}/></div>}</article>
- <dialog ref={sheet} tabIndex={-1} className="journey-flow-screen passenger-journey" aria-label="Tu viaje en curso" onClose={()=>setOpened(false)}>
+ <dialog ref={sheet} tabIndex={-1} className="journey-flow-screen passenger-journey" aria-label="Tu viaje en curso" onClose={event=>{if(event.target===event.currentTarget)setOpened(false);}}>
   <header className="journey-context-header"><button className="icon-button" aria-label="Volver a Inicio" onClick={()=>sheet.current?.close()}><AppIcon name="back"/></button><span>Tu viaje</span><span className="journey-map-label">Mapa</span></header>
   <div className="passenger-route-map">{opened&&<JourneyMap origin={from.point} destination={to.point} livePosition={live.driver&&live.location&&live.freshness!=='lost'?{...live.driver,accuracy:Math.min(live.location.accuracy,150)}:null}/>}</div>
   <section className="journey-bottom-sheet passenger-stage-sheet"><div className="sheet-handle"/><div key={status} className="passenger-stage-content">

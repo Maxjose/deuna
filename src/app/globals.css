@@ -1708,6 +1708,8 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
 .driver-nav-header .icon-button { width:42px; height:42px; flex-shrink:0; background:#f2f4f5; box-shadow:none; }
 .availability-notice { padding:12px 16px; border-radius:14px; background:var(--surface); border:1px solid var(--line); font-size:13px; }
 .driver-nav-footer .trip-cancellation { text-align:right; }
+.trip-cancel-sheet h2, .trip-cancel-sheet > p { text-align:center; }
+.driver-nav-footer > .primary + .sharing-status { margin-top:18px; }
 .driver-nav-footer .trip-cancellation > button.text { color:var(--danger); font-weight:700; padding:10px 0; width:auto; }
 .driver-nav-map { flex: 1; min-height: 180px; position: relative; }
 .driver-nav-map > .journey-map { position: absolute; inset: 0; }
