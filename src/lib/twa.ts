@@ -1,13 +1,14 @@
-/** App Android de pruebas (TWA). La app oficial tendrá su propio paquete. */
+/** App Android: la TWA de pruebas (paquete anterior) y la app nativa con WebView (com.de1na.app). */
 export const TWA_PACKAGE = 'com.de1na.app.pruebas';
 const FLAG = 'de1na-twa';
 
 /** True si la web se está mostrando dentro de la app Android (TWA). */
 export function detectTwa(): boolean {
   if (typeof window === 'undefined') return false;
+  if (window.De1naNative) return true;
   let stored = false;
   try { stored = sessionStorage.getItem(FLAG) === '1'; } catch { /* sin almacenamiento */ }
-  const fromLaunch = new URLSearchParams(window.location.search).get('source') === 'twa' || document.referrer.startsWith(`android-app://${TWA_PACKAGE}`);
+  const fromLaunch = new URLSearchParams(window.location.search).get('source') === 'twa' || new URLSearchParams(window.location.search).get('source') === 'app' || document.referrer.startsWith(`android-app://${TWA_PACKAGE}`);
   if (fromLaunch && !stored) { try { sessionStorage.setItem(FLAG, '1'); } catch { /* sin almacenamiento */ } }
   return stored || fromLaunch;
 }

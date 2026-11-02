@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Pantalla de inicio nativa (Android 12+ y compatibilidad con versiones anteriores). -->
+    <style name="Theme.De1na.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ink</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="windowSplashScreenAnimationDuration">600</item>
+        <item name="postSplashScreenTheme">@style/Theme.De1na</item>
+    </style>
+    <style name="Theme.De1na" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/ink</item>
+        <item name="android:navigationBarColor">@color/paper</item>
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+    </style>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícono de la pantalla de inicio: logo sobre círculo lima, centrado en el área segura de 160dp. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:width="160dp" android:height="160dp" android:gravity="center">
+        <shape android:shape="oval"><solid android:color="@color/lime" /></shape>
+    </item>
+    <item android:width="104dp" android:height="104dp" android:gravity="center" android:drawable="@mipmap/ic_launcher" />
+</layer-list>

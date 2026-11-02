@@ -7,7 +7,8 @@ export function LaunchScreen({ children }: { children: React.ReactNode }) {
   );
   useEffect(() => {
     // En escritorio (panel de administración) no se muestra la pantalla de carga.
-    if (window.matchMedia("(min-width: 761px)").matches) { setPhase("ready"); return; }
+    // En escritorio (panel de administración) y en la app nativa (ya tiene su pantalla de inicio) no se muestra.
+    if (window.matchMedia("(min-width: 761px)").matches || "De1naNative" in window) { setPhase("ready"); return; }
     const fade = window.setTimeout(() => setPhase("leaving"), 1750);
     const finish = window.setTimeout(() => setPhase("ready"), 2050);
     return () => {

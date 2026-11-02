@@ -1,6 +1,12 @@
 "use client";
 import { browserClient } from './supabase/client';
+import { isNativeApp, nativePushEndpoint } from './native';
 export async function disconnectPushDevice() {
+  if (isNativeApp()) {
+    const endpoint = await nativePushEndpoint();
+    if (endpoint) await browserClient().rpc('push_manage', { action: 'unsubscribe', payload: { endpoint } });
+    return;
+  }
   if (!('serviceWorker' in navigator)) return;
   const registration = await navigator.serviceWorker.getRegistration();
   const subscription = await registration?.pushManager?.getSubscription();

@@ -3,7 +3,7 @@ export type AppRelease = { versionCode: number; minVersionCode: number; apkUrl: 
 export type UpdateNeed = 'none' | 'optional' | 'required';
 
 const STORAGE_KEY = 'de1na-app-version';
-export const APK_URL = 'https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na-pruebas.apk';
+export const APK_URL = 'https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na.apk';
 export const RELEASE_MANIFEST_URL = 'https://github.com/Maxjose/deuna/releases/download/apk-pruebas/version.json';
 
 function positiveInt(value: unknown) {

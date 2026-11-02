@@ -1,4 +1,4 @@
-package com.de1na.app.pruebas;
+package com.de1na.app;
 
 import android.Manifest;
 import android.app.Activity;

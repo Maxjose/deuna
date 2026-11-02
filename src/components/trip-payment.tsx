@@ -1,4 +1,5 @@
 "use client";
+import { readClipboardText } from "@/lib/native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { usd } from "@/lib/fare";
@@ -56,7 +57,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   const updateReference=(value:string)=>{setDraft(value.replace(/\D/g,'').slice(-6));setError('');};
   async function pasteReference(){
     setPasting(true);
-    try{updateReference(await navigator.clipboard.readText());}
+    try{updateReference(await readClipboardText());}
     catch{setError('No pudimos leer el portapapeles. Mantén pulsado el campo y elige Pegar.');}
     finally{setPasting(false);}
   }

@@ -6,6 +6,7 @@ import { parseStoredPlace } from "@/lib/journey";
 import type { MapPoint } from "@/lib/destination";
 import { refreshNavigationRoute } from "@/lib/navigation";
 import { detectTwa, trackingIntentUrl } from "@/lib/twa";
+import { nativeBridge } from "@/lib/native";
 import {
   shouldShareFix, shareParams, shareableFix, locationFreshness, ageLabel, etaMinutes,
   type LiveLocation, type SharedFix,
@@ -96,7 +97,9 @@ export function useDriverLocationSharing(tripId: string | null) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     if (!backgroundToken || !url || !key) return;
     // Debe ejecutarse dentro del toque del usuario: Chrome solo abre apps con un gesto.
-    window.location.href = trackingIntentUrl("start", { token: backgroundToken, url, key });
+    const bridge = nativeBridge();
+    if (bridge) bridge.startTracking(backgroundToken, url, key);
+    else window.location.href = trackingIntentUrl("start", { token: backgroundToken, url, key });
     setBackgroundActive(true);
   };
   const background = twa && tripId ? { ready: !!backgroundToken, active: backgroundActive, start: startBackground } : null;

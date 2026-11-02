@@ -1,40 +1,14 @@
-# De1na Pruebas (TWA)
+# App Android de De1na (nativa, WebView)
 
-App Android de pruebas que abre https://deuna-five.vercel.app a pantalla completa (Trusted Web Activity).
-Paquete `com.de1na.app.pruebas`. No es la app oficial: la versión oficial tendrá su propio dominio, paquete y clave.
+App propia (`com.de1na.app`) que muestra https://de1na.app en un WebView a pantalla completa:
 
-## Compilación
+- Pantalla de inicio nativa (SplashScreen API) que se mantiene hasta que la web cargó; sin avisos ni barras de Chrome.
+- Puente `window.De1naNative` (ver `src/lib/native.ts`): GPS en segundo plano durante el viaje (`LocationService`),
+  token de notificaciones FCM, portapapeles y mantener la pantalla encendida. Solo responde a páginas de de1na.app.
+- Notificaciones por Firebase Cloud Messaging (`PushService`). El servidor envía por FCM a los dispositivos
+  `fcm:<token>` con la cuenta de servicio de la variable `FIREBASE_SERVICE_ACCOUNT` (Vercel) y por web push al resto.
+- Enlaces externos (WhatsApp, teléfono, Binance, Google Maps, descargas) se abren en su app.
 
-GitHub Actions (`.github/workflows/android-pruebas.yml`) compila y firma el APK al cambiar `android/` o al
-ejecutarlo a mano desde la pestaña Actions. El APK queda en la versión **apk-pruebas** de GitHub (Releases).
-
-Secretos del repositorio necesarios (Settings → Secrets and variables → Actions):
-
-- `TWA_PRUEBAS_KEYSTORE_B64`: el archivo de firma `.jks` en base64.
-- `TWA_PRUEBAS_KEYSTORE_PASSWORD`: su contraseña (alias `pruebas`).
-
-La huella SHA-256 de esa clave está en `public/.well-known/assetlinks.json`; el flujo comprueba que coincidan.
-Sin esa verificación Android muestra la barra de direcciones.
-
-## Incluye
-
-- Notificaciones web delegadas a la app y delegación de ubicación (permiso de ubicación de Android).
-- Pantalla de inicio con el icono y colores de la marca.
-- La web se abre con `?source=twa` para poder distinguirla del navegador.
-
-## Ubicación en segundo plano
-
-`LocationService` es un servicio en primer plano (aviso fijo "Compartiendo tu ubicación") que envía la
-posición del conductor a `share_location_token` aunque la app esté minimizada o la pantalla apagada.
-La web, dentro de la TWA, muestra el botón "Mantener ubicación activa": pide un token ligado al viaje
-(`issue_tracking_token`) y abre `de1na-tracking://start` (`TrackingActivity`), que solicita los permisos
-y arranca el servicio. El servicio se detiene solo cuando el viaje termina, se cancela o se reasigna
-(el servidor rechaza el token), o con el botón "Detener" del aviso.
-
-## Actualizaciones
-
-Cada compilación publica junto al APK un `version.json` (número de versión = número de ejecución de
-GitHub Actions y novedades = título del commit, o el texto "notas" al lanzarla a mano). La app abre la web
-con `?app_version=N`; la web consulta `/api/app-version` y, si hay una versión más nueva, muestra un aviso
-para descargarla e instalarla encima. Para obligar a actualizar, sube `minVersionCode` en
-`src/lib/app-update-policy.json` (se aplica al publicar la web, sin recompilar el APK).
+Se compila y firma en GitHub Actions (`.github/workflows/android-pruebas.yml`) con los secretos
+`TWA_PRUEBAS_KEYSTORE_B64` y `TWA_PRUEBAS_KEYSTORE_PASSWORD`, y se publica en la versión `apk-pruebas` como `de1na.apk`.
+`app/google-services.json` es la configuración pública del proyecto de Firebase `de1na-app`.

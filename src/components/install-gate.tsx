@@ -3,7 +3,7 @@ import {useEffect,useState,type ReactNode} from 'react';
 import {installPlatform,requiresInstallation} from '@/lib/install-platform';
 import {detectTwa} from '@/lib/twa';
 import {AppIcon} from './app-icon';
-const APK_URL='https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na-pruebas.apk';
+const APK_URL='https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na.apk';
 type InstallPrompt=Event&{prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 
 export function InstallGate({children}:{children:ReactNode}){

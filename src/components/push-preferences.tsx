@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { browserClient } from '@/lib/supabase/client';
 import { disconnectPushDevice } from '@/lib/push-device';
+import { isNativeApp, nativePushEndpoint } from '@/lib/native';
 import { Toast, useNotice } from './toast';
 export function PushPreferences() {
   const [supported,setSupported]=useState(false), [loading,setLoading]=useState(true), [busy,setBusy]=useState(false),
@@ -12,6 +13,14 @@ export function PushPreferences() {
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),8000);
     async function load() {
+      if(isNativeApp()){
+        setSupported(true);setConfigured(true);
+        try{
+          const native=await nativePushEndpoint();
+          if(native){const {data,error}=await browserClient().rpc('push_manage',{action:'info',payload:{endpoint:native}});if(error)throw error;if(active&&data.enabled){setEndpoint(native);setPromotions(data.promotions);}}
+        }catch{if(active)notify('No pudimos consultar tus notificaciones.');}
+        if(active)setLoading(false);clearTimeout(timeout);return;
+      }
       const available = isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
       if(!active)return;
       setSupported(available);
@@ -38,6 +47,13 @@ export function PushPreferences() {
   async function enable() {
     setBusy(true);
     try {
+      if(isNativeApp()){
+        const native=await nativePushEndpoint();
+        if(!native){notify('Permite las notificaciones de De1na en los ajustes del teléfono.');return;}
+        const {data,error}=await browserClient().rpc('push_manage',{action:'subscribe',payload:{endpoint:native,keys:{}}});
+        if(error)throw error;
+        setEndpoint(native);setPromotions(data.promotions);notify('Notificaciones de viajes activadas.');return;
+      }
       const permission=await Notification.requestPermission();
       if(permission!=='granted'){setBlocked(permission==='denied');notify('Permite las notificaciones para activarlas.');return;}
       const response=await fetch('/api/push/config');const config=await response.json();

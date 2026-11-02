@@ -1,4 +1,5 @@
 "use client";
+import { readClipboardText } from "@/lib/native";
 import { useState } from "react";
 import { usd } from "@/lib/fare";
 import type { PaymentSettings } from "@/lib/payments";
@@ -65,7 +66,7 @@ export function TxField({ value, onChange, disabled }: { value: string; onChange
   return <label>ID de la transacción
     <span className="payment-reference-field">
       <input value={value} onChange={e => onChange(clean(e.target.value))} onPaste={e => { e.preventDefault(); onChange(clean(e.clipboardData.getData("text"))); }} autoComplete="off" maxLength={64} placeholder="Pega aquí el ID" required disabled={disabled || pasting} />
-      <button type="button" disabled={disabled || pasting} onClick={async () => { setPasting(true); setErr(""); try { onChange(clean(await navigator.clipboard.readText())); } catch { setErr("No pudimos leer el portapapeles. Mantén pulsado el campo y elige Pegar."); } finally { setPasting(false); } }}>{pasting ? "…" : "Pegar"}</button>
+      <button type="button" disabled={disabled || pasting} onClick={async () => { setPasting(true); setErr(""); try { onChange(clean(await readClipboardText())); } catch { setErr("No pudimos leer el portapapeles. Mantén pulsado el campo y elige Pegar."); } finally { setPasting(false); } }}>{pasting ? "…" : "Pegar"}</button>
     </span>
     {err && <small className="payment-error">{err}</small>}
   </label>;

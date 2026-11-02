@@ -1,4 +1,4 @@
-package com.de1na.app.pruebas;
+package com.de1na.app;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -40,8 +40,8 @@ import java.util.concurrent.Executors;
  * aunque la app esté minimizada o la pantalla apagada. Se detiene solo cuando el viaje termina.
  */
 public class LocationService extends Service implements LocationListener {
-    static final String ACTION_START = "com.de1na.app.pruebas.TRACKING_START";
-    static final String ACTION_STOP = "com.de1na.app.pruebas.TRACKING_STOP";
+    static final String ACTION_START = "com.de1na.app.TRACKING_START";
+    static final String ACTION_STOP = "com.de1na.app.TRACKING_STOP";
     static final String EXTRA_TOKEN = "token";
     static final String EXTRA_URL = "url";
     static final String EXTRA_KEY = "key";

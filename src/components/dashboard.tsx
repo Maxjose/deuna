@@ -23,6 +23,7 @@ import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
+import { isNativeApp, nativePushEndpoint } from "@/lib/native";
 import { PaymentMethodsSettings, SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
@@ -172,6 +173,17 @@ export function Dashboard({
     if(!debt.error&&debt.data)setBalance(debt.data as Balance);
   }, [client, userId]);
   useEffect(()=>{void reloadWallet();},[trips,reloadWallet]);
+  // App nativa: registra el teléfono para notificaciones (FCM) una vez por sesión, sin pasos extra.
+  const profileRole=profile?.role, profileSuspended=profile?.suspended;
+  useEffect(()=>{
+    if(!profileRole||profileSuspended||!isNativeApp())return;
+    try{if(sessionStorage.getItem('de1na-fcm')===userId)return;}catch{/* sin almacenamiento */}
+    void nativePushEndpoint().then(async endpoint=>{
+      if(!endpoint)return;
+      const {error}=await client.rpc('push_manage',{action:'subscribe',payload:{endpoint,keys:{}}});
+      if(!error){try{sessionStorage.setItem('de1na-fcm',userId);}catch{/* sin almacenamiento */}}
+    });
+  },[client,userId,profileRole,profileSuspended]);
   useEffect(() => {
     let active = true;
     void client.auth.getUser().then(({ data }) => {

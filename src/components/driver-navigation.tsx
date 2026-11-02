@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
+import { nativeBridge } from '@/lib/native';
 import { parseStoredPlace } from '@/lib/journey';
 import { googleNavigationUrl,refreshNavigationRoute, usableFix, type NavigationFix } from '@/lib/navigation';
 import type { MapPoint } from '@/lib/destination';
@@ -45,6 +46,8 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
  },[target.point]);
  useEffect(()=>{
   if(!opened||!awake)return;
+  const bridge=nativeBridge();
+  if(bridge){bridge.keepScreenOn(true);setWakeActive(true);return()=>{bridge.keepScreenOn(false);setWakeActive(false);};}
   let alive=true,pending=false,lock:WakeLockSentinel|null=null;
   async function acquire(){
    if(!('wakeLock' in navigator)||document.visibilityState!=='visible'||pending||lock&&!lock.released)return;
