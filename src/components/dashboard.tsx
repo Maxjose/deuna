@@ -100,6 +100,7 @@ export function Dashboard({
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const [historyPage,setHistoryPage]=useState(0);
   const [historyDate,setHistoryDate]=useState("");
+  const [settingsSection,setSettingsSection]=useState<"hours"|"fares"|"payment"|"drivers">("hours");
   const [balance,setBalance]=useState<Balance>({amount_cents:0,trips:[]});
   const [detailTrip,setDetailTrip]=useState<string|null>(null);
   const detailDialog=useRef<HTMLDialogElement>(null),dateDialog=useRef<HTMLDialogElement>(null);
@@ -681,12 +682,17 @@ export function Dashboard({
           ) : page === "notifications" && role === "admin" ? (
             <PushCampaigns />
           ) : page === "settings" && settings ? (
-            <div className="account-stack">
-
-            <PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} />
-            <FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />
-            <AvailabilitySettings />
-            <form
+            <div className="service-settings">
+            <div className="service-tabs" role="tablist" aria-label="Secciones del servicio">
+              {([["hours","Horario","history"],["fares","Tarifas","moto"],["payment","Pago móvil y tasa","payments"],["drivers","Conductores","drivers"]] as const).map(([value,label,icon])=>(
+                <button key={value} type="button" role="tab" aria-selected={settingsSection===value} className={settingsSection===value?"is-active":""} onClick={()=>setSettingsSection(value)}><AppIcon name={icon}/><span>{label}</span></button>
+              ))}
+            </div>
+            <div className="service-panel" role="tabpanel" key={settingsSection}>
+            {settingsSection==="payment"&&<PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} />}
+            {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
+            {settingsSection==="drivers"&&<AvailabilitySettings />}
+            {settingsSection==="hours"&&<form
               className="trip-card"
               onSubmit={(e) => {
                 e.preventDefault();
@@ -732,7 +738,8 @@ export function Dashboard({
               <button className="primary" disabled={busy || offline}>
                 Guardar configuración
               </button>
-            </form>
+            </form>}
+            </div>
             </div>
           ) : role === "admin" && (page === "drivers" || page === "users" || page === "history") ? (
             <AdminRecords viewerId={userId} key={page} section={page === "drivers" ? "team" : page === "users" ? "users" : "trips"} busy={busy || offline} refresh={profiles} onDriver={(id,approved)=>act("driver",{id,approved})} renderTrip={card}/>
