@@ -31,7 +31,10 @@ export async function POST(request: Request) {
   if (!lookup.ok) {
     const status = lookup.reason === 'not_found' || lookup.reason === 'not_income' || lookup.reason === 'currency' ? 422 : 503;
     const message = lookup.reason === 'not_found' ? 'No encontramos esa transacción. Revisa el ID; si acabas de pagar, espera un minuto y vuelve a intentar.'
-      : lookup.reason === 'not_income' || lookup.reason === 'currency' ? lookup.message + '.' : 'No pudimos consultar Binance. Inténtalo en unos minutos.';
+      : lookup.reason === 'not_income' || lookup.reason === 'currency' ? lookup.message + '.'
+      : lookup.reason === 'config' ? 'Binance Pay aún no está configurado en el servidor (código B1).'
+      : lookup.reason === 'restricted' ? 'Binance bloqueó la consulta por la región del servidor (código B2).'
+      : `No pudimos consultar Binance (código B3: ${lookup.message}).`;
     if (status === 503) console.error('binance verify', lookup.reason, lookup.message);
     return Response.json({ error: message }, { status, headers });
   }
