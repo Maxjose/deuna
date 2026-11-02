@@ -181,13 +181,13 @@ export function WalletSettings({ enabled, onSaved }: { enabled: boolean; onSaved
 /** Administración: activar o desactivar pago móvil y Binance Pay (Pay ID de la cuenta receptora). */
 export function PaymentMethodsSettings({ settings, onSaved }: { settings: PaymentSettings; onSaved: (text: string) => void }) {
   const client = useMemo(() => browserClient(), []);
-  const [pm, setPm] = useState(settings.pago_movil_enabled !== false), [bn, setBn] = useState(!!settings.binance_enabled), [payId, setPayId] = useState(settings.binance_pay_id || "");
+  const [pm, setPm] = useState(settings.pago_movil_enabled !== false), [bn, setBn] = useState(!!settings.binance_enabled), [payId, setPayId] = useState(settings.binance_pay_id || ""), [link, setLink] = useState(settings.binance_pay_link || "");
   const [busy, setBusy] = useState(false), [err, setErr] = useState("");
   return <form className="trip-card" onSubmit={async e => {
     e.preventDefault(); setBusy(true); setErr("");
-    const { error } = await client.rpc("admin_payment_methods", { pago_movil_enabled: pm, binance_enabled: bn, binance_pay_id: payId });
+    const { error } = await client.rpc("admin_payment_methods", { pago_movil_enabled: pm, binance_enabled: bn, binance_pay_id: payId, binance_pay_link: link });
     setBusy(false);
-    if (error) { setErr(error.message === "Falta el Pay ID" ? "Escribe el Pay ID para activar Binance Pay." : error.message === "Pay ID inválido" ? "El Pay ID debe tener solo números." : "No se pudo guardar."); return; }
+    if (error) { setErr(error.message === "Falta el Pay ID" ? "Escribe el Pay ID para activar Binance Pay." : error.message === "Pay ID inválido" ? "El Pay ID debe tener solo números." : error.message === "Enlace inválido" ? "Pega el enlace de cobro de Binance (empieza por https://app.binance.com/)." : "No se pudo guardar."); return; }
     onSaved("Métodos de pago actualizados.");
   }}>
     <h2>Métodos de pago</h2>
@@ -195,6 +195,8 @@ export function PaymentMethodsSettings({ settings, onSaved }: { settings: Paymen
     <label className="payment-switch"><input type="checkbox" role="switch" checked={pm} onChange={e => setPm(e.target.checked)} /><span><strong>Pago móvil {pm ? "activado" : "desactivado"}</strong><small>Transferencia en bolívares con verificación por referencia.</small></span></label>
     <label className="payment-switch"><input type="checkbox" role="switch" checked={bn} onChange={e => setBn(e.target.checked)} /><span><strong>Binance Pay {bn ? "activado" : "desactivado"}</strong><small>Pago en USDT a tu Pay ID, verificado al instante con el ID de la transacción.</small></span></label>
     <label>Pay ID de Binance<input inputMode="numeric" value={payId} onChange={e => setPayId(e.target.value)} placeholder="Ej. 65038281" maxLength={15} disabled={busy} /></label>
+    <label>Enlace de cobro de Binance<input type="url" value={link} onChange={e => setLink(e.target.value.trim())} placeholder="https://app.binance.com/uni-qr/…" maxLength={230} disabled={busy} /></label>
+    <p className="muted">En Binance: Pay → Recibir → compartir enlace. Con él, el pasajero abre Binance con tu cuenta ya cargada y ve tu QR.</p>
     {err && <p className="payment-error" role="alert">{err}</p>}
     <button className="primary" disabled={busy}>{busy ? "Guardando…" : "Guardar métodos de pago"}</button>
   </form>;

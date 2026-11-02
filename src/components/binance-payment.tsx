@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { usd } from "@/lib/fare";
 import type { PaymentSettings } from "@/lib/payments";
 import { AppIcon } from "./app-icon";
@@ -18,6 +19,16 @@ export async function verifyBinance(payload: { kind: "trip" | "topup"; trip_id?:
 
 export function BinanceInstructions({ settings, amountCents }: { settings: PaymentSettings | null; amountCents?: number }) {
   if (!settings?.binance_pay_id) return <p className="payment-error">Binance Pay no está configurado.</p>;
+  const link = settings.binance_pay_link;
+  if (link) return <>
+    <a className="primary binance-open" href={link} target="_blank" rel="noopener"><AppIcon name="wallet" />Pagar en Binance</a>
+    <BinanceQr link={link} />
+    <p className="muted binance-hint">Se abre Binance con la cuenta de De1na. Escribe {amountCents != null ? <strong>{usdt(amountCents)} USDT</strong> : "el monto en USDT"}, paga y vuelve para pegar el <strong>ID de la transacción</strong>.</p>
+    <div className="payment-data">
+      {amountCents != null && <CopyRow label="Monto (USDT)" value={usdt(amountCents)} />}
+      <CopyRow label="Pay ID de De1na" value={settings.binance_pay_id} />
+    </div>
+  </>;
   return <>
     <ol className="binance-steps">
       <li>Abre Binance → <strong>Pay</strong> → <strong>Enviar</strong>.</li>
@@ -53,4 +64,11 @@ export function BinancePayment({ trip, settings, offline }: { trip: PaymentTrip;
       <button className="primary" disabled={busy || offline || tx.length < 6}>{busy ? "Verificando…" : "Verificar pago"}</button>
     </form>
   );
+}
+
+/** QR del enlace de cobro (para pagar escaneando desde otro teléfono). */
+function BinanceQr({ link }: { link: string }) {
+  const [src, setSrc] = useState("");
+  useEffect(() => { let alive = true; void QRCode.toDataURL(link, { margin: 1, width: 360, color: { dark: "#122033", light: "#ffffff" } }).then(url => { if (alive) setSrc(url); }).catch(() => {}); return () => { alive = false; }; }, [link]);
+  return <div className="binance-qr">{src ? <img src={src} width={180} height={180} alt="Código QR para pagar a De1na en Binance" /> : <span className="skeleton" />}<small>Escanéalo con Binance si pagas desde otro dispositivo</small></div>;
 }

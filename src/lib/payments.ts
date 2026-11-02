@@ -8,6 +8,7 @@ export type PaymentSettings = {
   pago_movil_enabled?: boolean;
   binance_enabled?: boolean;
   binance_pay_id?: string | null;
+  binance_pay_link?: string | null;
   wallet_topup_enabled?: boolean;
 };
 
