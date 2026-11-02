@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { usd } from "@/lib/fare";
 import { VE_BANKS, bankName, binanceReady, cleanPhone, pagoMovilReady, type PaymentSettings } from "@/lib/payments";
-import { BinanceInstructions, verifyBinance } from "./binance-payment";
+import { BinanceInstructions, TxField, verifyBinance } from "./binance-payment";
 import { AppIcon } from "./app-icon";
 
 export type Movement = { id: string; amount_cents: number; kind: string; trip_id: string | null; note: string | null; created_at: string };
@@ -77,7 +77,7 @@ export function WalletView({ wallet, settings, onChanged }: { wallet: Wallet | n
       <h2>Recargar con Binance Pay</h2>
       <p className="muted">Envía la cantidad de USDT que quieras recargar (de 1 a 1000). Se acredita al instante: 1 USDT = $1.</p>
       <BinanceInstructions settings={settings} />
-      <label>ID de la transacción<input value={tx} onChange={e => setTx(e.target.value.replace(/\s/g, ""))} maxLength={64} autoComplete="off" placeholder="Pega aquí el ID" required disabled={busy} /></label>
+      <TxField value={tx} onChange={setTx} disabled={busy} />
       {err && <p className="payment-error" role="alert">{err}</p>}
       <button className="primary" disabled={busy || tx.length < 6}>{busy ? "Verificando…" : "Verificar y recargar"}</button>
       <button type="button" className="text" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button>

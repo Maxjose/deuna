@@ -14,10 +14,8 @@
   "dependencies": {
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
-    "@types/qrcode": "^1.5.5",
     "leaflet": "1.9.4",
     "next": "16.4.3",
-    "qrcode": "^1.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "web-push": "3.6.7"

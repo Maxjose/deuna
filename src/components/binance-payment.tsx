@@ -1,6 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+import { useState } from "react";
 import { usd } from "@/lib/fare";
 import type { PaymentSettings } from "@/lib/payments";
 import { AppIcon } from "./app-icon";
@@ -20,15 +19,7 @@ export async function verifyBinance(payload: { kind: "trip" | "topup"; trip_id?:
 export function BinanceInstructions({ settings, amountCents }: { settings: PaymentSettings | null; amountCents?: number }) {
   if (!settings?.binance_pay_id) return <p className="payment-error">Binance Pay no está configurado.</p>;
   const link = settings.binance_pay_link;
-  if (link) return <>
-    <a className="primary binance-open" href={link} target="_blank" rel="noopener"><AppIcon name="wallet" />Pagar en Binance</a>
-    <BinanceQr link={link} />
-    <p className="muted binance-hint">Se abre Binance con la cuenta de De1na. Escribe {amountCents != null ? <strong>{usdt(amountCents)} USDT</strong> : "el monto en USDT"}, paga y vuelve para pegar el <strong>ID de la transacción</strong>.</p>
-    <div className="payment-data">
-      {amountCents != null && <CopyRow label="Monto (USDT)" value={usdt(amountCents)} />}
-      <CopyRow label="Pay ID de De1na" value={settings.binance_pay_id} />
-    </div>
-  </>;
+  if (link) return <a className="primary binance-open" href={link} target="_blank" rel="noopener"><AppIcon name="wallet" />Pagar en Binance</a>;
   return <>
     <ol className="binance-steps">
       <li>Abre Binance → <strong>Pay</strong> → <strong>Enviar</strong>.</li>
@@ -59,16 +50,23 @@ export function BinancePayment({ trip, settings, offline }: { trip: PaymentTrip;
     }}>
       <div className="binance-head"><AppIcon name="wallet" /><p><strong>Paga con Binance Pay</strong><span>Total: {usd(trip.fare_cents)} = {usdt(trip.fare_cents)} USDT</span></p></div>
       <BinanceInstructions settings={settings} amountCents={trip.fare_cents} />
-      <label>ID de la transacción<input value={tx} onChange={e => setTx(e.target.value.replace(/\s/g, ""))} inputMode="text" autoComplete="off" maxLength={64} placeholder="Pega aquí el ID" required disabled={busy} /></label>
+      <TxField value={tx} onChange={setTx} disabled={busy} />
       {error && <p className="payment-error" role="alert">{error}</p>}
       <button className="primary" disabled={busy || offline || tx.length < 6}>{busy ? "Verificando…" : "Verificar pago"}</button>
     </form>
   );
 }
 
-/** QR del enlace de cobro (para pagar escaneando desde otro teléfono). */
-function BinanceQr({ link }: { link: string }) {
-  const [src, setSrc] = useState("");
-  useEffect(() => { let alive = true; void QRCode.toDataURL(link, { margin: 1, width: 360, color: { dark: "#122033", light: "#ffffff" } }).then(url => { if (alive) setSrc(url); }).catch(() => {}); return () => { alive = false; }; }, [link]);
-  return <div className="binance-qr">{src ? <img src={src} width={180} height={180} alt="Código QR para pagar a De1na en Binance" /> : <span className="skeleton" />}<small>Escanéalo con Binance si pagas desde otro dispositivo</small></div>;
+
+/** Campo del ID de transacción con botón «Pegar» (igual que la referencia del pago móvil). */
+export function TxField({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled: boolean }) {
+  const [pasting, setPasting] = useState(false), [err, setErr] = useState("");
+  const clean = (v: string) => v.replace(/\s/g, "").slice(0, 64);
+  return <label>ID de la transacción
+    <span className="payment-reference-field">
+      <input value={value} onChange={e => onChange(clean(e.target.value))} onPaste={e => { e.preventDefault(); onChange(clean(e.clipboardData.getData("text"))); }} autoComplete="off" maxLength={64} placeholder="Pega aquí el ID" required disabled={disabled || pasting} />
+      <button type="button" disabled={disabled || pasting} onClick={async () => { setPasting(true); setErr(""); try { onChange(clean(await navigator.clipboard.readText())); } catch { setErr("No pudimos leer el portapapeles. Mantén pulsado el campo y elige Pegar."); } finally { setPasting(false); } }}>{pasting ? "…" : "Pegar"}</button>
+    </span>
+    {err && <small className="payment-error">{err}</small>}
+  </label>;
 }
