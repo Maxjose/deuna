@@ -2662,3 +2662,16 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .password-field input { flex: 1; min-width: 0; }
 .admin-create-notice { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--success-soft); color: var(--lime-text); font-weight: 600; }
 @media (min-width: 761px) { .admin-create-sheet.action-sheet { max-width: 560px; } }
+
+/* Ficha de usuario (admin): datos y acciones a la izquierda, historial a la derecha en escritorio */
+.member-layout { display: grid; gap: 18px; }
+.member-info { display: grid; gap: 8px; align-content: start; }
+.member-info p { margin: 0; }
+.member-history h3 { margin: 0 0 10px; }
+@media (min-width: 900px) {
+  .member-sheet.action-sheet { width: min(1240px, calc(100vw - 48px)); }
+  .member-layout { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .member-info { position: sticky; top: 0; padding-right: 24px; border-right: 1px solid var(--line); }
+  .member-info .member-actions, .member-info .member-confirm { display: grid; gap: 10px; }
+  .member-history { min-width: 0; }
+}

@@ -31,11 +31,12 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
     {error&&<p role="alert">{error}<button className="secondary" onClick={()=>void load()}>Reintentar</button></p>}
     <div className="cards" ref={list} style={{minHeight:height||undefined}} aria-busy={loading}>{items.map(item=>{
       if(!isPeople)return renderTrip(item as AdminTrip);
-      const p=item as Person;return <article className="trip-card team-person" key={p.id}><h2>{p.name||p.email||'Usuario sin nombre'}</h2>{p.email&&<p className="team-email">{p.email}</p>}{p.phone&&<p className="muted">{p.phone}</p>}<p>{p.role==='admin'?'Administrador':p.role==='driver'?'Conductor':'Pasajero'} · {p.role==='driver'?(p.approved?'Aprobado':'Sin habilitaci\u00f3n'):'Usuario'}</p><p className="muted">{p.suspended?'Cuenta suspendida':p.role==='driver'?(p.available?'Disponible':'Desconectado'):'Cuenta activa'}</p><button className="secondary" disabled={busy||loading} onClick={()=>{setOperation('');setActionError('');setPerson(p);}}>Gestionar e historial</button></article>;
+      const p=item as Person;return <article className="trip-card team-person" key={p.id}><h2>{p.name||p.email||'Usuario sin nombre'}</h2>{p.email&&<p className="team-email">{p.email}</p>}{p.phone&&<p className="muted">{p.phone}</p>}<p>{p.role==='admin'?'Administrador':p.role==='driver'?'Conductor':'Pasajero'} · {p.role==='driver'?(p.approved?'Aprobado':'Sin habilitaci\u00f3n'):'Usuario'}</p><p className="muted">{p.suspended?'Cuenta suspendida':p.role==='driver'?(p.available?'Disponible':'Desconectado'):'Cuenta activa'}</p><button className="secondary" disabled={busy||loading} onClick={()=>{setOperation('');setActionError('');setPerson(p);}}>Gestionar</button></article>;
     })}{!loading&&!items.length&&!error&&<p className="muted">No hay resultados para esta búsqueda.</p>}</div>
     <div className="catalog-pages"><button type="button" className="secondary" disabled={!page||loading||busy} onClick={()=>turn(page-1)}>Anterior</button><span>Página {page+1} de {Math.max(1,Math.ceil(total/12))}</span><button type="button" className="secondary" disabled={(page+1)*12>=total||loading||busy} onClick={()=>turn(page+1)}>Siguiente</button></div>
     {isPeople&&<dialog ref={detail} className="action-sheet member-sheet" aria-label="Gestionar cuenta" onCancel={e=>{if(saving)e.preventDefault();}} onClose={()=>{setPerson(null);setOperation('');}}>
       {person&&<><div className="row"><h2>{person.name||person.email||'Usuario sin nombre'}</h2><button className="icon-button" disabled={saving} aria-label="Cerrar ficha" onClick={()=>detail.current?.close()}>×</button></div>
+      <div className="member-layout"><div className="member-info">
       <p className="team-email">{person.email}</p>{person.phone&&<p>{person.phone}</p>}
       <DriverReputation viewerId={viewerId} personId={person.id}/>
       <p>{person.role==='driver'?'Conductor · Moto':'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
@@ -44,7 +45,9 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
         {person.role==='driver'?<button className="secondary" disabled={busy} onClick={()=>setOperation(person.approved?'suspend_driver':'approve_driver')}>{person.approved?'Suspender conductor':'Aprobar conductor'}</button>:<><button className="secondary" disabled={busy} onClick={()=>setOperation(person.suspended?'restore_account':'suspend_account')}>{person.suspended?'Reactivar cuenta':'Suspender cuenta'}</button><button className="secondary" disabled={busy||person.suspended} onClick={()=>setOperation('assign_driver')}>Asignar como conductor</button></>}
       </div>}
       {actionError&&<p role="alert">{actionError}</p>}
-      <h3>Historial de viajes</h3><AdminRecords viewerId={viewerId} key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/>
+      </div>
+      <section className="member-history"><h3>Historial de viajes</h3><AdminRecords viewerId={viewerId} key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/></section>
+      </div>
       </>}
     </dialog>}
   </div>;
