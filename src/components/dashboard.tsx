@@ -100,6 +100,7 @@ export function Dashboard({
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const [historyPage,setHistoryPage]=useState(0);
   const [historyDate,setHistoryDate]=useState("");
+  const [balance,setBalance]=useState<Balance>({amount_cents:0,trips:[]});
   const [detailTrip,setDetailTrip]=useState<string|null>(null);
   const detailDialog=useRef<HTMLDialogElement>(null),dateDialog=useRef<HTMLDialogElement>(null);
   const moreDialog=useRef<HTMLDialogElement>(null);
@@ -161,6 +162,8 @@ export function Dashboard({
     setTrips(t.data);
     setSettings(s.data);
     setServiceOpen(service.data?.open===true);
+    const debt=await client.rpc('my_balance');
+    if(!debt.error&&debt.data)setBalance(debt.data as Balance);
   }, [client, userId]);
   useEffect(() => {
     let active = true;
@@ -238,11 +241,12 @@ export function Dashboard({
           'Cotizacion vencida': 'El precio venció. Actualiza la cotización antes de solicitar.',
           'Cotizacion invalida': 'No pudimos validar el precio. Actualiza la cotización.',
           'Cotizacion requerida': 'Vuelve a calcular la ruta y su precio antes de solicitar.',
+          'Saldo pendiente': 'Tienes un saldo pendiente. Envía la referencia del pago para volver a solicitar viajes.',
         };
         await load();
         throw new Error(messages[failure.message || ''] || (failure.code === '23505' ? 'Ya tienes una solicitud activa o esta cotización ya fue utilizada. Revisa tus viajes.' : 'No se pudo solicitar el viaje. Comprueba tu conexión y vuelve a intentar.'));
       }
-      setMessage(
+      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
       await load();
@@ -265,7 +269,7 @@ export function Dashboard({
           ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
-      setAccountSection(value === "account" && ["info","security","favorites","payout","payment-data","preferences"].includes(section) ? section : "overview");
+      setAccountSection(value === "account" && ["info","security","balance","favorites","payout","payment-data","preferences"].includes(section) ? section : "overview");
       setMoreOpen(false);
     };
     syncPage();
@@ -333,7 +337,7 @@ export function Dashboard({
   const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceOpen ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
     page === "account"
-      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
+      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",balance:"Saldo pendiente","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
       : ({history:"Viajes",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
@@ -383,6 +387,20 @@ export function Dashboard({
     }
     } catch { setMessage("No se pudo cerrar la sesión. Inténtalo de nuevo."); }
     finally { setSigningOut(false); signOutDialog.current?.close(); }
+  }
+  function pendingBalance() {
+    const debtTrips = trips.filter(t => balance.trips.includes(t.id));
+    if (balance.amount_cents <= 0) return <article className="trip-card pending-balance is-clear"><h2>Estás al día</h2><p className="muted">No tienes pagos pendientes.</p></article>;
+    return <article className="trip-card pending-balance">
+      <span className="pending-balance-eyebrow">SALDO PENDIENTE</span>
+      <strong className="pending-balance-amount">{usd(balance.amount_cents)}</strong>
+      <p>No pudimos verificar {balance.trips.length === 1 ? "el pago de un viaje" : `los pagos de ${balance.trips.length} viajes`}. Envía la referencia correcta del pago móvil para volver a solicitar viajes.</p>
+      {debtTrips.map(t => <div key={t.id} className="pending-balance-trip">
+        <small>{t.created_at ? new Date(t.created_at).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : ""} · {parseStoredPlace(t.destination).label.split(",")[0]}</small>
+        <PassengerPayment trip={t} settings={settings} offline={offline} />
+      </div>)}
+      <p className="muted">Si ya pagaste y el monto sigue apareciendo, la verificación puede tardar unos minutos. Si persiste, escríbenos.</p>
+    </article>;
   }
   function card(t: Trip, detail = false) {
     const compact = page === "history" && !detail;
@@ -462,7 +480,7 @@ export function Dashboard({
           page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <DriverNavigation contact={<TripContactButton tripId={t.id} viewerId={userId}/>} origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
+            <DriverNavigation advanceBlocked={t.status==='arrived'&&t.payment_method==='pago_movil'&&!t.payment_reference?'Esperando que el pasajero envíe la referencia del pago móvil para iniciar el viaje.':undefined} contact={<TripContactButton tripId={t.id} viewerId={userId}/>} origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
           )}
         {role === "passenger" &&
           t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/>}
@@ -621,7 +639,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["balance",balance.amount_cents>0?`Saldo pendiente · ${usd(balance.amount_cents)}`:"Saldo pendiente","payments"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -645,6 +663,7 @@ export function Dashboard({
               {accountSection==="security"&&<><ChangePassword /><PasskeySecurity /></>}
               {accountSection==="payout"&&role==="driver"&&<DriverPayout />}
               {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
+              {accountSection==="balance"&&role==="passenger"&&pendingBalance()}
               {accountSection==="favorites"&&role==="passenger"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
               {accountSection==="preferences"&&<><PushPreferences /><InstallApp /></>}
             </div>
@@ -713,6 +732,8 @@ export function Dashboard({
           ) : page === "home" && role === "passenger" ? (
             mine ? (
               card(mine)
+            ) : balance.amount_cents > 0 ? (
+              pendingBalance()
             ) : (
               <RideRequest
                 home={savedPlaces.favorites.find(place=>place.kind==='home')}
@@ -918,6 +939,7 @@ export function Dashboard({
   );
 }
 
+type Balance = { amount_cents: number; trips: string[] };
 /** Día local (AAAA-MM-DD) de una fecha. */
 function localDay(value?: string) {
   if (!value) return "";

@@ -7,7 +7,7 @@ import type { MapPoint } from '@/lib/destination';
 import { AppIcon } from './app-icon';
 import {isOwnDialogEvent} from '@/lib/dialog';
 const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
-export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpenChat,children,contact}:{contact?:ReactNode;origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void;onOpenChat:()=>void;children?:ReactNode}){
+export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpenChat,children,contact,advanceBlocked}:{advanceBlocked?:string;contact?:ReactNode;origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void;onOpenChat:()=>void;children?:ReactNode}){
  const pickup=useMemo(()=>parseStoredPlace(origin),[origin]),dropoff=useMemo(()=>parseStoredPlace(destination),[destination]);
  const target=status==='ongoing'?dropoff:pickup;
  const googleUrl=googleNavigationUrl(target.point);
@@ -67,7 +67,8 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
     {!target.point&&<p role="alert">Este viaje no tiene un punto guardado. Consulta la dirección con el pasajero.</p>}
     <label className="check"><input type="checkbox" checked={awake} onChange={e=>setAwake(e.target.checked)}/>Mantener pantalla encendida {awake&&<small>{wakeActive?'· Activo':'· No disponible ahora'}</small>}</label>
     <p className="muted driver-nav-note">Mantén esta pantalla abierta. Al bloquear el teléfono o cambiar de app, el GPS puede pausarse.</p>
-    <button className="primary" disabled={busy} onClick={onAdvance}>{status==='assigned'?'Ya llegué a la recogida':status==='arrived'?'Iniciar viaje':'Finalizar viaje'}</button>
+    {advanceBlocked&&<p className="driver-advance-blocked" role="status">{advanceBlocked}</p>}
+    <button className="primary" disabled={busy||!!advanceBlocked} onClick={onAdvance}>{status==='assigned'?'Ya llegué a la recogida':status==='arrived'?'Iniciar viaje':'Finalizar viaje'}</button>
     {children}
    </footer>
   </dialog>
