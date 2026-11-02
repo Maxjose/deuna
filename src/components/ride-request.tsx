@@ -484,14 +484,14 @@ export function RideRequest({
                         <span><strong>Saldo De1na</strong><small>{quote && walletCents < quote.fare_cents ? `Saldo insuficiente (${usd(walletCents)})` : `Disponible: ${usd(walletCents)}`}</small></span>
                         <span className="selection-dot" />
                       </button>}
-                      {binance && <button type="button" role="radio" aria-checked={method === "binance"} className={"moto-option payment-option " + (method === "binance" ? "is-selected" : "")} onClick={() => setMethod("binance")}>
-                        <span className="service-icon"><AppIcon name="wallet" /></span>
-                        <span><strong>Binance Pay</strong><small>Pagas en USDT cuando un conductor acepte tu viaje</small></span>
-                        <span className="selection-dot" />
-                      </button>}
                       {payment?.pago_movil_enabled !== false && <button type="button" role="radio" aria-checked={method === "pago_movil"} disabled={!pagoMovil} className={"moto-option payment-option " + (method === "pago_movil" ? "is-selected" : "")} onClick={() => setMethod("pago_movil")}>
                         <span className="service-icon"><AppIcon name="phone" /></span>
                         <span><strong>Pago móvil</strong><small>{pagoMovil ? "Transfieres cuando un conductor acepte tu viaje" : "No disponible por ahora"}</small></span>
+                        <span className="selection-dot" />
+                      </button>}
+                      {binance && <button type="button" role="radio" aria-checked={method === "binance"} className={"moto-option payment-option " + (method === "binance" ? "is-selected" : "")} onClick={() => setMethod("binance")}>
+                        <span className="service-icon"><AppIcon name="wallet" /></span>
+                        <span><strong>Binance Pay</strong><small>Pagas en USDT cuando un conductor acepte tu viaje</small></span>
                         <span className="selection-dot" />
                       </button>}
                     </div>
