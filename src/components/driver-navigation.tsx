@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { parseStoredPlace } from '@/lib/journey';
-import { refreshNavigationRoute, usableFix, type NavigationFix } from '@/lib/navigation';
+import { googleNavigationUrl,refreshNavigationRoute, usableFix, type NavigationFix } from '@/lib/navigation';
 import type { MapPoint } from '@/lib/destination';
 import { AppIcon } from './app-icon';
 import {isOwnDialogEvent} from '@/lib/dialog';
@@ -10,20 +10,22 @@ const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
 export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpenChat,children,contact}:{contact?:ReactNode;origin:string;destination:string;status:string;busy:boolean;onAdvance:()=>void;onOpenChat:()=>void;children?:ReactNode}){
  const pickup=useMemo(()=>parseStoredPlace(origin),[origin]),dropoff=useMemo(()=>parseStoredPlace(destination),[destination]);
  const target=status==='ongoing'?dropoff:pickup;
+ const googleUrl=googleNavigationUrl(target.point);
+ const fixRef=useRef<NavigationFix|null>(null);
  const dialog=useRef<HTMLDialogElement>(null),lastRoute=useRef<{point:MapPoint;at:number;accuracy:number}|null>(null);
  const [opened,setOpened]=useState(true),[fix,setFix]=useState<NavigationFix|null>(null),[routeOrigin,setRouteOrigin]=useState<MapPoint|null>(null),[follow,setFollow]=useState(true),[gpsError,setGpsError]=useState(''),[retry,setRetry]=useState(0),[now,setNow]=useState(0),[awake,setAwake]=useState(true),[wakeActive,setWakeActive]=useState(false),[offline,setOffline]=useState(false);
  useEffect(()=>{if(opened){dialog.current?.showModal();dialog.current?.focus({preventScroll:true});}},[opened]);
  useEffect(()=>{
   if(!opened)return;
   let alive=true;
-  lastRoute.current=null;setRouteOrigin(null);setFix(null);setGpsError('');
+  lastRoute.current=null;setGpsError('');
   if(!navigator.geolocation){setGpsError('Este dispositivo no permite obtener tu ubicación.');return;}
   const watch=navigator.geolocation.watchPosition(position=>{
    if(!alive)return;
    const next={lat:position.coords.latitude,lng:position.coords.longitude,accuracy:position.coords.accuracy,timestamp:position.timestamp};
    const time=Date.now();setNow(time);
    if(!usableFix(next,time)){setGpsError('Señal GPS muy imprecisa o antigua. Activa la ubicación precisa del teléfono.');return;}
-   setFix(next);setGpsError('');
+   fixRef.current=next;setFix(next);setGpsError('');
    if(navigator.onLine&&refreshNavigationRoute(lastRoute.current,next,time)){
     const point={lat:next.lat,lng:next.lng};lastRoute.current={point,at:time,accuracy:next.accuracy};setRouteOrigin(point);
    }
@@ -34,7 +36,13 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
   const visible=()=>{if(document.visibilityState==='visible'){lastRoute.current=null;setRetry(n=>n+1);}};
   document.addEventListener('visibilitychange',visible);
   return()=>{alive=false;navigator.geolocation.clearWatch(watch);clearInterval(timer);window.removeEventListener('online',reconnect);window.removeEventListener('offline',reconnect);document.removeEventListener('visibilitychange',visible);};
- },[opened,retry,status]);
+ },[opened,retry]);
+ // Changing trip stage changes the destination, not the GPS subscription or live marker.
+ useEffect(()=>{
+  lastRoute.current=null;
+  const position=fixRef.current;
+  if(position&&usableFix(position,Date.now()))setRouteOrigin({lat:position.lat,lng:position.lng});
+ },[target.point]);
  useEffect(()=>{
   if(!opened||!awake)return;
   let alive=true,pending=false,lock:WakeLockSentinel|null=null;
@@ -51,7 +59,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
  return <><button className="secondary" onClick={()=>setOpened(true)}><AppIcon name="ride"/>Abrir navegación</button>
   <dialog ref={dialog} tabIndex={-1} className="journey-flow-screen driver-navigation" aria-label="Navegación del conductor" onClose={event=>{if(isOwnDialogEvent(event))setOpened(false);}}>
    <header className="driver-nav-header"><button className="icon-button" aria-label="Cerrar navegación" onClick={()=>dialog.current?.close()}><AppIcon name="back"/></button><div><small>{status==='ongoing'?'LLEVAR AL PASAJERO':'RECOGER AL PASAJERO'}</small><strong>{target.label}</strong></div></header>
-   <div className="driver-nav-map">{opened&&<JourneyMap extraPoint={status!=='ongoing'?dropoff.point:null} navigation origin={routeOrigin} destination={target.point} livePosition={fix} follow={follow}/>}<button className="driver-follow secondary" aria-pressed={follow} onClick={()=>setFollow(value=>!value)}>{follow?'Explorar mapa':'Seguir mi ubicación'}</button></div>
+   <div className="driver-nav-map">{opened&&<JourneyMap extraPoint={status!=='ongoing'?dropoff.point:null} navigation origin={routeOrigin} destination={target.point} livePosition={fix} follow={follow}/>}<div className="driver-map-actions"><button className="driver-follow secondary" aria-pressed={follow} onClick={()=>setFollow(value=>!value)}>{follow?'Explorar mapa':'Seguir mi ubicación'}</button>{googleUrl&&<a className="driver-google-map" href={googleUrl} target="_blank" rel="noopener noreferrer" aria-label="Abrir ruta en Google Maps" title="Abrir ruta en Google Maps"><AppIcon name="map"/></a>}</div></div>
    <footer className="driver-nav-footer">
     <div className="trip-contact-row"><button type="button" className="secondary driver-chat-button" onClick={()=>{dialog.current?.close();onOpenChat();}}><AppIcon name="messages"/>Abrir chat del viaje</button>{contact}</div>
     <p className="driver-gps" role="status">{offline?'Sin conexión: la ruta no puede actualizarse.':gpsError||(!fix?'Buscando tu ubicación…':!fresh?'GPS sin actualizar. Esperando señal…':fix.accuracy>100?`Señal GPS baja (±${Math.round(fix.accuracy)} m). Activa la ubicación precisa para mejorarla.`:`GPS activo · precisión ${Math.round(fix.accuracy)} m`)}</p>

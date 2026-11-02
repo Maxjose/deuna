@@ -1,5 +1,11 @@
 import type { MapPoint } from './destination';
 export type NavigationFix = MapPoint & { accuracy:number; timestamp:number };
+export function googleNavigationUrl(destination:MapPoint|null){
+ if(!destination||!Number.isFinite(destination.lat)||!Number.isFinite(destination.lng)||Math.abs(destination.lat)>90||Math.abs(destination.lng)>180)return null;
+ const url=new URL('https://www.google.com/maps/dir/');
+ url.search=new URLSearchParams({api:'1',destination:`${destination.lat},${destination.lng}`,travelmode:'driving',dir_action:'navigate'}).toString();
+ return url.toString();
+}
 export function usableFix(fix:NavigationFix,now:number){
  return Number.isFinite(fix.lat)&&Math.abs(fix.lat)<=90&&Number.isFinite(fix.lng)&&Math.abs(fix.lng)<=180&&Number.isFinite(fix.accuracy)&&fix.accuracy>=0&&fix.accuracy<=1500&&Number.isFinite(fix.timestamp)&&now-fix.timestamp<=30000&&fix.timestamp<=now+5000;
 }

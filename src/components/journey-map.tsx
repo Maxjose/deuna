@@ -40,6 +40,8 @@ export default function JourneyMap({
   const cameraFollow=useRef(follow);
   cameraFollow.current=follow;
   const overviewBounds=useRef<import('leaflet').LatLngBounds|null>(null);
+  const routeLayer=useRef<import('leaflet').LayerGroup|null>(null);
+  const routeDestination=useRef('');
   const overviewAllowed=useRef(true);
   overviewAllowed.current=!navigation||!follow||!origin;
   function fitOverview(){
@@ -82,6 +84,7 @@ export default function JourneyMap({
       alive = false;
       mapRef.current?.remove();
       mapRef.current = null;
+      routeLayer.current=null;routeDestination.current='';
     };
   }, []);
   useEffect(()=>{
@@ -96,6 +99,10 @@ export default function JourneyMap({
       L = library;
     if (!map || !L) return;
     const layer = L.layerGroup().addTo(map);
+    const route=routeLayer.current??(routeLayer.current=L.layerGroup().addTo(map));
+    const destinationKey=destination?`${destination.lat},${destination.lng}`:'';
+    if(!navigation||!origin||!destination||picking||routeDestination.current!==destinationKey)route.clearLayers();
+    routeDestination.current=destinationKey;
     const controller = new AbortController();
     let active = true;
     const timeout = setTimeout(() => controller.abort(), 15000);
@@ -130,7 +137,7 @@ export default function JourneyMap({
         "https://router.project-osrm.org";
       const coordinates = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
       fetch(
-        quotePlaces ? '/api/quote' : `${base}/route/v1/driving/${coordinates}?overview=full&geometries=geojson&radiuses=250;250`,
+        quotePlaces ? '/api/quote' : `${base}/route/v1/driving/${coordinates}?overview=full&geometries=geojson&radiuses=${navigation?1500:250};250`,
         { signal: controller.signal, ...(quotePlaces ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(quotePlaces) } : {}) },
       )
         .then(async (r) => {
@@ -143,13 +150,14 @@ export default function JourneyMap({
           }
           return decodeRoute(body);
         })
-        .then((route) => {
-          if (!active || !route) return;
-          L.polyline(route, { color: "#fff", weight: 9, opacity: 0.95 }).addTo(
-            layer,
+        .then((geometry) => {
+          if (!active || !geometry) return;
+          route.clearLayers();
+          L.polyline(geometry, { color: "#fff", weight: 9, opacity: 0.95 }).addTo(
+            route,
           );
-          const line = L.polyline(route, { color: "#122033", weight: 5 }).addTo(
-            layer,
+          const line = L.polyline(geometry, { color: "#122033", weight: 5 }).addTo(
+            route,
           );
           overviewBounds.current=line.getBounds();
           for(const point of points)overviewBounds.current.extend([point.lat,point.lng]);
@@ -160,7 +168,7 @@ export default function JourneyMap({
         .catch((error) => {
           if (active)
             setMessage(
-              error instanceof Error && error.message.includes('tarifas') ? error.message : "No pudimos trazar la ruta. Revisa los puntos o vuelve a intentar.",
+              navigation&&route.getLayers().length ? "No pudimos actualizar la ruta. Se muestra el último trazo disponible." : error instanceof Error && error.message.includes('tarifas') ? error.message : "No pudimos trazar la ruta. Revisa los puntos o vuelve a intentar.",
             );
         })
         .finally(() => clearTimeout(timeout));

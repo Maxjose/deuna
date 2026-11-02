@@ -1714,6 +1714,9 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
 .driver-nav-map { flex: 1; min-height: 180px; position: relative; }
 .driver-nav-map > .journey-map { position: absolute; inset: 0; }
 .driver-follow.secondary { position: absolute; z-index: 500; top: 14px; left: 12px; width: auto; padding: 10px 12px; font-size: 12px; box-shadow: 0 3px 15px #12203320; background: white; }
+.driver-map-actions { position:absolute; z-index:500; top:14px; left:12px; right:62px; display:flex; align-items:center; gap:8px; }
+.driver-map-actions .driver-follow.secondary { position:static; margin:0; min-height:44px; }
+.driver-google-map { display:grid; place-items:center; flex:0 0 44px; width:44px; height:44px; border-radius:50%; background:#fff; color:#122033; box-shadow:0 3px 15px #12203320; }
 .driver-nav-footer { padding: 12px 20px calc(16px + env(safe-area-inset-bottom)); background: white; max-height: 45dvh; overflow-y: auto; }
 .driver-gps { font-size: 12px; margin: 0 0 10px; }
 .driver-nav-note { font-size: 12px; line-height: 1.5; margin: 8px 0 12px; }
