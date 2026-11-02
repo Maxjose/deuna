@@ -9,7 +9,7 @@ import {AdminWallet} from './wallet';
 import {AdminDriverEarnings} from './earnings';
 export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
   const detail=useRef<HTMLDialogElement>(null);
- const [notice,setNotice]=useState('');
+ const [notice,setNotice]=useState(''),[memberTab,setMemberTab]=useState('info');
   const [person,setPerson]=useState<Person|null>(null),[operation,setOperation]=useState(''),[saving,setSaving]=useState(false),[actionError,setActionError]=useState('');
   useEffect(()=>{if(person)detail.current?.showModal();},[person]);
   const isPeople=section==='team'||section==='users';
@@ -33,12 +33,17 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
     {error&&<p role="alert">{error}<button className="secondary" onClick={()=>void load()}>Reintentar</button></p>}
     <div className="cards" ref={list} style={{minHeight:height||undefined}} aria-busy={loading}>{items.map(item=>{
       if(!isPeople)return renderTrip(item as AdminTrip);
-      const p=item as Person;return <article className="trip-card team-person" key={p.id}><h2>{p.name||p.email||'Usuario sin nombre'}</h2>{p.email&&<p className="team-email">{p.email}</p>}{p.phone&&<p className="muted">{p.phone}</p>}<p>{p.role==='admin'?'Administrador':p.role==='driver'?'Conductor':'Pasajero'} · {p.role==='driver'?(p.approved?'Aprobado':'Sin habilitaci\u00f3n'):'Usuario'}</p><p className="muted">{p.suspended?'Cuenta suspendida':p.role==='driver'?(p.available?'Disponible':'Desconectado'):'Cuenta activa'}</p><button className="secondary" disabled={busy||loading} onClick={()=>{setOperation('');setActionError('');setPerson(p);}}>Gestionar</button></article>;
+      const p=item as Person;return <article className="trip-card team-person" key={p.id}><h2>{p.name||p.email||'Usuario sin nombre'}</h2>{p.email&&<p className="team-email">{p.email}</p>}{p.phone&&<p className="muted">{p.phone}</p>}<p>{p.role==='admin'?'Administrador':p.role==='driver'?'Conductor':'Pasajero'} · {p.role==='driver'?(p.approved?'Aprobado':'Sin habilitaci\u00f3n'):'Usuario'}</p><p className="muted">{p.suspended?'Cuenta suspendida':p.role==='driver'?(p.available?'Disponible':'Desconectado'):'Cuenta activa'}</p><button className="secondary" disabled={busy||loading} onClick={()=>{setOperation('');setActionError('');setMemberTab('info');setPerson(p);}}>Gestionar</button></article>;
     })}{!loading&&!items.length&&!error&&<p className="muted">No hay resultados para esta búsqueda.</p>}</div>
     <div className="catalog-pages"><button type="button" className="secondary" disabled={!page||loading||busy} onClick={()=>turn(page-1)}>Anterior</button><span>Página {page+1} de {Math.max(1,Math.ceil(total/12))}</span><button type="button" className="secondary" disabled={(page+1)*12>=total||loading||busy} onClick={()=>turn(page+1)}>Siguiente</button></div>
     {isPeople&&<dialog ref={detail} className="action-sheet member-sheet" aria-label="Gestionar cuenta" onCancel={e=>{if(saving)e.preventDefault();}} onClose={()=>{setPerson(null);setOperation('');}}>
       {person&&<><div className="row"><h2>{person.name||person.email||'Usuario sin nombre'}</h2><button className="icon-button" disabled={saving} aria-label="Cerrar ficha" onClick={()=>detail.current?.close()}>×</button></div>
-      <div className="member-layout"><div className="member-info">
+      <div className="service-tabs member-tabs" role="tablist" aria-label="Secciones de la cuenta">
+        {(person.role==='driver'?[['info','Información'],['payout','Cuenta de cobro'],['trips','Historial de viajes'],['movements','Movimientos']]:[['info','Información'],['trips','Historial de viajes']]).map(([value,label])=>
+          <button key={value} type="button" role="tab" aria-selected={memberTab===value} className={memberTab===value?'is-active':''} onClick={()=>setMemberTab(value)}>{label}</button>)}
+      </div>
+      <div className="member-panel" role="tabpanel" key={memberTab}>
+      {memberTab==='info'&&<div className="member-info">
       <p className="team-email">{person.email}</p>{person.phone&&<p>{person.phone}</p>}
       <DriverReputation viewerId={viewerId} personId={person.id}/>
       <p>{person.role==='driver'?'Conductor · Moto':'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
@@ -48,9 +53,10 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
       </div>}
       {actionError&&<p role="alert">{actionError}</p>}
       {person.role==='passenger'&&<AdminWallet key={person.id} personId={person.id}/>}
-      {person.role==='driver'&&<AdminDriverEarnings key={person.id} driverId={person.id}/>}
-      </div>
-      <section className="member-history"><h3>Historial de viajes</h3><AdminRecords viewerId={viewerId} key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/></section>
+      </div>}
+      {memberTab==='payout'&&person.role==='driver'&&<AdminDriverEarnings key={person.id+'p'} driverId={person.id} view="payout"/>}
+      {memberTab==='movements'&&person.role==='driver'&&<AdminDriverEarnings key={person.id+'m'} driverId={person.id} view="movements"/>}
+      {memberTab==='trips'&&<section className="member-history"><AdminRecords viewerId={viewerId} key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/></section>}
       </div>
       </>}
     </dialog>}

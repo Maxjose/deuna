@@ -72,7 +72,7 @@ export function DriverEarnings({ refresh, onOpenPayout }: { refresh: unknown; on
 }
 
 /** Administración (ficha del conductor): datos de cobro, acumulado y registrar pagos al conductor. */
-export function AdminDriverEarnings({ driverId }: { driverId: string }) {
+export function AdminDriverEarnings({ driverId, view }: { driverId: string; view: "payout" | "movements" }) {
   const client = useMemo(() => browserClient(), []);
   const [e, setE] = useState<Earnings | null>(null), [busy, setBusy] = useState(false), [err, setErr] = useState(""), [ok, setOk] = useState("");
   const load = useCallback(async () => { const { data } = await client.rpc("admin_driver_earnings", { driver_id: driverId }); if (data) setE(data); }, [client, driverId]);
@@ -88,6 +88,13 @@ export function AdminDriverEarnings({ driverId }: { driverId: string }) {
     if (error) { setErr(error.message === "Monto mayor al acumulado" ? "El monto es mayor a lo que se le debe." : "No se pudo registrar el pago."); return; }
     setE(data); form.reset(); setOk("Pago registrado.");
   }
+  if (view === "movements") return <div className="admin-earnings">
+    {e ? <><div className="earnings-totals admin-earnings-totals">
+      <span><small>Por pagar</small><strong>{usd(e.balance_cents)}</strong></span>
+      <span><small>Acumulado</small><strong>{usd(e.earned_cents)}</strong></span>
+      <span><small>Pagado</small><strong>{usd(e.paid_cents)}</strong></span>
+    </div><MovementList items={e.movements} /></> : <div className="skeleton-group"><div className="skeleton" /></div>}
+  </div>;
   return <div className="admin-wallet admin-earnings">
     <h3>Cuenta de cobro</h3>
     {acc?.bank ? <dl className="payout-account">
@@ -107,7 +114,6 @@ export function AdminDriverEarnings({ driverId }: { driverId: string }) {
       {ok && <p className="admin-create-notice" role="status">{ok}</p>}
       <button className="primary" disabled={busy || !e?.balance_cents}>{busy ? "Registrando…" : "Registrar pago al conductor"}</button>
     </form>
-    {e && e.movements.length > 0 && <details className="admin-wallet-movements"><summary>Ver movimientos ({e.movements.length})</summary><MovementList items={e.movements} /></details>}
   </div>;
 }
 
