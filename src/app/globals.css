@@ -2741,3 +2741,6 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .earnings-list li.is-fee .earnings-icon { background: #fdf0f2; color: var(--danger); }
 .earnings-list li.is-fee b { color: var(--danger); }
 .earnings-fee { margin: 0; font-size: 13px; }
+.earnings .history-filters, .admin-earnings .history-filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.earnings .history-filters::-webkit-scrollbar, .admin-earnings .history-filters::-webkit-scrollbar { display: none; }
+.earnings .history-filters button, .admin-earnings .history-filters button { flex: 0 0 auto; width: auto; margin: 0; padding: 0 14px; white-space: nowrap; }
