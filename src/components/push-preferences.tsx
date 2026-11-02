@@ -8,6 +8,8 @@ export function PushPreferences() {
   const [supported,setSupported]=useState(false), [loading,setLoading]=useState(true), [busy,setBusy]=useState(false),
     [endpoint,setEndpoint]=useState(''),[promotions,setPromotions]=useState(false),[blocked,setBlocked]=useState(false),[configured,setConfigured]=useState(false);
   const {message,notify}=useNotice('push-preferences');
+  const [nativeApp,setNativeApp]=useState(false);
+  useEffect(()=>{setNativeApp(isNativeApp());},[]);
   useEffect(()=>{
     let active=true;
     const controller=new AbortController();
@@ -82,6 +84,13 @@ export function PushPreferences() {
     catch{notify('No pudimos desactivarlas. Inténtalo de nuevo.');}
     finally{setBusy(false);}
   }
+  if(nativeApp)return <article className="trip-card"><h2>Notificaciones</h2>
+    {loading?<p role="status">Comprobando…</p>:endpoint?<>
+      <p className="muted">Las notificaciones de tus viajes están activas en esta app.</p>
+      <label className="payment-switch"><input type="checkbox" role="switch" checked={promotions} disabled={busy} onChange={e=>void changePromotions(e.target.checked)}/><span><strong>Promociones y novedades</strong><small>{promotions?'Recibirás ofertas y novedades de De1na.':'Solo recibirás avisos de tus viajes.'}</small></span></label>
+    </>:<p className="muted">Las notificaciones están desactivadas. Actívalas en Ajustes del teléfono → Apps → De1na → Notificaciones.</p>}
+    <Toast message={message}/>
+  </article>;
   return <article className="trip-card"><h2>Notificaciones</h2>
     {loading?<p role="status">Comprobando este dispositivo…</p>:!supported?<p className="muted">Este navegador no permite activar notificaciones. En iPhone, agrega De1na a la pantalla de inicio y ábrela desde allí (iOS 16.4 o posterior).</p>:!configured?<p className="muted">Estamos preparando las notificaciones. Vuelve a comprobarlo más tarde.</p>:endpoint?<>
       <p className="muted">Avisos de tus viajes activos en este dispositivo.</p>

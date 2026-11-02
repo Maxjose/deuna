@@ -175,7 +175,7 @@ export function Dashboard({
   useEffect(()=>{void reloadWallet();},[trips,reloadWallet]);
   // App nativa: registra el teléfono para notificaciones (FCM) una vez por sesión, sin pasos extra.
   const profileRole=profile?.role, profileSuspended=profile?.suspended;
-  // En la app nativa las notificaciones se activan solas y no hace falta «instalar»: se oculta Configuración.
+  // En la app nativa las notificaciones se activan solas y no hace falta «instalar».
   const [nativeApp,setNativeApp]=useState(false);
   useEffect(()=>{setNativeApp(isNativeApp());},[]);
   useEffect(()=>{
@@ -674,7 +674,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),...(nativeApp?[]:[["preferences","Configuración","settings"]])].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -700,7 +700,7 @@ export function Dashboard({
               {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
               {(accountSection==="wallet"||accountSection==="balance")&&role==="passenger"&&<>{balance.amount_cents>0&&pendingBalance()}<WalletView wallet={wallet} settings={settings} onChanged={()=>void reloadWallet()} /></>}
               {accountSection==="favorites"&&role==="passenger"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
-              {accountSection==="preferences"&&!nativeApp&&<><PushPreferences /><InstallApp /></>}
+              {accountSection==="preferences"&&<><PushPreferences />{!nativeApp&&<InstallApp />}</>}
             </div>
           ) : page === "payments" && role === "admin" ? (
             <AdminPayments onMessage={setMessage} />
