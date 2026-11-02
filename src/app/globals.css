@@ -2653,3 +2653,12 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 @media (prefers-reduced-motion: reduce) { .service-panel { animation: none; } }
+
+/* Crear cuenta (admin) */
+.admin-create-button { justify-self: start; width: auto; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; min-height: 44px; margin-bottom: 4px; }
+.admin-create-form { display: grid; gap: 12px; }
+.admin-create-sheet { max-height: 92dvh; overflow-y: auto; }
+.password-field { display: flex; gap: 8px; align-items: center; }
+.password-field input { flex: 1; min-width: 0; }
+.admin-create-notice { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--success-soft); color: var(--lime-text); font-weight: 600; }
+@media (min-width: 761px) { .admin-create-sheet.action-sheet { max-width: 560px; } }

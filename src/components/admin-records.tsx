@@ -4,8 +4,10 @@ import { browserClient } from '@/lib/supabase/client';
 import { DriverReputation } from './trip-resolution';
 type Person={id:string;name:string;email:string;phone:string;role:string;approved:boolean;available:boolean;suspended:boolean};
 export type AdminTrip={id:string;origin:string;destination:string;zone:string|null;fare_cents:number|null;distance_meters:number|null;status:string;passenger_id:string;driver_id:string|null;passenger_name?:string;driver_name?:string};
+import {AdminCreateUser} from './admin-create-user';
 export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
   const detail=useRef<HTMLDialogElement>(null);
+ const [notice,setNotice]=useState('');
   const [person,setPerson]=useState<Person|null>(null),[operation,setOperation]=useState(''),[saving,setSaving]=useState(false),[actionError,setActionError]=useState('');
   useEffect(()=>{if(person)detail.current?.showModal();},[person]);
   const isPeople=section==='team'||section==='users';
@@ -22,6 +24,8 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
     finally{setSaving(false);}
   }
   return <div className="admin-records">
+    {(section==='users'||section==='team')&&<AdminCreateUser defaultRole={section==='team'?'driver':'passenger'} onCreated={text=>{setNotice(text);setPage(0);setFilter('');setQuery('');void load();}}/>}
+    {notice&&<p className="admin-create-notice" role="status">{notice}</p>}
     <form className="admin-records-search" onSubmit={e=>{e.preventDefault();setPage(0);setHeight(0);setFilter(query.trim());}}><label>{isPeople?(section==='team'?'Buscar equipo':'Buscar usuarios'):'Buscar viajes'}<input type="search" value={query} maxLength={120} onChange={e=>setQuery(e.target.value)} placeholder={isPeople?'Nombre, correo o teléfono':'Pasajero, conductor, destino o código'}/></label><button className="secondary" disabled={loading}>Buscar</button></form>
     <p className="muted" role="status">{loading?'Cargando…':`${total} resultados`}</p>
     {error&&<p role="alert">{error}<button className="secondary" onClick={()=>void load()}>Reintentar</button></p>}
