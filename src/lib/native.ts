@@ -11,6 +11,7 @@ type Bridge = {
   keepScreenOn(on: boolean): void;
   appVersion(): number;
   haptic?(): void;
+  downloadUpdate?(id: string, url: string): void;
 };
 declare global { interface Window { De1naNative?: Bridge; __de1naNative?: { resolve: (id: string, value: string | null) => void } } }
 
@@ -18,7 +19,7 @@ export const nativeBridge = (): Bridge | null => (typeof window !== 'undefined' 
 export const isNativeApp = () => !!nativeBridge();
 
 const pending = new Map<string, (value: string | null) => void>();
-function call(method: 'requestPushToken' | 'readClipboard', timeoutMs = 20000) {
+function call(method: 'requestPushToken' | 'readClipboard' | 'downloadUpdate', timeoutMs = 20000, ...args: string[]) {
   const bridge = nativeBridge();
   if (!bridge) return Promise.resolve(null);
   if (!window.__de1naNative) window.__de1naNative = { resolve: (id, value) => { pending.get(id)?.(value); pending.delete(id); } };
@@ -26,7 +27,7 @@ function call(method: 'requestPushToken' | 'readClipboard', timeoutMs = 20000) {
   return new Promise<string | null>((resolve) => {
     pending.set(id, resolve);
     setTimeout(() => { if (pending.has(id)) { pending.delete(id); resolve(null); } }, timeoutMs);
-    bridge[method](id);
+    (bridge[method] as (...a: string[]) => void)(id, ...args);
   });
 }
 
@@ -44,4 +45,12 @@ export async function readClipboardText() {
     return text;
   }
   return navigator.clipboard.readText();
+}
+
+/** App nativa: descarga la actualización dentro de la app y abre el instalador. Devuelve false si no está disponible. */
+export async function nativeDownloadUpdate(url: string) {
+  if (!nativeBridge()?.downloadUpdate) return false;
+  const result = await call('downloadUpdate', 10 * 60_000, url);
+  if (result === 'error') throw new Error('download');
+  return true;
 }

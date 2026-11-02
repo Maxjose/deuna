@@ -133,7 +133,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); web.saveState(out); }
-    @Override protected void onResume() { super.onResume(); web.onResume(); }
+    @Override protected void onResume() {
+        super.onResume(); web.onResume();
+        if (pendingInstall && (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls())) { pendingInstall = false; installUpdate(); }
+    }
+    @Override protected void onDestroy() { if (updateReceiver != null) unregisterReceiver(updateReceiver); super.onDestroy(); }
     @Override protected void onPause() { web.onPause(); CookieManager.getInstance().flush(); super.onPause(); }
 
     private boolean isOwnHost(Uri uri) {
@@ -185,6 +189,59 @@ public class MainActivity extends AppCompatActivity {
         main.post(() -> web.evaluateJavascript(js, null));
     }
 
+    private long updateDownload = -1;
+    private String updateRequest;
+    private android.content.BroadcastReceiver updateReceiver;
+
+    private java.io.File updateFile() { return new java.io.File(getExternalFilesDir("updates"), "de1na.apk"); }
+
+    private void startUpdateDownload(String id, String url) {
+        try {
+            java.io.File file = updateFile();
+            if (file.exists()) file.delete();
+            android.app.DownloadManager manager = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(Uri.parse(url))
+                .setTitle("Actualización de De1na")
+                .setDescription("Descargando la nueva versión…")
+                .setMimeType("application/vnd.android.package-archive")
+                .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE)
+                .setDestinationInExternalFilesDir(this, "updates", "de1na.apk");
+            updateRequest = id;
+            updateDownload = manager.enqueue(request);
+            if (updateReceiver == null) {
+                updateReceiver = new android.content.BroadcastReceiver() {
+                    @Override public void onReceive(Context context, Intent intent) {
+                        long done = intent.getLongExtra(android.app.DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                        if (done != updateDownload) return;
+                        boolean ok = false;
+                        try (android.database.Cursor c = manager.query(new android.app.DownloadManager.Query().setFilterById(done))) {
+                            ok = c != null && c.moveToFirst() && c.getInt(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS)) == android.app.DownloadManager.STATUS_SUCCESSFUL;
+                        }
+                        if (updateRequest != null) { resolve(updateRequest, ok ? "downloaded" : "error"); updateRequest = null; }
+                        if (ok) installUpdate();
+                    }
+                };
+                ContextCompat.registerReceiver(this, updateReceiver, new android.content.IntentFilter(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE), ContextCompat.RECEIVER_EXPORTED);
+            }
+        } catch (Exception e) { resolve(id, "error"); }
+    }
+
+    /** Abre el instalador de Android; si falta el permiso de «instalar apps desconocidas», lleva a ese ajuste primero. */
+    private void installUpdate() {
+        java.io.File file = updateFile();
+        if (!file.exists()) return;
+        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            pendingInstall = true;
+            startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
+            return;
+        }
+        Uri uri = androidx.core.content.FileProvider.getUriForFile(this, "com.de1na.app.fileprovider", file);
+        Intent install = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(install);
+    }
+    private boolean pendingInstall = false;
+
     private void fetchPushToken(String id) {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             resolve(id, null); return;
@@ -205,6 +262,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface public int appVersion() { return BuildConfig.APP_VERSION; }
+
+        /** Descarga la actualización dentro de la app y abre el instalador al terminar (solo desde GitHub del proyecto). */
+        @JavascriptInterface public void downloadUpdate(String id, String url) {
+            if (!trusted() || url == null || !url.startsWith("https://github.com/Maxjose/deuna/releases/download/")) { resolve(id, "error"); return; }
+            main.post(() -> startUpdateDownload(id, url));
+        }
 
         /** Vibración táctil nativa al tocar botones (más suave y precisa que navigator.vibrate). */
         @JavascriptInterface public void haptic() {

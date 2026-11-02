@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { detectTwa } from "@/lib/twa";
+import { isNativeApp, nativeDownloadUpdate } from "@/lib/native";
 import { readInstalledVersion, updateNeed, type AppRelease, type UpdateNeed } from "@/lib/app-update";
 import { AppIcon } from "./app-icon";
 
@@ -11,7 +12,7 @@ export function AppUpdate() {
   const [release, setRelease] = useState<AppRelease | null>(null);
   const [need, setNeed] = useState<UpdateNeed>("none");
   const [installed, setInstalled] = useState(0);
-  const [downloading, setDownloading] = useState(false);
+  const [downloading, setDownloading] = useState(false), [inApp, setInApp] = useState(false), [failed, setFailed] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const dialog=useRef<HTMLDialogElement>(null);
   const visible=need!=='none'&&!!release&&!(need==='optional'&&dismissed);
@@ -52,16 +53,23 @@ export function AppUpdate() {
 
   if (need === "none" || !release || (need === "optional" && dismissed)) return null;
   const download = (
-    <a className="primary app-update-download" href={release.apkUrl} onClick={() => setDownloading(true)}>
+    <a className="primary app-update-download" href={release.apkUrl} aria-disabled={downloading && inApp} onClick={event => {
+      if (!isNativeApp()) { setDownloading(true); return; }
+      event.preventDefault(); if (downloading) return;
+      setDownloading(true); setInApp(true); setFailed(false);
+      nativeDownloadUpdate(release.apkUrl).then(ok => { if (!ok) window.location.href = release.apkUrl; }).catch(() => { setDownloading(false); setFailed(true); });
+    }}>
       <AppIcon name="download" />
       {downloading ? "Descargando…" : need === "required" ? "Descargar actualización" : "Actualizar"}
     </a>
   );
   const help = downloading && (
     <p className="app-update-help" role="status">
-      Cuando termine la descarga, ábrela desde la notificación y toca <strong>Actualizar</strong>. Tu sesión se mantiene.
+      {inApp ? <>Al terminar se abrirá el instalador: toca <strong>Actualizar</strong>. Si Android lo pide, permite instalar apps de De1na. Tu sesión se mantiene.</>
+        : <>Cuando termine la descarga, ábrela desde la notificación y toca <strong>Actualizar</strong>. Tu sesión se mantiene.</>}
     </p>
   );
+  const failure = failed && <p className="app-update-help" role="alert">No se pudo descargar la actualización. Revisa tu conexión e inténtalo de nuevo.</p>;
   return (
     <dialog ref={dialog} tabIndex={-1} className="app-update-screen" aria-labelledby="app-update-title" onCancel={event=>{event.preventDefault();dismiss();}}>
       <div className="app-update-content">
@@ -71,7 +79,7 @@ export function AppUpdate() {
         <p>{need==='required'?'Necesitas instalar la nueva versión para continuar usando De1na.':'Tenemos una nueva versión con mejoras para acompañarte en cada viaje.'}</p>
         {release.notes&&<div className="app-update-release"><AppIcon name="download"/><p>{release.notes}</p></div>}
         <div className="app-update-screen-actions">{download}{need==='optional'&&<button type="button" className="text" onClick={dismiss}>Ahora no</button>}</div>
-        {help}
+        {help}{failure}
         <small>Versión instalada: {installed||'anterior'} · Nueva versión: {release.versionCode}</small>
       </div>
     </dialog>

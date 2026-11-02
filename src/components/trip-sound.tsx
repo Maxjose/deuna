@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { readPref } from "@/lib/prefs";
 
-export function TripSound({userId,trips}:{userId:string;trips:readonly {id:string;passenger_id:string;status:string}[]}) {
+export function TripSound({userId,trips,driver=false}:{userId:string;trips:readonly {id:string;passenger_id:string;status:string}[];driver?:boolean}) {
+  const seenRequests = useRef<Set<string>|null>(null);
   const audio = useRef<AudioContext | null>(null);
   const previous = useRef(new Map<string,string>());
   useEffect(() => {
@@ -23,8 +25,12 @@ export function TripSound({userId,trips}:{userId:string;trips:readonly {id:strin
     const own=trips.filter(trip=>trip.passenger_id===userId);
     const accepted=own.some(trip=>previous.current.get(trip.id)==="searching" && ["assigned","arrived","ongoing"].includes(trip.status));
     previous.current=new Map(own.map(trip=>[trip.id,trip.status]));
+    // Conductor: suena cuando aparece una solicitud nueva (no en la primera carga).
+    const searching=trips.filter(trip=>trip.status==="searching"&&trip.passenger_id!==userId).map(trip=>trip.id);
+    const newRequest=driver&&seenRequests.current!==null&&searching.some(id=>!seenRequests.current!.has(id));
+    seenRequests.current=new Set(searching);
     const context=audio.current;
-    if (!accepted || document.hidden || !context || context.state!=="running") return;
+    if ((!accepted && !newRequest) || document.hidden || !context || context.state!=="running" || !readPref("sound")) return;
     const start=context.currentTime;
     [880,1174.66].forEach((frequency,index)=>{
       const oscillator=context.createOscillator(),gain=context.createGain();

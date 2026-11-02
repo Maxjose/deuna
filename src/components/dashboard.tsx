@@ -23,6 +23,7 @@ import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
+import { AppPreferences } from "./app-preferences";
 import { isNativeApp, nativePushEndpoint } from "@/lib/native";
 import { PaymentMethodsSettings, SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
 import { RideWaiting } from "./ride-waiting";
@@ -534,7 +535,7 @@ export function Dashboard({
         (page === "home" && role === "passenger" ? "ride-screen " : "") + (page === "home" && role === "driver" ? "driver-home " : "") + (currentTrip && page !== "home" ? "has-trip-card" : "")
       }
     >
-      <TripSound userId={userId} trips={trips} />
+      <TripSound userId={userId} trips={trips} driver={role==="driver"&&!!profile?.available} />
       <aside className="sidebar">
         <a className="brand" href="/dashboard">
           <img
@@ -700,7 +701,7 @@ export function Dashboard({
               {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
               {(accountSection==="wallet"||accountSection==="balance")&&role==="passenger"&&<>{balance.amount_cents>0&&pendingBalance()}<WalletView wallet={wallet} settings={settings} onChanged={()=>void reloadWallet()} /></>}
               {accountSection==="favorites"&&role==="passenger"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
-              {accountSection==="preferences"&&<><PushPreferences />{!nativeApp&&<InstallApp />}</>}
+              {accountSection==="preferences"&&<><PushPreferences /><AppPreferences driver={role==="driver"} />{!nativeApp&&<InstallApp />}</>}
             </div>
           ) : page === "payments" && role === "admin" ? (
             <AdminPayments onMessage={setMessage} />

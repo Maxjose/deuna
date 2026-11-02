@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { nativeBridge } from '@/lib/native';
+import { readPref, writePref } from '@/lib/prefs';
 import { parseStoredPlace } from '@/lib/journey';
 import { googleNavigationUrl,refreshNavigationRoute, usableFix, type NavigationFix } from '@/lib/navigation';
 import type { MapPoint } from '@/lib/destination';
@@ -14,7 +15,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
  const googleUrl=googleNavigationUrl(target.point);
  const fixRef=useRef<NavigationFix|null>(null);
  const dialog=useRef<HTMLDialogElement>(null),lastRoute=useRef<{point:MapPoint;at:number;accuracy:number}|null>(null);
- const [opened,setOpened]=useState(true),[fix,setFix]=useState<NavigationFix|null>(null),[routeOrigin,setRouteOrigin]=useState<MapPoint|null>(null),[follow,setFollow]=useState(true),[gpsError,setGpsError]=useState(''),[retry,setRetry]=useState(0),[now,setNow]=useState(0),[awake,setAwake]=useState(true),[wakeActive,setWakeActive]=useState(false),[offline,setOffline]=useState(false);
+ const [opened,setOpened]=useState(true),[fix,setFix]=useState<NavigationFix|null>(null),[routeOrigin,setRouteOrigin]=useState<MapPoint|null>(null),[follow,setFollow]=useState(true),[gpsError,setGpsError]=useState(''),[retry,setRetry]=useState(0),[now,setNow]=useState(0),[awake,setAwake]=useState(()=>readPref('awake')),[wakeActive,setWakeActive]=useState(false),[offline,setOffline]=useState(false);
  useEffect(()=>{if(opened){dialog.current?.showModal();dialog.current?.focus({preventScroll:true});}},[opened]);
  useEffect(()=>{
   if(!opened)return;
@@ -68,7 +69,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
     <p className="driver-gps" role="status">{offline?'Sin conexión: la ruta no puede actualizarse.':gpsError||(!fix?'Buscando tu ubicación…':!fresh?'GPS sin actualizar. Esperando señal…':fix.accuracy>100?`Señal GPS baja (±${Math.round(fix.accuracy)} m). Activa la ubicación precisa para mejorarla.`:`GPS activo · precisión ${Math.round(fix.accuracy)} m`)}</p>
     {gpsError&&<button className="text" onClick={()=>setRetry(n=>n+1)}>Reintentar GPS</button>}
     {!target.point&&<p role="alert">Este viaje no tiene un punto guardado. Consulta la dirección con el pasajero.</p>}
-    <label className="check"><input type="checkbox" checked={awake} onChange={e=>setAwake(e.target.checked)}/>Mantener pantalla encendida {awake&&<small>{wakeActive?'· Activo':'· No disponible ahora'}</small>}</label>
+    <label className="check"><input type="checkbox" checked={awake} onChange={e=>{setAwake(e.target.checked);writePref('awake',e.target.checked);}}/>Mantener pantalla encendida {awake&&<small>{wakeActive?'· Activo':'· No disponible ahora'}</small>}</label>
     <p className="muted driver-nav-note">Mantén esta pantalla abierta. Al bloquear el teléfono o cambiar de app, el GPS puede pausarse.</p>
     {advanceBlocked&&<p className="driver-advance-blocked" role="status">{advanceBlocked}</p>}
     <button className="primary" disabled={busy||!!advanceBlocked} onClick={onAdvance}>{status==='assigned'?'Ya llegué a la recogida':status==='arrived'?'Iniciar viaje':'Finalizar viaje'}</button>
