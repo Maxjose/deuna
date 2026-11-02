@@ -34,7 +34,7 @@ import { disconnectPushDevice } from "@/lib/push-device";
 import { Toast, useNotice } from "./toast";
 import { closeOnBackdrop } from "@/lib/dialog";
 import { parseStoredPlace } from "@/lib/journey";
-import { FareSettings } from "./fare-settings";
+import { CommissionSettings, FareSettings } from "./fare-settings";
 import { DriverAvailability, AvailabilitySettings } from "./driver-availability";
 import { usd, type FareSettings as FareConfig } from "@/lib/fare";
 import { useRouter } from "next/navigation";
@@ -102,7 +102,7 @@ export function Dashboard({
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const [historyPage,setHistoryPage]=useState(0);
   const [historyDate,setHistoryDate]=useState("");
-  const [settingsSection,setSettingsSection]=useState<"hours"|"fares"|"payment"|"drivers">("hours");
+  const [settingsSection,setSettingsSection]=useState<"hours"|"fares"|"commission"|"payment"|"drivers">("hours");
   const [balance,setBalance]=useState<Balance>({amount_cents:0,trips:[]});
   const [walletRole,setWalletRole]=useState(false);
   const {wallet,reload:reloadWallet}=useWallet(walletRole);
@@ -639,7 +639,7 @@ export function Dashboard({
           ) : profile.suspended ? (
             <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={openSignOut}>Cerrar sesión</button></article>
           ) : page === "earnings" && role === "driver" ? (
-            <DriverEarnings refresh={trips} onOpenPayout={() => { openSection("payout"); window.scrollTo({ top: 0, behavior: "instant" }); }} />
+            <DriverEarnings refresh={trips} noCommission={!!(settings as FareConfig | null)?.commission_promo && (settings as FareConfig | null)?.commission_enabled === false} onOpenPayout={() => { openSection("payout"); window.scrollTo({ top: 0, behavior: "instant" }); }} />
           ) : page === "messages" && role !== "admin" ? (
             <TripChat userId={userId} refresh={trips} offline={offline} role={role}/>
           ) : page === "account" ? (
@@ -696,13 +696,14 @@ export function Dashboard({
           ) : page === "settings" && settings ? (
             <div className="service-settings">
             <div className="service-tabs" role="tablist" aria-label="Secciones del servicio">
-              {([["hours","Horario","history"],["fares","Tarifas","moto"],["payment","Pago móvil y tasa","payments"],["drivers","Conductores","drivers"]] as const).map(([value,label,icon])=>(
+              {([["hours","Horario","history"],["fares","Tarifas","moto"],["commission","Comisiones","cash"],["payment","Pago móvil y tasa","payments"],["drivers","Conductores","drivers"]] as const).map(([value,label,icon])=>(
                 <button key={value} type="button" role="tab" aria-selected={settingsSection===value} className={settingsSection===value?"is-active":""} onClick={()=>setSettingsSection(value)}><AppIcon name={icon}/><span>{label}</span></button>
               ))}
             </div>
             <div className="service-panel" role="tabpanel" key={settingsSection}>
             {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><PaymentMethodsSettings settings={settings} onSaved={text=>{setMessage(text);void load();}} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
+            {settingsSection==="commission"&&<CommissionSettings settings={settings} busy={busy || offline} />}
             {settingsSection==="drivers"&&<AvailabilitySettings />}
             {settingsSection==="hours"&&<form
               className="trip-card"

@@ -50,7 +50,7 @@ function Summary({ e }: { e: Earnings }) {
 }
 
 /** Conductor: ganancias de viajes cobrados por la app y pagos recibidos de De1na. */
-export function DriverEarnings({ refresh, onOpenPayout }: { refresh: unknown; onOpenPayout: () => void }) {
+export function DriverEarnings({ refresh, onOpenPayout, noCommission = false }: { refresh: unknown; onOpenPayout: () => void; noCommission?: boolean }) {
   const client = useMemo(() => browserClient(), []);
   const [e, setE] = useState<Earnings | null>(null), [error, setError] = useState(false);
   const load = useCallback(async () => { const { data, error } = await client.rpc("my_earnings"); if (error) setError(true); else { setE(data); setError(false); } }, [client]);
@@ -61,6 +61,10 @@ export function DriverEarnings({ refresh, onOpenPayout }: { refresh: unknown; on
   if (!e) return <EarningsSkeleton />;
   return <div className="account-stack earnings">
     <Summary e={e} />
+    {noCommission && <div className="promo-alert" role="status">
+      <span className="promo-alert-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><path d="M7.5 7.5h.01M15 9l-6 6"/></svg></span>
+      <span><strong>¡Sin comisión por ahora!</strong><small>Hoy te llevas el 100% de cada viaje. Aprovecha.</small></span>
+    </div>}
     {!hasPayout && <div className="payout-alert" role="status">
       <span className="payout-alert-icon" aria-hidden="true"><AppIcon name="wallet" /></span>
       <span><strong>Agrega tu pago móvil para cobrar</strong><small>Registra tu banco, cédula y teléfono en «Mis cuentas» para que De1na pueda pagarte tus ganancias.</small></span>

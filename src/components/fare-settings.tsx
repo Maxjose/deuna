@@ -38,14 +38,13 @@ export function FareSettings({ settings, busy, onSave }: { settings: Settings; b
       <label>Recargo (%)<input name="nightPercent" type="number" min="0" max="300" step="1" required defaultValue={settings.night_percent ?? 0} /></label>
       <button className="primary" disabled={busy}>Guardar tarifa nocturna</button>
     </form>
-    <CommissionSettings settings={settings} busy={busy} />
   </div>;
 }
 
 /** Comisión de De1na: interruptor general, porcentaje y a qué métodos de pago se aplica. */
-function CommissionSettings({ settings, busy }: { settings: Settings; busy: boolean }) {
+export function CommissionSettings({ settings, busy }: { settings: Settings; busy: boolean }) {
   const client = useMemo(() => browserClient(), []);
-  const [on, setOn] = useState(settings.commission_enabled !== false);
+  const [on, setOn] = useState(settings.commission_enabled !== false), [promo, setPromo] = useState(!!settings.commission_promo);
   const [saving, setSaving] = useState(false), [msg, setMsg] = useState(""), [err, setErr] = useState("");
   const methods: [string, string, boolean | undefined][] = [
     ["commission_on_pago_movil", "Pago móvil", settings.commission_on_pago_movil],
@@ -55,7 +54,7 @@ function CommissionSettings({ settings, busy }: { settings: Settings; busy: bool
   ];
   return <form className="trip-card commission-settings" onSubmit={async e => {
     e.preventDefault(); const f = new FormData(e.currentTarget);
-    const payload: Record<string, unknown> = { commission_enabled: on, commission_percent: Number(String(f.get("percent")).replace(",", ".")) };
+    const payload: Record<string, unknown> = { commission_enabled: on, commission_promo: promo, commission_percent: Number(String(f.get("percent")).replace(",", ".")) };
     for (const [key] of methods) payload[key] = f.get(key) === "on";
     setSaving(true); setErr(""); setMsg("");
     const { error } = await client.rpc("admin_commission", { payload });
@@ -71,6 +70,7 @@ function CommissionSettings({ settings, busy }: { settings: Settings; busy: bool
       <p className="commission-label">Aplicar en viajes pagados con:</p>
       {methods.map(([key, label, value]) => <label key={key} className="check"><input name={key} type="checkbox" defaultChecked={value !== false} />{label}</label>)}
     </fieldset>
+    <label className="payment-switch"><input type="checkbox" role="switch" checked={promo} onChange={e => setPromo(e.target.checked)} disabled={saving || busy} /><span><strong>Aviso «Sin comisión» a conductores</strong><small>{on ? "Se mostrará en Ganancias solo cuando la comisión esté desactivada." : promo ? "Los conductores ven en Ganancias que hoy no se cobra comisión." : "Actívalo para avisar a los conductores que no se cobra comisión."}</small></span></label>
     {err && <p className="payment-error" role="alert">{err}</p>}
     {msg && <p className="admin-create-notice" role="status">{msg}</p>}
     <button className="primary" disabled={saving || busy}>{saving ? "Guardando…" : "Guardar comisión"}</button>
