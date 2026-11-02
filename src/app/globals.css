@@ -2805,3 +2805,5 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .cards.people-list .team-person > p:not(.team-email) { grid-column: 1; }
   .cards.people-list .team-person > button { grid-column: 2; }
 }
+.admin-records-search .layout-toggle { flex: 0 0 auto; align-self: end; height: 48px; align-items: center; padding: 4px; }
+.admin-records-search .layout-toggle button { height: 38px; width: 40px; min-width: 40px; }
