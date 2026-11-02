@@ -2714,3 +2714,27 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .binance-qr img, .binance-qr .skeleton { width: 180px; height: 180px; border-radius: 8px; }
 .binance-qr small { color: #536477; font-size: 12px; text-align: center; }
 .binance-hint { margin: 0; }
+
+/* Ganancias del conductor */
+.earnings-summary { display: grid; gap: 10px; }
+.earnings-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.earnings-totals span { display: grid; gap: 2px; }
+.earnings-totals small { color: var(--muted); font-size: 12px; }
+.earnings-note { margin: 0 4px; font-size: 13px; }
+.earnings-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; }
+.earnings-list li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.earnings-list li:last-child { border-bottom: 0; }
+.earnings-icon { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; }
+.earnings-icon svg { width: 20px; height: 20px; }
+.earnings-list li.is-trip .earnings-icon { background: var(--success-soft); color: var(--lime-text); }
+.earnings-list li.is-payout .earnings-icon { background: #e8eefc; color: #2b4c9b; }
+.earnings-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.earnings-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.earnings-main small { color: var(--muted); font-size: 13px; }
+.earnings-list b { white-space: nowrap; }
+.earnings-list li.is-trip b { color: #3f8f12; }
+.earnings-list li.is-payout b { color: #2b4c9b; }
+.payout-account { display: grid; gap: 6px; margin: 0; }
+.payout-account div { display: flex; justify-content: space-between; gap: 10px; }
+.payout-account dt { color: var(--muted); }
+.payout-account dd { margin: 0; font-weight: 700; }

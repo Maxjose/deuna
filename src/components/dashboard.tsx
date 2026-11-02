@@ -22,6 +22,7 @@ import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout } from "./driver-payout";
+import { DriverEarnings } from "./earnings";
 import { PaymentMethodsSettings, SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
@@ -275,7 +276,7 @@ export function Dashboard({
       const allowed =
         profile?.role === "admin"
           ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
-          : ["home", "history", "messages", "account"];
+          : ["home", "history", "earnings", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
       setAccountSection(value === "account" && ["info","security","wallet","balance","favorites","payout","payment-data","preferences"].includes(section) ? section : "overview");
       setMoreOpen(false);
@@ -324,6 +325,7 @@ export function Dashboard({
       : [
           ["home", role === "driver" ? "Solicitudes" : "Inicio", ""],
           ["history", "Viajes", ""],
+          ...(role === "driver" ? [["earnings", "Ganancias", ""] as [string, string, string]] : []),
           ["messages", "Mensajes", ""],
           ["account", "Cuenta", ""],
         ];
@@ -346,7 +348,7 @@ export function Dashboard({
   const pageTitle =
     page === "account"
       ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",balance:"Saldo pendiente",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
-      : ({history:"Viajes",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
+      : ({history:"Viajes",earnings:"Ganancias",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
   const pageContext =
@@ -550,7 +552,7 @@ export function Dashboard({
                 aria-current={page === p ? "page" : undefined}
                 onClick={() => navigate(p)}
               >
-                <AppIcon name={p} />
+                <AppIcon name={p === "earnings" ? "wallet" : p} />
                 <span>{label}</span>
                 {p === "messages" && chatActive && <i className="nav-dot" aria-label="Conversación activa" />}
               </button>
@@ -636,6 +638,8 @@ export function Dashboard({
             </div>
           ) : profile.suspended ? (
             <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={openSignOut}>Cerrar sesión</button></article>
+          ) : page === "earnings" && role === "driver" ? (
+            <DriverEarnings refresh={trips} />
           ) : page === "messages" && role !== "admin" ? (
             <TripChat userId={userId} refresh={trips} offline={offline} role={role}/>
           ) : page === "account" ? (

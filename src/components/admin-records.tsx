@@ -6,6 +6,7 @@ type Person={id:string;name:string;email:string;phone:string;role:string;approve
 export type AdminTrip={id:string;origin:string;destination:string;zone:string|null;fare_cents:number|null;distance_meters:number|null;status:string;passenger_id:string;driver_id:string|null;passenger_name?:string;driver_name?:string};
 import {AdminCreateUser} from './admin-create-user';
 import {AdminWallet} from './wallet';
+import {AdminDriverEarnings} from './earnings';
 export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
   const detail=useRef<HTMLDialogElement>(null);
  const [notice,setNotice]=useState('');
@@ -47,6 +48,7 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
       </div>}
       {actionError&&<p role="alert">{actionError}</p>}
       {person.role==='passenger'&&<AdminWallet key={person.id} personId={person.id}/>}
+      {person.role==='driver'&&<AdminDriverEarnings key={person.id} driverId={person.id}/>}
       </div>
       <section className="member-history"><h3>Historial de viajes</h3><AdminRecords viewerId={viewerId} key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/></section>
       </div>
