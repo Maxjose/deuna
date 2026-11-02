@@ -49,6 +49,14 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   const expected = trip.fare_cents != null ? bsAmount(trip.fare_cents, trip.exchange_rate) : null;
   const [draft, setDraft] = useState(""), [bank, setBank] = useState(""), [phone, setPhone] = useState(""), [amount, setAmount] = useState("");
   const [editing, setEditing] = useState(false), [sending, setSending] = useState(false), [error, setError] = useState(""), [sent, setSent] = useState<{ reference: string; status: string } | null>(null);
+  const [pasting,setPasting]=useState(false);
+  const updateReference=(value:string)=>{setDraft(value.replace(/\D/g,'').slice(-6));setError('');};
+  async function pasteReference(){
+    setPasting(true);
+    try{updateReference(await navigator.clipboard.readText());}
+    catch{setError('No pudimos leer el portapapeles. Mantén pulsado el campo y elige Pegar.');}
+    finally{setPasting(false);}
+  }
   useEffect(() => {
     try { const saved = JSON.parse(localStorage.getItem(ORIGIN_KEY) || "{}"); if (saved.bank) setBank(saved.bank); if (saved.phone) setPhone(formatPhone(saved.phone)); } catch { /* sin almacenamiento */ }
   }, []);
@@ -79,7 +87,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const clean = cleanReference(draft), origin = cleanPhone(phone), paid = parseBs(amount);
-    if (!clean) { setError("Escribe el número de referencia (solo números, entre 4 y 20 dígitos)."); return; }
+    if (!clean) { setError("Escribe los últimos seis dígitos de la referencia."); return; }
     if (!bank) { setError("Elige el banco desde el que hiciste el pago."); return; }
     if (!origin) { setError("Escribe el teléfono desde el que pagaste, por ejemplo 0412-1234567."); return; }
     if (paid == null) { setError("Escribe el monto que transferiste, por ejemplo 3.680,00."); return; }
@@ -148,10 +156,13 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
             </div>
             <label>
               Número de referencia
-              <input inputMode="numeric" autoComplete="off" placeholder="Ej. 00123456" maxLength={30} value={draft} onChange={(e) => setDraft(e.target.value)} />
+              <span className="payment-reference-field">
+                <input inputMode="numeric" autoComplete="off" placeholder="Últimos 6 dígitos" value={draft} disabled={pasting||sending} onChange={e=>updateReference(e.target.value)} onPaste={e=>{e.preventDefault();updateReference(e.clipboardData.getData('text'));}}/>
+                <button type="button" disabled={pasting||sending} onClick={()=>void pasteReference()}>{pasting?'…':'Pegar'}</button>
+              </span>
             </label>
             {error && <p className="payment-error" role="alert">{error}</p>}
-            <button className="primary" disabled={sending || offline || !draft.trim()}>{sending ? "Enviando…" : "Enviar pago para verificar"}</button>
+            <button className="primary" disabled={sending || pasting || offline || !cleanReference(draft)}>{sending ? "Enviando…" : "Enviar pago para verificar"}</button>
             {editing && <button type="button" className="text" onClick={() => { setEditing(false); setError(""); }}>Cancelar</button>}
           </form>
         </>

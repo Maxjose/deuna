@@ -39,7 +39,7 @@ export function formatIdNumber(id: string) {
 
 export function cleanReference(reference: string) {
   const digits = reference.replace(/\D/g, '');
-  return /^\d{4,20}$/.test(digits) ? digits : null;
+  return digits.length>=6 ? digits.slice(-6) : null;
 }
 
 /** Bancos de Venezuela (código SUDEBAN) para indicar desde dónde se hizo el pago móvil. */

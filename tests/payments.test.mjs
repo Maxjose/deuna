@@ -22,9 +22,12 @@ test('pagos: pago móvil solo disponible con datos y tasa', () => {
 test('pagos: formato de datos y referencia', () => {
   assert.equal(formatPhone('04141234567'), '0414-1234567');
   assert.equal(formatIdNumber('V12345678'), 'V-12.345.678');
-  assert.equal(cleanReference(' 0012-3456 '), '00123456');
+  assert.equal(cleanReference(' 0012-3456 '), '123456');
   assert.equal(cleanReference('12'), null);
-  assert.equal(cleanReference('1'.repeat(21)), null);
+  assert.equal(cleanReference('1'.repeat(21)), '111111');
+  assert.equal(cleanReference('000012'), '000012');
+  assert.equal(cleanReference('12345'), null);
+  assert.equal(cleanReference('ref: 000000123456789'), '456789');
 });
 
 test('pagos: estado, teléfono y monto escrito', async () => {
