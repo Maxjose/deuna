@@ -58,7 +58,7 @@ export function DriverEarnings({ refresh, onOpenPayout }: { refresh: unknown; on
   const [hasPayout, setHasPayout] = useState(true);
   useEffect(() => { void client.auth.getUser().then(({ data }) => setHasPayout(!!(data.user?.user_metadata?.payout as { bank?: string } | undefined)?.bank)); }, [client]);
   if (error && !e) return <p className="payment-error" role="alert">No pudimos cargar tus ganancias. <button className="text" onClick={() => void load()}>Reintentar</button></p>;
-  if (!e) return <div className="skeleton-group" role="status" aria-label="Cargando ganancias"><div className="skeleton" /><div className="skeleton" /></div>;
+  if (!e) return <EarningsSkeleton />;
   return <div className="account-stack earnings">
     <Summary e={e} />
     {!hasPayout && <div className="payout-alert" role="status">
@@ -108,5 +108,29 @@ export function AdminDriverEarnings({ driverId }: { driverId: string }) {
       <button className="primary" disabled={busy || !e?.balance_cents}>{busy ? "Registrando…" : "Registrar pago al conductor"}</button>
     </form>
     {e && e.movements.length > 0 && <details className="admin-wallet-movements"><summary>Ver movimientos ({e.movements.length})</summary><MovementList items={e.movements} /></details>}
+  </div>;
+}
+
+/** Esqueleto de carga con la forma real de Ganancias: resumen, filtros y lista de movimientos. */
+function EarningsSkeleton() {
+  return <div className="account-stack earnings" role="status" aria-label="Cargando ganancias">
+    <article className="trip-card earnings-summary">
+      <i className="sk sk-line" style={{ width: 90 }} />
+      <i className="sk sk-amount" />
+      <div className="earnings-totals">
+        <span><i className="sk sk-line" style={{ width: "70%" }} /><i className="sk sk-value" /></span>
+        <span><i className="sk sk-line" style={{ width: "60%" }} /><i className="sk sk-value" /></span>
+      </div>
+    </article>
+    <i className="sk sk-line" style={{ width: "85%", margin: "0 4px" }} />
+    <article className="trip-card">
+      <i className="sk sk-title" />
+      <div className="sk-chips"><i className="sk sk-chip" /><i className="sk sk-chip" /><i className="sk sk-chip wide" /></div>
+      <ul className="earnings-list">{[0, 1, 2, 3].map(i => <li key={i}>
+        <i className="sk sk-icon" />
+        <span className="earnings-main"><i className="sk sk-line" style={{ width: `${70 - i * 8}%` }} /><i className="sk sk-line small" style={{ width: `${50 - i * 5}%` }} /></span>
+        <i className="sk sk-value" style={{ width: 56 }} />
+      </li>)}</ul>
+    </article>
   </div>;
 }

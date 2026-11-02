@@ -2753,3 +2753,17 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .payout-alert-go { flex: 0 0 auto; width: 44px; min-width: 44px; height: 44px; padding: 0; margin: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: #122033; color: #fff; cursor: pointer; }
 .payout-alert-go svg { width: 20px; height: 20px; }
 @media (prefers-reduced-motion: reduce) { .payout-alert { animation: none; } }
+
+/* Esqueletos con forma de la interfaz (reutilizables) */
+.sk { display: block; border-radius: 8px; background: linear-gradient(100deg, #e9edf0 30%, #f6f8fa 50%, #e9edf0 70%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
+.sk-line { height: 12px; }
+.sk-line.small { height: 10px; margin-top: 4px; }
+.sk-amount { width: 150px; height: 36px; border-radius: 10px; }
+.sk-value { width: 80px; height: 16px; margin-top: 6px; }
+.sk-title { width: 120px; height: 18px; }
+.sk-chips { display: flex; gap: 8px; margin-top: 12px; }
+.sk-chip { width: 64px; height: 34px; border-radius: 999px; }
+.sk-chip.wide { width: 120px; }
+.sk-icon { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; }
+@media (prefers-color-scheme: dark) { .sk { background: linear-gradient(100deg, #1e2c3c 30%, #273849 50%, #1e2c3c 70%); background-size: 200% 100%; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
