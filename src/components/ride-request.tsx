@@ -23,8 +23,9 @@ export function RideRequest({
   busy,
   offline,
   onRequest,
-  home, work, homeLoading, homeError, onSetupHome, onManagePlaces, payment,
+  home, work, homeLoading, homeError, onSetupHome, onManagePlaces, payment, walletCents = 0,
 }: {
+  walletCents?: number;
   enabled: boolean;
   busy: boolean;
   offline: boolean;
@@ -478,6 +479,11 @@ export function RideRequest({
                         <span><strong>Efectivo</strong><small>Le pagas al conductor al llegar</small></span>
                         <span className="selection-dot" />
                       </button>
+                      {walletCents > 0 && <button type="button" role="radio" aria-checked={method === "wallet"} disabled={!quote || walletCents < quote.fare_cents} className={"moto-option payment-option " + (method === "wallet" ? "is-selected" : "")} onClick={() => setMethod("wallet")}>
+                        <span className="service-icon"><AppIcon name="wallet" /></span>
+                        <span><strong>Saldo De1na</strong><small>{quote && walletCents < quote.fare_cents ? `Saldo insuficiente (${usd(walletCents)})` : `Disponible: ${usd(walletCents)}`}</small></span>
+                        <span className="selection-dot" />
+                      </button>}
                       <button type="button" role="radio" aria-checked={method === "pago_movil"} disabled={!pagoMovil} className={"moto-option payment-option " + (method === "pago_movil" ? "is-selected" : "")} onClick={() => setMethod("pago_movil")}>
                         <span className="service-icon"><AppIcon name="phone" /></span>
                         <span><strong>Pago móvil</strong><small>{pagoMovil ? "Transfieres cuando un conductor acepte tu viaje" : "No disponible por ahora"}</small></span>
@@ -508,11 +514,11 @@ export function RideRequest({
                       </div>
                     </div>
                     <div className="confirmation-payment">
-                      <AppIcon name={method === "cash" ? "cash" : "phone"} />
+                      <AppIcon name={method === "cash" ? "cash" : method === "wallet" ? "wallet" : "phone"} />
                       <p>
                         <small>PAGO</small>
-                        <strong>{method === "cash" ? "Efectivo al conductor" : "Pago móvil"}</strong>
-                        <span>{method === "cash" ? "Ten el monto listo al llegar." : "Te mostraremos los datos para transferir cuando un conductor acepte."}</span>
+                        <strong>{method === "cash" ? "Efectivo al conductor" : method === "wallet" ? "Saldo De1na" : "Pago móvil"}</strong>
+                        <span>{method === "cash" ? "Ten el monto listo al llegar." : method === "wallet" ? "Se descuenta de tu saldo al solicitar. Si se cancela, vuelve a tu saldo." : "Te mostraremos los datos para transferir cuando un conductor acepte."}</span>
                       </p>
                       <button type="button" className="text" onClick={() => setStep("payment")}>Cambiar</button>
                     </div>
@@ -524,7 +530,7 @@ export function RideRequest({
                       onClick={async () => {
                         try {
                           if (!quote || expired) return;
-                          await onRequest({ quote: quote.quote, signature: quote.signature, payment_method: method === "pago_movil" && pagoMovil ? "pago_movil" : "cash" });
+                          await onRequest({ quote: quote.quote, signature: quote.signature, payment_method: method === "wallet" ? "wallet" : method === "pago_movil" && pagoMovil ? "pago_movil" : "cash" });
                         } catch (error) {
                           setMessage(
                             error instanceof Error ? error.message : "No se pudo solicitar el viaje. Inténtalo otra vez.",

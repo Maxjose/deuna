@@ -2675,3 +2675,30 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .member-info .member-actions, .member-info .member-confirm { display: grid; gap: 10px; }
   .member-history { min-width: 0; }
 }
+
+/* Saldo De1na */
+.wallet-card { display: grid; gap: 10px; }
+.wallet-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.2px; color: var(--lime-text); }
+.wallet-amount { font-size: 38px; line-height: 1; font-weight: 800; }
+.wallet-topup { display: grid; gap: 12px; }
+.wallet-movements { list-style: none; margin: 0; padding: 0; display: grid; }
+.wallet-movements li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.wallet-movements li:last-child { border-bottom: 0; }
+.wallet-movements li > span { display: grid; gap: 2px; min-width: 0; }
+.wallet-movements small { color: var(--muted); font-size: 13px; }
+.wallet-movements b { white-space: nowrap; }
+.wallet-movements b.is-in { color: #3f8f12; }
+.wallet-movements b.is-out { color: var(--danger); }
+.wallet-settle { display: grid; gap: 6px; }
+.admin-wallet { display: grid; gap: 10px; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.admin-wallet .row { display: flex; align-items: center; justify-content: space-between; }
+.admin-wallet h3 { margin: 0; }
+.admin-wallet-amount { font-size: 22px; font-weight: 800; }
+.admin-wallet-form { display: grid; gap: 10px; }
+.admin-wallet-movements summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.admin-topups { display: grid; gap: 10px; border: 1px solid var(--lime); }
+.admin-topup { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.admin-topup > span:first-child { display: grid; gap: 2px; }
+.admin-topup small { color: var(--muted); }
+.admin-topup-actions { display: flex; gap: 8px; }
+.admin-topup-actions button { width: auto; padding: 0 16px; min-height: 40px; }

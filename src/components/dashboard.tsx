@@ -22,6 +22,7 @@ import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout } from "./driver-payout";
+import { SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { PushPreferences } from "./push-preferences";
@@ -102,6 +103,8 @@ export function Dashboard({
   const [historyDate,setHistoryDate]=useState("");
   const [settingsSection,setSettingsSection]=useState<"hours"|"fares"|"payment"|"drivers">("hours");
   const [balance,setBalance]=useState<Balance>({amount_cents:0,trips:[]});
+  const [walletRole,setWalletRole]=useState(false);
+  const {wallet,reload:reloadWallet}=useWallet(walletRole);
   const [detailTrip,setDetailTrip]=useState<string|null>(null);
   const detailDialog=useRef<HTMLDialogElement>(null),dateDialog=useRef<HTMLDialogElement>(null);
   const moreDialog=useRef<HTMLDialogElement>(null);
@@ -163,9 +166,11 @@ export function Dashboard({
     setTrips(t.data);
     setSettings(s.data);
     setServiceOpen(service.data?.open===true);
+    setWalletRole(own?.role==='passenger');
     const debt=await client.rpc('my_balance');
     if(!debt.error&&debt.data)setBalance(debt.data as Balance);
   }, [client, userId]);
+  useEffect(()=>{void reloadWallet();},[trips,reloadWallet]);
   useEffect(() => {
     let active = true;
     void client.auth.getUser().then(({ data }) => {
@@ -270,7 +275,7 @@ export function Dashboard({
           ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
-      setAccountSection(value === "account" && ["info","security","balance","favorites","payout","payment-data","preferences"].includes(section) ? section : "overview");
+      setAccountSection(value === "account" && ["info","security","wallet","balance","favorites","payout","payment-data","preferences"].includes(section) ? section : "overview");
       setMoreOpen(false);
     };
     syncPage();
@@ -338,7 +343,7 @@ export function Dashboard({
   const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceOpen ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
     page === "account"
-      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",balance:"Saldo pendiente","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
+      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",balance:"Saldo pendiente",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
       : ({history:"Viajes",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
@@ -398,6 +403,7 @@ export function Dashboard({
       <p>No pudimos verificar {balance.trips.length === 1 ? "el pago de un viaje" : `los pagos de ${balance.trips.length} viajes`}. Envía la referencia correcta del pago móvil para volver a solicitar viajes.</p>
       {debtTrips.map(t => <div key={t.id} className="pending-balance-trip">
         <small>{t.created_at ? new Date(t.created_at).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : ""} · {parseStoredPlace(t.destination).label.split(",")[0]}</small>
+        {t.fare_cents != null && <SettleWithWallet tripId={t.id} fareCents={t.fare_cents} balanceCents={wallet?.balance_cents ?? 0} onDone={() => { setMessage("Pagaste con tu saldo. ¡Estás al día!"); void load(); void reloadWallet(); }} />}
         <PassengerPayment trip={t} settings={settings} offline={offline} />
       </div>)}
       <p className="muted">Si ya pagaste y el monto sigue apareciendo, la verificación puede tardar unos minutos. Si persiste, escríbenos.</p>
@@ -647,7 +653,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["balance",balance.amount_cents>0?`Saldo pendiente · ${usd(balance.amount_cents)}`:"Saldo pendiente","payments"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["balance",balance.amount_cents>0?`Saldo pendiente · ${usd(balance.amount_cents)}`:"Saldo pendiente","payments"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -672,6 +678,7 @@ export function Dashboard({
               {accountSection==="payout"&&role==="driver"&&<DriverPayout />}
               {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
               {accountSection==="balance"&&role==="passenger"&&pendingBalance()}
+              {accountSection==="wallet"&&role==="passenger"&&<WalletView wallet={wallet} settings={settings} onChanged={()=>void reloadWallet()} />}
               {accountSection==="favorites"&&role==="passenger"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
               {accountSection==="preferences"&&<><PushPreferences /><InstallApp /></>}
             </div>
@@ -689,7 +696,7 @@ export function Dashboard({
               ))}
             </div>
             <div className="service-panel" role="tabpanel" key={settingsSection}>
-            {settingsSection==="payment"&&<PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} />}
+            {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
             {settingsSection==="drivers"&&<AvailabilitySettings />}
             {settingsSection==="hours"&&<form
@@ -748,6 +755,7 @@ export function Dashboard({
               card(mine)
             ) : (
               <RideRequest
+                walletCents={wallet?.balance_cents ?? 0}
                 home={savedPlaces.favorites.find(place=>place.kind==='home')}
                 work={savedPlaces.favorites.find(place=>place.kind==='work')}
                 onManagePlaces={()=>openSection('favorites')}

@@ -5,6 +5,7 @@ import { DriverReputation } from './trip-resolution';
 type Person={id:string;name:string;email:string;phone:string;role:string;approved:boolean;available:boolean;suspended:boolean};
 export type AdminTrip={id:string;origin:string;destination:string;zone:string|null;fare_cents:number|null;distance_meters:number|null;status:string;passenger_id:string;driver_id:string|null;passenger_name?:string;driver_name?:string};
 import {AdminCreateUser} from './admin-create-user';
+import {AdminWallet} from './wallet';
 export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
   const detail=useRef<HTMLDialogElement>(null);
  const [notice,setNotice]=useState('');
@@ -45,6 +46,7 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
         {person.role==='driver'?<button className="secondary" disabled={busy} onClick={()=>setOperation(person.approved?'suspend_driver':'approve_driver')}>{person.approved?'Suspender conductor':'Aprobar conductor'}</button>:<><button className="secondary" disabled={busy} onClick={()=>setOperation(person.suspended?'restore_account':'suspend_account')}>{person.suspended?'Reactivar cuenta':'Suspender cuenta'}</button><button className="secondary" disabled={busy||person.suspended} onClick={()=>setOperation('assign_driver')}>Asignar como conductor</button></>}
       </div>}
       {actionError&&<p role="alert">{actionError}</p>}
+      {person.role==='passenger'&&<AdminWallet key={person.id} personId={person.id}/>}
       </div>
       <section className="member-history"><h3>Historial de viajes</h3><AdminRecords viewerId={viewerId} key={person.id} section={`person:${person.id}`} busy={saving||busy} refresh={refresh} onDriver={onDriver} renderTrip={renderTrip}/></section>
       </div>

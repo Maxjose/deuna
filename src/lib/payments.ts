@@ -1,4 +1,4 @@
-export type PaymentMethod = 'cash' | 'pago_movil';
+export type PaymentMethod = 'cash' | 'pago_movil' | 'wallet';
 export type PaymentSettings = {
   pago_movil_bank: string | null;
   pago_movil_phone: string | null;

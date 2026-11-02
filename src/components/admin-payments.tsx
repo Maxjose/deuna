@@ -5,6 +5,7 @@ import { usd } from "@/lib/fare";
 import { bankName, bs, formatPhone, paymentStatusLabel } from "@/lib/payments";
 import { parseStoredPlace } from "@/lib/journey";
 import { AppIcon } from "./app-icon";
+import { AdminTopups } from "./wallet";
 
 type PaymentRow = {
   id: string;
@@ -82,6 +83,7 @@ export function AdminPayments({ onMessage }: { onMessage: (text: string) => void
   const schedule = health ? (health.auto_start === health.auto_end ? "todo el día" : `de ${health.auto_start} a ${health.auto_end}`) : "";
   return (
     <div className="admin-payments">
+      <AdminTopups onMessage={onMessage} />
       <div className="payments-toolbar">
         <span className={"payments-mode " + (health?.active ? "is-on" : "is-off")}>
           <i aria-hidden="true" />

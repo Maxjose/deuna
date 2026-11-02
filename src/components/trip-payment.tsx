@@ -70,6 +70,15 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   }, [client,trip.payment_method]);
   useEffect(() => { if (expected != null) setAmount(expected.toFixed(2).replace(".", ",")); }, [expected]);
   useEffect(() => { setSent(null); }, [trip.payment_reference, trip.payment_status]);
+  if (trip.payment_method === "wallet") {
+    if (trip.fare_cents == null || !["searching", "assigned", "arrived", "ongoing"].includes(trip.status)) return null;
+    return (
+      <div className="payment-panel is-cash">
+        <AppIcon name="wallet" />
+        <p><strong>Pagado con tu saldo</strong><span>Se descontaron {usd(trip.fare_cents)}. Si el viaje se cancela, vuelven a tu saldo.</span></p>
+      </div>
+    );
+  }
   if (trip.payment_method !== "pago_movil") {
     if (trip.fare_cents == null || !["assigned", "arrived", "ongoing"].includes(trip.status)) return null;
     return (
@@ -181,6 +190,14 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
 /** Conductor y administración: cómo se cobra este viaje. */
 export function TripPaymentNote({ trip, viewer }: { trip: PaymentTrip; viewer: "driver" | "admin" }) {
   if (trip.fare_cents == null) return null;
+  if (trip.payment_method === "wallet") {
+    return (
+      <p className="payment-note is-pago-movil">
+        <AppIcon name="wallet" />
+        <span><strong>Pagado con saldo{viewer === "driver" ? " · no cobres en efectivo" : ""}</strong><small>{usd(trip.fare_cents)} ya pagados por el pasajero</small></span>
+      </p>
+    );
+  }
   if (trip.payment_method === "pago_movil") {
     return (
       <p className="payment-note is-pago-movil">
