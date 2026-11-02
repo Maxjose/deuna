@@ -39,3 +39,15 @@ export async function findPayTransaction(id: string, sinceMs: number, fetcher: t
   }
   return { ok: false, reason: 'not_found', message: 'No encontramos esa transacción en Binance Pay' };
 }
+
+/** Últimos movimientos de Binance Pay (diagnóstico para la administración). */
+export async function recentPayTransactions(limit = 15) {
+  const key = process.env.BINANCE_API_KEY, secret = process.env.BINANCE_API_SECRET;
+  if (!key || !secret) throw new Error('config');
+  const query = signQuery({ startTime: Date.now() - 7 * 86400_000, endTime: Date.now(), limit: 100, recvWindow: 10000, timestamp: Date.now() }, secret);
+  const response = await fetch(`${BASE}/sapi/v1/pay/transactions?${query}`, { headers: { 'X-MBX-APIKEY': key }, signal: AbortSignal.timeout(12000), cache: 'no-store' });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`Binance ${response.status}: ${JSON.stringify(body).slice(0, 200)}`);
+  const list = (Array.isArray(body.data) ? body.data : []) as (PayTransaction & Record<string, unknown>)[];
+  return list.slice(0, limit).map((t) => ({ transactionId: String(t.transactionId), orderType: t.orderType, time: new Date(Number(t.transactionTime)).toISOString(), amount: t.amount, currency: t.currency, otherKeys: Object.keys(t) }));
+}
