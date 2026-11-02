@@ -10,6 +10,7 @@ type Bridge = {
   readClipboard(id: string): void;
   keepScreenOn(on: boolean): void;
   appVersion(): number;
+  haptic?(): void;
 };
 declare global { interface Window { De1naNative?: Bridge; __de1naNative?: { resolve: (id: string, value: string | null) => void } } }
 

@@ -206,6 +206,11 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface public int appVersion() { return BuildConfig.APP_VERSION; }
 
+        /** Vibración táctil nativa al tocar botones (más suave y precisa que navigator.vibrate). */
+        @JavascriptInterface public void haptic() {
+            main.post(() -> web.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY));
+        }
+
         @JavascriptInterface public void startTracking(String token, String url, String key) {
             if (!trusted() || !LocationService.validParams(token, url, key)) return;
             Uri data = Uri.parse("de1na-tracking://start").buildUpon().appendQueryParameter("token", token).appendQueryParameter("url", url).appendQueryParameter("key", key).build();
