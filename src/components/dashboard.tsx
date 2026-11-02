@@ -639,7 +639,7 @@ export function Dashboard({
           ) : profile.suspended ? (
             <article className="trip-card"><h2>Cuenta suspendida</h2><p>Tu cuenta no puede realizar operaciones. Contacta con la administración para revisar su estado.</p><button className="secondary" onClick={openSignOut}>Cerrar sesión</button></article>
           ) : page === "earnings" && role === "driver" ? (
-            <DriverEarnings refresh={trips} />
+            <DriverEarnings refresh={trips} onOpenPayout={() => { openSection("payout"); window.scrollTo({ top: 0, behavior: "instant" }); }} />
           ) : page === "messages" && role !== "admin" ? (
             <TripChat userId={userId} refresh={trips} offline={offline} role={role}/>
           ) : page === "account" ? (

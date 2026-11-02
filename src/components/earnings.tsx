@@ -50,15 +50,22 @@ function Summary({ e }: { e: Earnings }) {
 }
 
 /** Conductor: ganancias de viajes cobrados por la app y pagos recibidos de De1na. */
-export function DriverEarnings({ refresh }: { refresh: unknown }) {
+export function DriverEarnings({ refresh, onOpenPayout }: { refresh: unknown; onOpenPayout: () => void }) {
   const client = useMemo(() => browserClient(), []);
   const [e, setE] = useState<Earnings | null>(null), [error, setError] = useState(false);
   const load = useCallback(async () => { const { data, error } = await client.rpc("my_earnings"); if (error) setError(true); else { setE(data); setError(false); } }, [client]);
   useEffect(() => { void load(); }, [load, refresh]);
+  const [hasPayout, setHasPayout] = useState(true);
+  useEffect(() => { void client.auth.getUser().then(({ data }) => setHasPayout(!!(data.user?.user_metadata?.payout as { bank?: string } | undefined)?.bank)); }, [client]);
   if (error && !e) return <p className="payment-error" role="alert">No pudimos cargar tus ganancias. <button className="text" onClick={() => void load()}>Reintentar</button></p>;
   if (!e) return <div className="skeleton-group" role="status" aria-label="Cargando ganancias"><div className="skeleton" /><div className="skeleton" /></div>;
   return <div className="account-stack earnings">
     <Summary e={e} />
+    {!hasPayout && <div className="payout-alert" role="status">
+      <span className="payout-alert-icon" aria-hidden="true"><AppIcon name="wallet" /></span>
+      <span><strong>Agrega tu pago móvil para cobrar</strong><small>Registra tu banco, cédula y teléfono en «Mis cuentas» para que De1na pueda pagarte tus ganancias.</small></span>
+      <button type="button" className="payout-alert-go" aria-label="Ir a Mis cuentas para agregar tus datos" onClick={onOpenPayout}><AppIcon name="arrow" /></button>
+    </div>}
     <p className="muted earnings-note">Aquí se acreditan los viajes pagados por pago móvil, Binance Pay o saldo. Los viajes en efectivo los cobras directamente.</p>
     <article className="trip-card"><h2>Movimientos</h2><MovementList items={e.movements} /></article>
   </div>;

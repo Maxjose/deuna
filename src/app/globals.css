@@ -2744,3 +2744,12 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .earnings .history-filters, .admin-earnings .history-filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .earnings .history-filters::-webkit-scrollbar, .admin-earnings .history-filters::-webkit-scrollbar { display: none; }
 .earnings .history-filters button, .admin-earnings .history-filters button { flex: 0 0 auto; width: auto; margin: 0; padding: 0 14px; white-space: nowrap; }
+.payout-alert { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid #f3d28a; border-radius: 18px; background: #fff8e6; animation: balance-alert-in .3s cubic-bezier(.22,1,.36,1); }
+.payout-alert > span:nth-child(2) { flex: 1; display: grid; gap: 3px; }
+.payout-alert strong { font-size: 15px; color: #122033; }
+.payout-alert small { color: #6b5a2e; font-size: 13px; line-height: 1.35; }
+.payout-alert-icon { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: #f6e3b4; color: #7a5300; }
+.payout-alert-icon svg { width: 20px; height: 20px; }
+.payout-alert-go { flex: 0 0 auto; width: 44px; min-width: 44px; height: 44px; padding: 0; margin: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: #122033; color: #fff; cursor: pointer; }
+.payout-alert-go svg { width: 20px; height: 20px; }
+@media (prefers-reduced-motion: reduce) { .payout-alert { animation: none; } }
