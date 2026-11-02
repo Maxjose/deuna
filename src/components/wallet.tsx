@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { usd } from "@/lib/fare";
-import { VE_BANKS, bankName, cleanPhone, type PaymentSettings } from "@/lib/payments";
+import { VE_BANKS, bankName, binanceReady, cleanPhone, pagoMovilReady, type PaymentSettings } from "@/lib/payments";
+import { BinanceInstructions, verifyBinance } from "./binance-payment";
 import { AppIcon } from "./app-icon";
 
 export type Movement = { id: string; amount_cents: number; kind: string; trip_id: string | null; note: string | null; created_at: string };
@@ -37,6 +38,9 @@ function Movements({ items }: { items: Movement[] }) {
 export function WalletView({ wallet, settings, onChanged }: { wallet: Wallet | null; settings: PaymentSettings | null; onChanged: () => void }) {
   const client = useMemo(() => browserClient(), []);
   const [busy, setBusy] = useState(false), [msg, setMsg] = useState(""), [err, setErr] = useState(""), [open, setOpen] = useState(false);
+  const canPagoMovil = pagoMovilReady(settings), canBinance = binanceReady(settings);
+  const [via, setVia] = useState<"pago_movil" | "binance">(canPagoMovil ? "pago_movil" : "binance");
+  const [tx, setTx] = useState("");
   if (!wallet) return <div className="skeleton-group" role="status" aria-label="Cargando saldo"><div className="skeleton" /></div>;
   async function topup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,17 +52,38 @@ export function WalletView({ wallet, settings, onChanged }: { wallet: Wallet | n
     if (error) { setErr(fail(error)); return; }
     setMsg("Recibimos tu recarga. La verás en tu saldo cuando se apruebe."); setOpen(false); onChanged();
   }
+  async function topupBinance(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setErr(""); setMsg("");
+    try { const r = await verifyBinance({ kind: "topup", transaction_id: tx }); setMsg(`Recarga acreditada: +${usd(r.amount_cents ?? 0)}.`); setTx(""); setOpen(false); onChanged(); }
+    catch (error) { setErr(error instanceof Error ? error.message : "No pudimos verificar el pago."); }
+    finally { setBusy(false); }
+  }
+  const topupAvailable = wallet.topup_enabled && (canPagoMovil || canBinance);
   const pending = wallet.topups.filter(t => t.status === "pending");
   return <div className="account-stack">
     <article className="trip-card wallet-card">
       <span className="wallet-eyebrow">TU SALDO</span>
       <strong className="wallet-amount">{usd(wallet.balance_cents)}</strong>
       <p className="muted">Úsalo para pagar tus viajes. Si un viaje pagado se cancela, el dinero vuelve aquí.</p>
-      {wallet.topup_enabled && !open && <button className="primary" onClick={() => { setOpen(true); setErr(""); setMsg(""); }}><AppIcon name="wallet" />Recargar saldo</button>}
+      {topupAvailable && !open && <button className="primary" onClick={() => { setOpen(true); setErr(""); setMsg(""); }}><AppIcon name="wallet" />Recargar saldo</button>}
       {msg && <p className="admin-create-notice" role="status">{msg}</p>}
     </article>
-    {wallet.topup_enabled && open && <form className="trip-card wallet-topup" onSubmit={topup}>
-      <h2>Recargar saldo</h2>
+    {topupAvailable && open && canPagoMovil && canBinance && <div className="service-tabs" role="radiogroup" aria-label="Método de recarga">
+      <button type="button" role="radio" aria-checked={via === "pago_movil"} className={via === "pago_movil" ? "is-active" : ""} onClick={() => { setVia("pago_movil"); setErr(""); }}>Pago móvil</button>
+      <button type="button" role="radio" aria-checked={via === "binance"} className={via === "binance" ? "is-active" : ""} onClick={() => { setVia("binance"); setErr(""); }}>Binance Pay</button>
+    </div>}
+    {topupAvailable && open && (via === "binance" || !canPagoMovil) && <form className="trip-card wallet-topup" onSubmit={topupBinance}>
+      <h2>Recargar con Binance Pay</h2>
+      <p className="muted">Envía la cantidad de USDT que quieras recargar (de 1 a 1000). Se acredita al instante: 1 USDT = $1.</p>
+      <BinanceInstructions settings={settings} />
+      <label>ID de la transacción<input value={tx} onChange={e => setTx(e.target.value.replace(/\s/g, ""))} maxLength={64} autoComplete="off" placeholder="Pega aquí el ID" required disabled={busy} /></label>
+      {err && <p className="payment-error" role="alert">{err}</p>}
+      <button className="primary" disabled={busy || tx.length < 6}>{busy ? "Verificando…" : "Verificar y recargar"}</button>
+      <button type="button" className="text" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button>
+    </form>}
+    {topupAvailable && open && via === "pago_movil" && canPagoMovil && <form className="trip-card wallet-topup" onSubmit={topup}>
+      <h2>Recargar con pago móvil</h2>
       {settings?.pago_movil_bank && <p className="muted">Haz un pago móvil a {settings.pago_movil_bank} · {settings.pago_movil_phone} · {settings.pago_movil_id} y luego informa los datos.</p>}
       <label>Monto a recargar (USD)<input name="amount" type="number" min="1" max="1000" step="0.01" required disabled={busy} /></label>
       <label>Banco de origen<select name="bank" required disabled={busy} defaultValue=""><option value="">Selecciona tu banco</option>{VE_BANKS.map(([c, n]) => <option key={c} value={c}>{n} ({c})</option>)}</select></label>
@@ -150,5 +175,27 @@ export function WalletSettings({ enabled, onSaved }: { enabled: boolean; onSaved
     <p className="muted">Los reembolsos de viajes cancelados y los abonos de la administración van al saldo de cada usuario, que puede usarlo para pagar viajes. Las recargas permiten que el usuario informe un pago móvil para agregar saldo; tú las apruebas en Pagos.</p>
     <label className="payment-switch"><input type="checkbox" role="switch" checked={on} onChange={e => setOn(e.target.checked)} /><span><strong>{on ? "Recargas activadas" : "Recargas desactivadas"}</strong><small>{on ? "Los usuarios ven el botón «Recargar saldo»." : "El botón de recarga no se muestra."}</small></span></label>
     <button className="primary" disabled={busy}>{busy ? "Guardando…" : "Guardar"}</button>
+  </form>;
+}
+
+/** Administración: activar o desactivar pago móvil y Binance Pay (Pay ID de la cuenta receptora). */
+export function PaymentMethodsSettings({ settings, onSaved }: { settings: PaymentSettings; onSaved: (text: string) => void }) {
+  const client = useMemo(() => browserClient(), []);
+  const [pm, setPm] = useState(settings.pago_movil_enabled !== false), [bn, setBn] = useState(!!settings.binance_enabled), [payId, setPayId] = useState(settings.binance_pay_id || "");
+  const [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  return <form className="trip-card" onSubmit={async e => {
+    e.preventDefault(); setBusy(true); setErr("");
+    const { error } = await client.rpc("admin_payment_methods", { pago_movil_enabled: pm, binance_enabled: bn, binance_pay_id: payId });
+    setBusy(false);
+    if (error) { setErr(error.message === "Falta el Pay ID" ? "Escribe el Pay ID para activar Binance Pay." : error.message === "Pay ID inválido" ? "El Pay ID debe tener solo números." : "No se pudo guardar."); return; }
+    onSaved("Métodos de pago actualizados.");
+  }}>
+    <h2>Métodos de pago</h2>
+    <p className="muted">Desactivar un método lo oculta al solicitar viajes y recargas. Los viajes ya solicitados con ese método no cambian.</p>
+    <label className="payment-switch"><input type="checkbox" role="switch" checked={pm} onChange={e => setPm(e.target.checked)} /><span><strong>Pago móvil {pm ? "activado" : "desactivado"}</strong><small>Transferencia en bolívares con verificación por referencia.</small></span></label>
+    <label className="payment-switch"><input type="checkbox" role="switch" checked={bn} onChange={e => setBn(e.target.checked)} /><span><strong>Binance Pay {bn ? "activado" : "desactivado"}</strong><small>Pago en USDT a tu Pay ID, verificado al instante con el ID de la transacción.</small></span></label>
+    <label>Pay ID de Binance<input inputMode="numeric" value={payId} onChange={e => setPayId(e.target.value)} placeholder="Ej. 65038281" maxLength={15} disabled={busy} /></label>
+    {err && <p className="payment-error" role="alert">{err}</p>}
+    <button className="primary" disabled={busy}>{busy ? "Guardando…" : "Guardar métodos de pago"}</button>
   </form>;
 }

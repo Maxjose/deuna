@@ -5,6 +5,7 @@ import { usd } from "@/lib/fare";
 import { bs, bsAmount, cleanPhone, cleanReference, formatIdNumber, formatPhone, parseBs, paymentStatusLabel, rateValue, VE_BANKS, type PaymentSettings } from "@/lib/payments";
 import { AppIcon } from "./app-icon";
 import {loadPaymentPreferences} from '@/lib/payment-preferences';
+import { BinancePayment } from "./binance-payment";
 
 export type PaymentTrip = {
   id: string;
@@ -15,6 +16,7 @@ export type PaymentTrip = {
   payment_reference?: string | null;
   payment_status?: string | null;
   payment_note?: string | null;
+  binance_tx?: string | null;
 };
 
 function Amount({ trip }: { trip: PaymentTrip }) {
@@ -28,7 +30,7 @@ function Amount({ trip }: { trip: PaymentTrip }) {
   );
 }
 
-function CopyRow({ label, value, display }: { label: string; value: string; display?: string }) {
+export function CopyRow({ label, value, display }: { label: string; value: string; display?: string }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => { if (!copied) return; const timer = setTimeout(() => setCopied(false), 1800); return () => clearTimeout(timer); }, [copied]);
   return (
@@ -70,6 +72,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   }, [client,trip.payment_method]);
   useEffect(() => { if (expected != null) setAmount(expected.toFixed(2).replace(".", ",")); }, [expected]);
   useEffect(() => { setSent(null); }, [trip.payment_reference, trip.payment_status]);
+  if (trip.payment_method === "binance") return <BinancePayment trip={trip} settings={settings} offline={offline} />;
   if (trip.payment_method === "wallet") {
     if (trip.fare_cents == null || !["searching", "assigned", "arrived", "ongoing"].includes(trip.status)) return null;
     return (
@@ -190,6 +193,15 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
 /** Conductor y administración: cómo se cobra este viaje. */
 export function TripPaymentNote({ trip, viewer }: { trip: PaymentTrip; viewer: "driver" | "admin" }) {
   if (trip.fare_cents == null) return null;
+  if (trip.payment_method === "binance") {
+    return (
+      <p className="payment-note is-pago-movil">
+        <AppIcon name="wallet" />
+        <span><strong>Binance Pay (USDT){viewer === "driver" ? " · no cobres en efectivo" : ""}</strong>
+          <small>{trip.payment_status === "verified" ? `Pagado · ${trip.binance_tx ? "Tx " + trip.binance_tx : "verificado"}` : "Pago pendiente del pasajero"}</small></span>
+      </p>
+    );
+  }
   if (trip.payment_method === "wallet") {
     return (
       <p className="payment-note is-pago-movil">

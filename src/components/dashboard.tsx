@@ -22,7 +22,7 @@ import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout } from "./driver-payout";
-import { SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
+import { PaymentMethodsSettings, SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { PushPreferences } from "./push-preferences";
@@ -145,7 +145,7 @@ export function Dashboard({
       client.from("profiles").select("id,role,approved,available,suspended"),
       client
         .from("trips")
-        .select("id,created_at,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference,payment_status,payment_note")
+        .select("id,created_at,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference,payment_status,payment_note,binance_tx")
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
@@ -247,12 +247,14 @@ export function Dashboard({
           'Cotizacion vencida': 'El precio venció. Actualiza la cotización antes de solicitar.',
           'Cotizacion invalida': 'No pudimos validar el precio. Actualiza la cotización.',
           'Cotizacion requerida': 'Vuelve a calcular la ruta y su precio antes de solicitar.',
+          'Binance Pay no disponible': 'Binance Pay no está disponible en este momento. Elige otro método.',
+          'Pago movil no disponible': 'El pago móvil no está disponible en este momento. Elige otro método.',
           'Saldo pendiente': 'Tienes un saldo pendiente. Envía la referencia del pago para volver a solicitar viajes.',
         };
         await load();
         throw new Error(messages[failure.message || ''] || (failure.code === '23505' ? 'Ya tienes una solicitud activa o esta cotización ya fue utilizada. Revisa tus viajes.' : 'No se pudo solicitar el viaje. Comprueba tu conexión y vuelve a intentar.'));
       }
-      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':
+      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
       await load();
@@ -487,7 +489,7 @@ export function Dashboard({
           page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <DriverNavigation advanceBlocked={t.status==='arrived'&&t.payment_method==='pago_movil'&&!t.payment_reference?'Esperando que el pasajero envíe la referencia del pago móvil para iniciar el viaje.':undefined} contact={<TripContactButton tripId={t.id} viewerId={userId}/>} origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
+            <DriverNavigation advanceBlocked={t.status==='arrived'&&t.payment_method==='pago_movil'&&!t.payment_reference?'Esperando que el pasajero envíe la referencia del pago móvil para iniciar el viaje.':t.status==='arrived'&&t.payment_method==='binance'&&t.payment_status!=='verified'?'Esperando que el pasajero pague con Binance Pay para iniciar el viaje.':undefined} contact={<TripContactButton tripId={t.id} viewerId={userId}/>} origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
           )}
         {role === "passenger" &&
           t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/>}
@@ -696,7 +698,7 @@ export function Dashboard({
               ))}
             </div>
             <div className="service-panel" role="tabpanel" key={settingsSection}>
-            {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /></div>}
+            {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><PaymentMethodsSettings settings={settings} onSaved={text=>{setMessage(text);void load();}} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
             {settingsSection==="drivers"&&<AvailabilitySettings />}
             {settingsSection==="hours"&&<form

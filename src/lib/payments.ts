@@ -1,10 +1,14 @@
-export type PaymentMethod = 'cash' | 'pago_movil' | 'wallet';
+export type PaymentMethod = 'cash' | 'pago_movil' | 'wallet' | 'binance';
 export type PaymentSettings = {
   pago_movil_bank: string | null;
   pago_movil_phone: string | null;
   pago_movil_id: string | null;
   exchange_rate: number | string | null;
   exchange_rate_updated_at?: string | null;
+  pago_movil_enabled?: boolean;
+  binance_enabled?: boolean;
+  binance_pay_id?: string | null;
+  wallet_topup_enabled?: boolean;
 };
 
 export function rateValue(rate: number | string | null | undefined) {
@@ -24,7 +28,7 @@ export function bs(amount: number) {
 }
 
 export function pagoMovilReady(settings: PaymentSettings | null | undefined) {
-  return !!settings && !!settings.pago_movil_bank && !!settings.pago_movil_phone && !!settings.pago_movil_id && rateValue(settings.exchange_rate) != null;
+  return !!settings && settings.pago_movil_enabled !== false && !!settings.pago_movil_bank && !!settings.pago_movil_phone && !!settings.pago_movil_id && rateValue(settings.exchange_rate) != null;
 }
 
 export function formatPhone(phone: string) {
@@ -74,4 +78,9 @@ export function parseBs(text: string) {
   const normalized = raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : raw;
   const value = Number(normalized);
   return /^\d+(\.\d{1,2})?$/.test(normalized) && value > 0 ? Math.round(value * 100) / 100 : null;
+}
+
+/** Binance Pay disponible: activado por la administración y con Pay ID configurado. */
+export function binanceReady(settings: PaymentSettings | null | undefined) {
+  return !!settings && settings.binance_enabled === true && !!settings.binance_pay_id;
 }

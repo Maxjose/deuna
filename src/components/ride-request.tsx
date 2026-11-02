@@ -5,7 +5,7 @@ import { AppIcon } from "./app-icon";
 import { ReferenceInput } from './reference-input';
 import { PromoBanners } from "./promo-banners";
 import type { Favorite } from './favorite-places';
-import { bs, bsAmount, pagoMovilReady, rateValue, type PaymentMethod, type PaymentSettings } from '@/lib/payments';
+import { binanceReady, bs, bsAmount, pagoMovilReady, rateValue, type PaymentMethod, type PaymentSettings } from '@/lib/payments';
 import { Toast, useNotice } from "./toast";
 import { usd, type FareQuote } from "@/lib/fare";
 import { type Place, placeDistanceMeters, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
@@ -39,9 +39,9 @@ export function RideRequest({
   payment?: PaymentSettings | null;
 }) {
   const [method, setMethod] = useState<PaymentMethod>("cash");
-  const pagoMovil = pagoMovilReady(payment);
+  const pagoMovil = pagoMovilReady(payment), binance = binanceReady(payment);
   const rate = rateValue(payment?.exchange_rate);
-  useEffect(() => { if (!pagoMovil) setMethod("cash"); }, [pagoMovil]);
+  useEffect(() => { if ((method === "pago_movil" && !pagoMovil) || (method === "binance" && !binance)) setMethod("cash"); }, [pagoMovil, binance, method]);
   const [step, setStep] = useState<Step>("home"),
     [active, setActive] = useState<"origin" | "destination">("destination"),
     [origin, setOrigin] = useState<Place>({ label: "", point: null }),
@@ -484,11 +484,16 @@ export function RideRequest({
                         <span><strong>Saldo De1na</strong><small>{quote && walletCents < quote.fare_cents ? `Saldo insuficiente (${usd(walletCents)})` : `Disponible: ${usd(walletCents)}`}</small></span>
                         <span className="selection-dot" />
                       </button>}
-                      <button type="button" role="radio" aria-checked={method === "pago_movil"} disabled={!pagoMovil} className={"moto-option payment-option " + (method === "pago_movil" ? "is-selected" : "")} onClick={() => setMethod("pago_movil")}>
+                      {binance && <button type="button" role="radio" aria-checked={method === "binance"} className={"moto-option payment-option " + (method === "binance" ? "is-selected" : "")} onClick={() => setMethod("binance")}>
+                        <span className="service-icon"><AppIcon name="wallet" /></span>
+                        <span><strong>Binance Pay</strong><small>Pagas en USDT cuando un conductor acepte tu viaje</small></span>
+                        <span className="selection-dot" />
+                      </button>}
+                      {payment?.pago_movil_enabled !== false && <button type="button" role="radio" aria-checked={method === "pago_movil"} disabled={!pagoMovil} className={"moto-option payment-option " + (method === "pago_movil" ? "is-selected" : "")} onClick={() => setMethod("pago_movil")}>
                         <span className="service-icon"><AppIcon name="phone" /></span>
                         <span><strong>Pago móvil</strong><small>{pagoMovil ? "Transfieres cuando un conductor acepte tu viaje" : "No disponible por ahora"}</small></span>
                         <span className="selection-dot" />
-                      </button>
+                      </button>}
                     </div>
                     <button className="primary" onClick={() => setStep("confirm")}>
                       Continuar
@@ -514,11 +519,11 @@ export function RideRequest({
                       </div>
                     </div>
                     <div className="confirmation-payment">
-                      <AppIcon name={method === "cash" ? "cash" : method === "wallet" ? "wallet" : "phone"} />
+                      <AppIcon name={method === "cash" ? "cash" : method === "wallet" || method === "binance" ? "wallet" : "phone"} />
                       <p>
                         <small>PAGO</small>
-                        <strong>{method === "cash" ? "Efectivo al conductor" : method === "wallet" ? "Saldo De1na" : "Pago móvil"}</strong>
-                        <span>{method === "cash" ? "Ten el monto listo al llegar." : method === "wallet" ? "Se descuenta de tu saldo al solicitar. Si se cancela, vuelve a tu saldo." : "Te mostraremos los datos para transferir cuando un conductor acepte."}</span>
+                        <strong>{method === "cash" ? "Efectivo al conductor" : method === "wallet" ? "Saldo De1na" : method === "binance" ? "Binance Pay (USDT)" : "Pago móvil"}</strong>
+                        <span>{method === "cash" ? "Ten el monto listo al llegar." : method === "wallet" ? "Se descuenta de tu saldo al solicitar. Si se cancela, vuelve a tu saldo." : method === "binance" ? "Te mostraremos el Pay ID y el monto cuando un conductor acepte." : "Te mostraremos los datos para transferir cuando un conductor acepte."}</span>
                       </p>
                       <button type="button" className="text" onClick={() => setStep("payment")}>Cambiar</button>
                     </div>
@@ -530,7 +535,7 @@ export function RideRequest({
                       onClick={async () => {
                         try {
                           if (!quote || expired) return;
-                          await onRequest({ quote: quote.quote, signature: quote.signature, payment_method: method === "wallet" ? "wallet" : method === "pago_movil" && pagoMovil ? "pago_movil" : "cash" });
+                          await onRequest({ quote: quote.quote, signature: quote.signature, payment_method: method === "wallet" ? "wallet" : method === "binance" && binance ? "binance" : method === "pago_movil" && pagoMovil ? "pago_movil" : "cash" });
                         } catch (error) {
                           setMessage(
                             error instanceof Error ? error.message : "No se pudo solicitar el viaje. Inténtalo otra vez.",
