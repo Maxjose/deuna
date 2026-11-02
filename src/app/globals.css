@@ -2738,3 +2738,6 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .payout-account div { display: flex; justify-content: space-between; gap: 10px; }
 .payout-account dt { color: var(--muted); }
 .payout-account dd { margin: 0; font-weight: 700; }
+.earnings-list li.is-fee .earnings-icon { background: #fdf0f2; color: var(--danger); }
+.earnings-list li.is-fee b { color: var(--danger); }
+.earnings-fee { margin: 0; font-size: 13px; }

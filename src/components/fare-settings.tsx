@@ -1,4 +1,6 @@
 "use client";
+import { useMemo, useState } from "react";
+import { browserClient } from "@/lib/supabase/client";
 import type { FareSettings as Settings } from '@/lib/fare';
 
 /** Tarifas de moto y tarifa nocturna, en recuadros separados (cada uno se guarda por su cuenta). */
@@ -36,5 +38,27 @@ export function FareSettings({ settings, busy, onSave }: { settings: Settings; b
       <label>Recargo (%)<input name="nightPercent" type="number" min="0" max="300" step="1" required defaultValue={settings.night_percent ?? 0} /></label>
       <button className="primary" disabled={busy}>Guardar tarifa nocturna</button>
     </form>
+    <CommissionSettings settings={settings} busy={busy} />
   </div>;
+}
+
+/** Comisión de De1na sobre cada viaje (se descuenta al acreditar las ganancias del conductor). */
+function CommissionSettings({ settings, busy }: { settings: Settings; busy: boolean }) {
+  const client = useMemo(() => browserClient(), []);
+  const [saving, setSaving] = useState(false), [msg, setMsg] = useState(""), [err, setErr] = useState("");
+  return <form className="trip-card commission-settings" onSubmit={async e => {
+    e.preventDefault(); const f = new FormData(e.currentTarget);
+    setSaving(true); setErr(""); setMsg("");
+    const { error } = await client.rpc("admin_commission", { commission_percent: Number(String(f.get("percent")).replace(",", ".")), commission_on_cash: f.get("cash") === "on" });
+    setSaving(false);
+    if (error) setErr(error.message === "Porcentaje inválido" ? "El porcentaje debe estar entre 0 y 100." : "No se pudo guardar."); else setMsg("Comisión guardada. Se aplica a los viajes que finalicen desde ahora.");
+  }}>
+    <h2>Comisión De1na</h2>
+    <p className="muted">Porcentaje que De1na se queda de cada viaje. En los viajes cobrados por la app (pago móvil, Binance o saldo) se descuenta antes de acreditar las ganancias del conductor.</p>
+    <label>Comisión (%)<input name="percent" type="number" min="0" max="100" step="0.01" required defaultValue={Number(settings.commission_percent ?? 0)} disabled={saving || busy} /></label>
+    <label className="check"><input name="cash" type="checkbox" defaultChecked={!!settings.commission_on_cash} disabled={saving || busy} />Cobrar también la comisión en viajes en efectivo (se descuenta de sus ganancias)</label>
+    {err && <p className="payment-error" role="alert">{err}</p>}
+    {msg && <p className="admin-create-notice" role="status">{msg}</p>}
+    <button className="primary" disabled={saving || busy}>{saving ? "Guardando…" : "Guardar comisión"}</button>
+  </form>;
 }

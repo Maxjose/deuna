@@ -1,4 +1,4 @@
-export type FareSettings = { base_cents: number; per_km_cents: number | null; minimum_cents: number; rounding_cents?:number; night_enabled?: boolean; night_start?: string; night_end?: string; night_percent?: number };
+export type FareSettings = { base_cents: number; per_km_cents: number | null; minimum_cents: number; rounding_cents?:number; night_enabled?: boolean; night_start?: string; night_end?: string; night_percent?: number; commission_percent?: number | string; commission_on_cash?: boolean };
 export type FareQuote = { quote: string; signature: string; fare_cents: number; night_percent?: number; distance_meters: number; duration_seconds: number; expires_at: number };
 export function fareCents(meters: number, settings: FareSettings, at: Date = new Date()) {
   const rounding=settings.rounding_cents===undefined?1:settings.rounding_cents;

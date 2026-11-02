@@ -6,14 +6,14 @@ import { bankName, formatPhone } from "@/lib/payments";
 import { parseStoredPlace } from "@/lib/journey";
 import { AppIcon } from "./app-icon";
 
-type Movement = { id: string; amount_cents: number; kind: string; trip_id: string | null; method: string | null; reference: string | null; note: string | null; created_at: string; destination: string | null };
-export type Earnings = { balance_cents: number; earned_cents: number; paid_cents: number; movements: Movement[]; payout_account?: { bank?: string; id_number?: string; phone?: string } | null };
+type Movement = { id: string; amount_cents: number; kind: string; trip_id: string | null; method: string | null; reference: string | null; note: string | null; created_at: string; destination: string | null; fare_cents?: number | null; commission_cents?: number };
+export type Earnings = { balance_cents: number; earned_cents: number; paid_cents: number; commission_cents?: number; movements: Movement[]; payout_account?: { bank?: string; id_number?: string; phone?: string } | null };
 const METHOD: Record<string, string> = { pago_movil: "Pago móvil", binance: "Binance Pay", wallet: "Saldo De1na" };
 const when = (v: string) => new Date(v).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" });
 
 function MovementList({ items }: { items: Movement[] }) {
   const [filter, setFilter] = useState<"all" | "trips" | "payouts">("all");
-  const visible = items.filter(m => filter === "all" || (filter === "trips" ? m.kind === "trip_credit" : m.kind !== "trip_credit"));
+  const visible = items.filter(m => filter === "all" || (filter === "trips" ? m.kind === "trip_credit" || m.kind === "commission" : m.kind === "payout" || m.kind === "adjustment"));
   return <>
     <div className="history-filters" role="group" aria-label="Filtrar movimientos">
       {([["all", "Todos"], ["trips", "Viajes"], ["payouts", "Pagos recibidos"]] as const).map(([v, l]) =>
@@ -21,14 +21,17 @@ function MovementList({ items }: { items: Movement[] }) {
     </div>
     {visible.length === 0 ? <p className="muted">No hay movimientos en esta lista.</p> :
       <ul className="earnings-list">{visible.map(m => {
-        const trip = m.kind === "trip_credit";
-        return <li key={m.id} className={trip ? "is-trip" : "is-payout"}>
-          <span className="earnings-icon" aria-hidden="true"><AppIcon name={trip ? "moto" : "wallet"} /></span>
+        const trip = m.kind === "trip_credit", fee = m.kind === "commission";
+        const place = m.destination ? parseStoredPlace(m.destination).label.split(",")[0] : "—";
+        const detail = trip ? [`${METHOD[m.method || ""] || "App"}`, m.commission_cents ? `${usd(m.fare_cents ?? 0)} − comisión ${usd(m.commission_cents)}` : null]
+          : fee ? [m.note] : [m.reference ? `Ref. ${m.reference}` : null, m.note];
+        return <li key={m.id} className={trip ? "is-trip" : fee ? "is-fee" : "is-payout"}>
+          <span className="earnings-icon" aria-hidden="true"><AppIcon name={trip ? "moto" : fee ? "cash" : "wallet"} /></span>
           <span className="earnings-main">
-            <strong>{trip ? `Viaje · ${m.destination ? parseStoredPlace(m.destination).label.split(",")[0] : "—"}` : "Pago de De1na"}</strong>
-            <small>{trip ? `Acreditado · ${METHOD[m.method || ""] || "App"}` : [m.reference ? `Ref. ${m.reference}` : null, m.note].filter(Boolean).join(" · ")} · {when(m.created_at)}</small>
+            <strong>{trip ? `Viaje · ${place}` : fee ? `Comisión · ${place}` : "Pago de De1na"}</strong>
+            <small>{detail.filter(Boolean).join(" · ")} · {when(m.created_at)}</small>
           </span>
-          <b>{trip ? "+" : "−"}{usd(Math.abs(m.amount_cents))}</b>
+          <b>{m.amount_cents > 0 ? "+" : "−"}{usd(Math.abs(m.amount_cents))}</b>
         </li>;
       })}</ul>}
   </>;
@@ -36,12 +39,13 @@ function MovementList({ items }: { items: Movement[] }) {
 
 function Summary({ e }: { e: Earnings }) {
   return <article className="trip-card earnings-summary">
-    <span className="wallet-eyebrow">POR COBRAR</span>
-    <strong className="wallet-amount">{usd(e.balance_cents)}</strong>
+    <span className="wallet-eyebrow">{e.balance_cents < 0 ? "DEBES A DE1NA" : "POR COBRAR"}</span>
+    <strong className="wallet-amount">{usd(Math.abs(e.balance_cents))}</strong>
     <div className="earnings-totals">
       <span><small>Acumulado por viajes</small><strong>{usd(e.earned_cents)}</strong></span>
       <span><small>Pagado por De1na</small><strong>{usd(e.paid_cents)}</strong></span>
     </div>
+    {!!e.commission_cents && <p className="muted earnings-fee">Comisión De1na descontada: {usd(e.commission_cents)}</p>}
   </article>;
 }
 
