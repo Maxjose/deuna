@@ -42,21 +42,35 @@ export function FareSettings({ settings, busy, onSave }: { settings: Settings; b
   </div>;
 }
 
-/** Comisión de De1na sobre cada viaje (se descuenta al acreditar las ganancias del conductor). */
+/** Comisión de De1na: interruptor general, porcentaje y a qué métodos de pago se aplica. */
 function CommissionSettings({ settings, busy }: { settings: Settings; busy: boolean }) {
   const client = useMemo(() => browserClient(), []);
+  const [on, setOn] = useState(settings.commission_enabled !== false);
   const [saving, setSaving] = useState(false), [msg, setMsg] = useState(""), [err, setErr] = useState("");
+  const methods: [string, string, boolean | undefined][] = [
+    ["commission_on_pago_movil", "Pago móvil", settings.commission_on_pago_movil],
+    ["commission_on_binance", "Binance Pay", settings.commission_on_binance],
+    ["commission_on_wallet", "Saldo De1na", settings.commission_on_wallet],
+    ["commission_on_cash", "Efectivo (se descuenta de sus ganancias)", settings.commission_on_cash ?? false],
+  ];
   return <form className="trip-card commission-settings" onSubmit={async e => {
     e.preventDefault(); const f = new FormData(e.currentTarget);
+    const payload: Record<string, unknown> = { commission_enabled: on, commission_percent: Number(String(f.get("percent")).replace(",", ".")) };
+    for (const [key] of methods) payload[key] = f.get(key) === "on";
     setSaving(true); setErr(""); setMsg("");
-    const { error } = await client.rpc("admin_commission", { commission_percent: Number(String(f.get("percent")).replace(",", ".")), commission_on_cash: f.get("cash") === "on" });
+    const { error } = await client.rpc("admin_commission", { payload });
     setSaving(false);
     if (error) setErr(error.message === "Porcentaje inválido" ? "El porcentaje debe estar entre 0 y 100." : "No se pudo guardar."); else setMsg("Comisión guardada. Se aplica a los viajes que finalicen desde ahora.");
   }}>
     <h2>Comisión De1na</h2>
-    <p className="muted">Porcentaje que De1na se queda de cada viaje. En los viajes cobrados por la app (pago móvil, Binance o saldo) se descuenta antes de acreditar las ganancias del conductor.</p>
-    <label>Comisión (%)<input name="percent" type="number" min="0" max="100" step="0.01" required defaultValue={Number(settings.commission_percent ?? 0)} disabled={saving || busy} /></label>
-    <label className="check"><input name="cash" type="checkbox" defaultChecked={!!settings.commission_on_cash} disabled={saving || busy} />Cobrar también la comisión en viajes en efectivo (se descuenta de sus ganancias)</label>
+    <p className="muted">Porcentaje que De1na se queda de cada viaje. Se descuenta al acreditar las ganancias del conductor.</p>
+    <label className="payment-switch"><input type="checkbox" role="switch" checked={on} onChange={e => setOn(e.target.checked)} disabled={saving || busy} /><span><strong>{on ? "Comisión activada" : "Comisión desactivada"}</strong><small>{on ? "Se aplica a los métodos marcados abajo." : "Los conductores reciben el precio completo de cada viaje."}</small></span></label>
+    <fieldset className={"commission-fields" + (on ? "" : " is-off")} aria-disabled={!on} disabled={saving || busy}>
+      <label>Comisión (%)<input name="percent" type="number" min="0" max="100" step="0.01" required defaultValue={Number(settings.commission_percent ?? 0)} /></label>
+      <legend className="sr-only">Métodos de pago con comisión</legend>
+      <p className="commission-label">Aplicar en viajes pagados con:</p>
+      {methods.map(([key, label, value]) => <label key={key} className="check"><input name={key} type="checkbox" defaultChecked={value !== false} />{label}</label>)}
+    </fieldset>
     {err && <p className="payment-error" role="alert">{err}</p>}
     {msg && <p className="admin-create-notice" role="status">{msg}</p>}
     <button className="primary" disabled={saving || busy}>{saving ? "Guardando…" : "Guardar comisión"}</button>

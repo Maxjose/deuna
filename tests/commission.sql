@@ -7,9 +7,9 @@ begin
   update public.profiles set role='admin' where id=a;
   update public.profiles set role='driver',approved=true where id=d;
   set local role authenticated; perform set_config('request.jwt.claim.sub',a::text,true);
-  rejected:=false; begin perform public.admin_commission(150,false); exception when raise_exception then rejected:=sqlerrm='Porcentaje inválido'; end;
+  rejected:=false; begin perform public.admin_commission('{"commission_percent":150}'); exception when raise_exception then rejected:=sqlerrm='Porcentaje inválido'; end;
   assert rejected,'Bad percent';
-  perform public.admin_commission(15,true);
+  perform public.admin_commission('{"commission_percent":15,"commission_on_cash":true}');
   reset role;
   insert into public.trips(id,passenger_id,driver_id,origin,destination,status,fare_cents,payment_method,exchange_rate,payment_reference,payment_status)
    values(t1,p,d,'A','B','ongoing',400,'pago_movil',100,'123456','verified');
@@ -21,7 +21,16 @@ begin
   assert private.driver_balance(d)=295,'Balance '||private.driver_balance(d);
   set local role authenticated; perform set_config('request.jwt.claim.sub',d::text,true);
   r:=public.my_earnings(); assert (r->>'commission_cents')::int=105 and (r->>'earned_cents')::int=340,'Earnings '||r::text;
+  -- Sin comisión para pago móvil: se acredita el precio completo.
+  perform set_config('request.jwt.claim.sub',a::text,true);
+  perform public.admin_commission('{"commission_percent":15,"commission_on_pago_movil":false}');
   reset role;
+  update public.trips set passenger_id=gen_random_uuid() where false;
+  insert into auth.users(id) values('00000000-0000-0000-0000-0000000000aa');
+  insert into public.trips(id,passenger_id,driver_id,origin,destination,status,fare_cents,payment_method,exchange_rate,payment_reference,payment_status)
+   values(gen_random_uuid(),'00000000-0000-0000-0000-0000000000aa',d,'A','D','ongoing',200,'pago_movil',100,'654321','verified');
+  update public.trips set status='finished' where destination='D';
+  assert private.driver_balance(d)=495,'No commission on pago movil '||private.driver_balance(d);
   raise notice 'commission ok';
 end
 $test$;
