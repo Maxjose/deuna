@@ -26,3 +26,11 @@ test('binance: busca en el historial y detecta región restringida', async () =>
   const missing = await findPayTransaction('111', 0, async () => new Response(JSON.stringify({ data: [] })));
   assert.equal(missing.reason, 'not_found');
 });
+
+test('binance: acepta el ID de la orden de la app y el transactionId de la API', async () => {
+  const { canonicalId } = await import('../src/lib/binance.ts');
+  const list = [{ transactionId: 'P_A25D6KYVRFS71116', orderId: '463317696761389056', transactionTime: 1, amount: '1', currency: 'USDT', orderType: 'C2C' }];
+  assert.equal(matchTransaction(list, '463317696761389056').ok, true);
+  assert.equal(matchTransaction(list, 'P_A25D6KYVRFS71116').ok, true);
+  assert.equal(canonicalId(list[0]), '463317696761389056');
+});

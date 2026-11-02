@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { serverClient } from '@/lib/supabase/server';
-import { findPayTransaction } from '@/lib/binance';
+import { canonicalId, findPayTransaction } from '@/lib/binance';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 const headers = { 'Cache-Control': 'private, no-store' };
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   let body: { kind?: string; trip_id?: string; transaction_id?: string };
   try { body = await request.json(); } catch { return Response.json({ error: 'Solicitud inválida.' }, { status: 400, headers }); }
   const id = String(body.transaction_id || '').replace(/\s/g, '');
-  if (!/^[0-9A-Za-z]{6,64}$/.test(id) || (body.kind !== 'trip' && body.kind !== 'topup') || (body.kind === 'trip' && !/^[0-9a-f-]{36}$/.test(String(body.trip_id))))
+  if (!/^[0-9A-Za-z_]{6,64}$/.test(id) || (body.kind !== 'trip' && body.kind !== 'topup') || (body.kind === 'trip' && !/^[0-9a-f-]{36}$/.test(String(body.trip_id))))
     return Response.json({ error: 'Revisa el ID de la transacción.' }, { status: 400, headers });
   const key = process.env.PUSH_WORKER_KEY;
   if (!key) return Response.json({ error: 'Binance Pay no está configurado.' }, { status: 503, headers });
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   }
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await db.rpc('binance_confirm', { worker_key: key, payload: {
-    kind: body.kind, user_id: user.id, trip_id: body.trip_id ?? null, transaction_id: id,
+    kind: body.kind, user_id: user.id, trip_id: body.trip_id ?? null, transaction_id: canonicalId(lookup.tx),
     amount: lookup.tx.amount, currency: lookup.tx.currency, transaction_time: lookup.tx.transactionTime } });
   if (error) return Response.json({ error: DB_ERRORS[error.message] || 'No pudimos confirmar el pago.' }, { status: 422, headers });
   return Response.json(data, { headers });
