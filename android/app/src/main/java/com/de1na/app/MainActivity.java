@@ -72,6 +72,10 @@ public class MainActivity extends AppCompatActivity {
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
         s.setUserAgentString(s.getUserAgentString() + " De1naApp/" + BuildConfig.APP_VERSION);
+        // Passkeys: el WebView usa el administrador de credenciales de Android (mismas passkeys que Chrome / Google).
+        if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.WEB_AUTHENTICATION)) {
+            androidx.webkit.WebSettingsCompat.setWebAuthenticationSupport(s, androidx.webkit.WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP);
+        }
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
         web.addJavascriptInterface(new Bridge(), "De1naNative");
