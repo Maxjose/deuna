@@ -194,6 +194,7 @@ export function AuthForm({
             </button>
           </>
         )}
+        <p className="legal-links">{mode === "register" ? "Al crear tu cuenta aceptas nuestra " : ""}<a href="/privacidad">Política de privacidad</a></p>
       </section>
     </div>
   );

@@ -23,6 +23,7 @@ import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
+import { DeleteAccount } from "./delete-account";
 import { CancelReasons } from "./cancel-reasons";
 import { AppPreferences } from "./app-preferences";
 import { isNativeApp, nativePushEndpoint } from "@/lib/native";
@@ -701,7 +702,7 @@ export function Dashboard({
                 </label>
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>}
-              {accountSection==="security"&&<><ChangePassword /><PasskeySecurity /></>}
+              {accountSection==="security"&&<><ChangePassword /><PasskeySecurity /><DeleteAccount /><p className="muted legal-links"><a href="/privacidad">Política de privacidad</a></p></>}
               {accountSection==="payout"&&role==="driver"&&<DriverPayout />}
               {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
               {(accountSection==="wallet"||accountSection==="balance")&&role==="passenger"&&<>{balance.amount_cents>0&&pendingBalance()}<WalletView wallet={wallet} settings={settings} onChanged={()=>void reloadWallet()} /></>}

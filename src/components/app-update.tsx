@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { detectTwa } from "@/lib/twa";
-import { isNativeApp, nativeDownloadUpdate } from "@/lib/native";
+import { isNativeApp, playUpdateVersion, startPlayUpdate } from "@/lib/native";
 import { readInstalledVersion, updateNeed, type AppRelease, type UpdateNeed } from "@/lib/app-update";
 import { AppIcon } from "./app-icon";
 
@@ -35,7 +35,12 @@ export function AppUpdate() {
       try {
         const response = await fetch("/api/app-version", { cache: "no-store" });
         if (!response.ok) return;
-        const { release } = (await response.json()) as { release: AppRelease | null };
+        let { release } = (await response.json()) as { release: AppRelease | null };
+        // App nativa: la versión disponible la decide Google Play (nunca se descarga un APK fuera de la tienda).
+        if (isNativeApp()) {
+          const play = await playUpdateVersion();
+          release = play ? { versionCode: play, minVersionCode: release?.minVersionCode ?? 0, apkUrl: "", notes: release?.notes ?? "", builtAt: null } : null;
+        }
         if (!alive) return;
         const next = updateNeed(current, release);
         setRelease(release);
@@ -55,9 +60,7 @@ export function AppUpdate() {
   const download = (
     <a className="primary app-update-download" href={release.apkUrl} aria-disabled={downloading && inApp} onClick={event => {
       if (!isNativeApp()) { setDownloading(true); return; }
-      event.preventDefault(); if (downloading) return;
-      setDownloading(true); setInApp(true); setFailed(false);
-      nativeDownloadUpdate(release.apkUrl).then(ok => { if (!ok) window.location.href = release.apkUrl; }).catch(() => { setDownloading(false); setFailed(true); });
+      event.preventDefault(); setInApp(true); setFailed(false); startPlayUpdate();
     }}>
       <AppIcon name="download" />
       {downloading ? "Descargando…" : need === "required" ? "Descargar actualización" : "Actualizar"}
@@ -65,7 +68,7 @@ export function AppUpdate() {
   );
   const help = downloading && (
     <p className="app-update-help" role="status">
-      {inApp ? <>Al terminar se abrirá el instalador: toca <strong>Actualizar</strong>. Si Android lo pide, permite instalar apps de De1na. Tu sesión se mantiene.</>
+      {inApp ? <>La actualización se hace desde Google Play. Tu sesión se mantiene.</>
         : <>Cuando termine la descarga, ábrela desde la notificación y toca <strong>Actualizar</strong>. Tu sesión se mantiene.</>}
     </p>
   );

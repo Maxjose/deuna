@@ -57,8 +57,9 @@ jobs:
         run: |
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/pruebas.jks"
           export TWA_KEYSTORE_PATH="$RUNNER_TEMP/pruebas.jks"
-          gradle -p android assembleRelease --no-daemon --stacktrace
+          gradle -p android assembleRelease bundleRelease --no-daemon --stacktrace
           cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/de1na.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/de1na.aab"
           rm -f "$RUNNER_TEMP/pruebas.jks"
 
       - name: Mostrar la firma del APK
@@ -84,7 +85,9 @@ jobs:
         if: steps.keys.outputs.ready == 'true'
         with:
           name: de1na-apk
-          path: ${{ runner.temp }}/de1na.apk
+          path: |
+            ${{ runner.temp }}/de1na.apk
+            ${{ runner.temp }}/de1na.aab
 
       - name: Publicar en la versión "apk-pruebas"
         if: steps.keys.outputs.ready == 'true'
@@ -92,7 +95,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete apk-pruebas --yes --cleanup-tag 2>/dev/null || true
-          gh release create apk-pruebas "$RUNNER_TEMP/de1na.apk" "$RUNNER_TEMP/version.json" \
+          gh release create apk-pruebas "$RUNNER_TEMP/de1na.apk" "$RUNNER_TEMP/de1na.aab" "$RUNNER_TEMP/version.json" \
             --prerelease --target "$GITHUB_SHA" \
             --title "De1na Android (compilación ${{ github.run_number }})" \
             --notes "App Android de De1na (WebView nativo) generada automáticamente."

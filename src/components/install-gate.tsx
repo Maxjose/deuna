@@ -13,6 +13,8 @@ export function InstallGate({children}:{children:ReactNode}){
   const display=window.matchMedia('(display-mode: standalone)'),full=window.matchMedia('(display-mode: fullscreen)');
   const platform=installPlatform(navigator.userAgent,navigator.maxTouchPoints);
   const update=()=>{
+   // Páginas públicas (privacidad, eliminar cuenta) siempre accesibles desde el navegador.
+   if(['/privacidad','/eliminar-cuenta'].some(path=>window.location.pathname.startsWith(path))){setMode('allowed');return;}
    const standalone=display.matches||full.matches||(navigator as Navigator&{standalone?:boolean}).standalone===true;
    setMode(requiresInstallation(platform,standalone,detectTwa())?(platform==='ios'?'ios':'android'):'allowed');
   };

@@ -11,7 +11,8 @@ type Bridge = {
   keepScreenOn(on: boolean): void;
   appVersion(): number;
   haptic?(): void;
-  downloadUpdate?(id: string, url: string): void;
+  checkPlayUpdate?(id: string): void;
+  startPlayUpdate?(): void;
 };
 declare global { interface Window { De1naNative?: Bridge; __de1naNative?: { resolve: (id: string, value: string | null) => void } } }
 
@@ -19,7 +20,7 @@ export const nativeBridge = (): Bridge | null => (typeof window !== 'undefined' 
 export const isNativeApp = () => !!nativeBridge();
 
 const pending = new Map<string, (value: string | null) => void>();
-function call(method: 'requestPushToken' | 'readClipboard' | 'downloadUpdate', timeoutMs = 20000, ...args: string[]) {
+function call(method: 'requestPushToken' | 'readClipboard' | 'checkPlayUpdate', timeoutMs = 20000, ...args: string[]) {
   const bridge = nativeBridge();
   if (!bridge) return Promise.resolve(null);
   if (!window.__de1naNative) window.__de1naNative = { resolve: (id, value) => { pending.get(id)?.(value); pending.delete(id); } };
@@ -47,10 +48,13 @@ export async function readClipboardText() {
   return navigator.clipboard.readText();
 }
 
-/** App nativa: descarga la actualización dentro de la app y abre el instalador. Devuelve false si no está disponible. */
-export async function nativeDownloadUpdate(url: string) {
-  if (!nativeBridge()?.downloadUpdate) return false;
-  const result = await call('downloadUpdate', 10 * 60_000, url);
-  if (result === 'error') throw new Error('download');
-  return true;
+/** App nativa: versionCode disponible en Google Play (null si no hay actualización o no aplica). */
+export async function playUpdateVersion() {
+  if (!nativeBridge()?.checkPlayUpdate) return null;
+  const value = await call('checkPlayUpdate', 15000);
+  const code = Number(value);
+  return Number.isInteger(code) && code > 0 ? code : null;
 }
+
+/** App nativa: abre la actualización de Google Play (o la ficha de la tienda). */
+export function startPlayUpdate() { nativeBridge()?.startPlayUpdate?.(); }
