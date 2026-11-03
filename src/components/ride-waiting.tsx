@@ -10,7 +10,7 @@ import {useTripLiveLocation,LiveDriverStatus} from './live-location';
 const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
 const headlines:Record<string,string>={searching:'Estamos buscando quién te lleve',assigned:'¡Listo! Ya van por ti',arrived:'¡Tu De1na llegó!',ongoing:'¡Vamos en camino!'};
 const descriptions:Record<string,string>={searching:'Conectando con un conductor disponible.',assigned:'Tu conductor se dirige al punto de recogida.',arrived:'Tu conductor te espera en la recogida.',ongoing:'Tu viaje hacia el destino está en curso.'};
-export function RideWaiting({origin,destination,busy,onCancel,fareCents,tripId,status,viewerId,onMessage,cancelPending,onCancellation,payment}:{payment?:React.ReactNode;origin:string;destination:string;busy:boolean;onCancel:()=>void;fareCents?:number|null;tripId:string;status:string;viewerId:string;onMessage:()=>void;cancelPending:boolean;onCancellation:(action:string,approved?:boolean)=>Promise<boolean>}){
+export function RideWaiting({origin,destination,busy,onCancel,fareCents,tripId,status,viewerId,onMessage,cancelPending,onCancellation,payment}:{payment?:React.ReactNode;origin:string;destination:string;busy:boolean;onCancel:()=>void;fareCents?:number|null;tripId:string;status:string;viewerId:string;onMessage:()=>void;cancelPending:boolean;onCancellation:(action:string,approved?:boolean,reason?:string)=>Promise<boolean>}){
  const sheet=useRef<HTMLDialogElement>(null),[opened,setOpened]=useState(true);
  const from=useMemo(()=>parseStoredPlace(origin),[origin]),to=useMemo(()=>parseStoredPlace(destination),[destination]);
  useEffect(()=>{if(opened){sheet.current?.showModal();sheet.current?.focus({preventScroll:true});}},[opened]);

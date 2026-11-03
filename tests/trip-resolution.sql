@@ -8,7 +8,7 @@ select set_config('request.jwt.claim.sub',current_setting('qa.d'),true);
 set local role authenticated;
 do $$begin
  begin perform public.operate('available','{"available":false}');raise exception 'Disconnect allowed';exception when raise_exception then if sqlerrm<>'Completa tu viaje activo primero' then raise;end if;end;
- perform public.operate('request_cancel',jsonb_build_object('id',current_setting('qa.t')));
+ perform public.operate('request_cancel',jsonb_build_object('id',current_setting('qa.t'),'reason','Problema con la moto'));
  begin perform public.operate('respond_cancel',jsonb_build_object('id',current_setting('qa.t'),'approved',true));raise exception 'Driver self authorized';exception when raise_exception then if sqlerrm<>'No autorizado' then raise;end if;end;
 end $$;
 select set_config('request.jwt.claim.sub',current_setting('qa.p'),true);

@@ -23,6 +23,7 @@ import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
+import { CancelReasons } from "./cancel-reasons";
 import { AppPreferences } from "./app-preferences";
 import { isNativeApp, nativePushEndpoint } from "@/lib/native";
 import { PaymentMethodsSettings, SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
@@ -271,7 +272,7 @@ export function Dashboard({
         await load();
         throw new Error(messages[failure.message || ''] || (failure.code === '23505' ? 'Ya tienes una solicitud activa o esta cotización ya fue utilizada. Revisa tus viajes.' : 'No se pudo solicitar el viaje. Comprueba tu conexión y vuelve a intentar.'));
       }
-      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':(error as {message?:string}).message==='Límite de cancelaciones'?'Alcanzaste el límite de cancelaciones. Intenta más tarde.':
+      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':(error as {message?:string}).message==='Límite de cancelaciones'?'Alcanzaste el límite de cancelaciones. Intenta más tarde.':(error as {message?:string}).message==='Motivo requerido'?'Elige el motivo de la cancelación.':
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
       await load();
@@ -315,9 +316,13 @@ export function Dashboard({
       window.removeEventListener("offline", sync);
     };
   }, [load]);
+  const [cancelReason,setCancelReason]=useState(""),[cancelLimit,setCancelLimit]=useState<{limit:number;hours:number;used:number;blocked_until:string|null}|null>(null);
   useEffect(() => {
-    if (cancelId) cancelDialog.current?.showModal();
-  }, [cancelId]);
+    if (!cancelId) return;
+    setCancelReason("");setCancelLimit(null);
+    cancelDialog.current?.showModal();
+    void client.rpc("my_cancel_state").then(({data})=>{if(data)setCancelLimit(data);});
+  }, [cancelId, client]);
   const navigate = (value: string) => {
     writeAppHash(window,value);
     setPage(value);
@@ -436,7 +441,7 @@ export function Dashboard({
       return (
         <RideWaiting
           payment={<PassengerPayment trip={t} settings={settings} offline={offline} />}
-          tripId={t.id} status={t.status} viewerId={userId} onMessage={()=>navigate('messages')} cancelPending={!!t.cancel_requested} onCancellation={(action,approved)=>act(action,{id:t.id,approved})}
+          tripId={t.id} status={t.status} viewerId={userId} onMessage={()=>navigate('messages')} cancelPending={!!t.cancel_requested} onCancellation={(action,approved,reason)=>act(action,{id:t.id,approved,reason})}
             fareCents={t.fare_cents}
           origin={t.origin}
           destination={t.destination}
@@ -507,10 +512,10 @@ export function Dashboard({
           page === "home" &&
           t.driver_id === userId &&
           ["assigned", "arrived", "ongoing"].includes(t.status) && (
-            <DriverNavigation advanceBlocked={t.status==='arrived'&&t.payment_method==='pago_movil'&&!t.payment_reference?'Esperando que el pasajero envíe la referencia del pago móvil para iniciar el viaje.':t.status==='arrived'&&t.payment_method==='binance'&&t.payment_status!=='verified'?'Esperando que el pasajero pague con Binance Pay para iniciar el viaje.':undefined} contact={<TripContactButton tripId={t.id} viewerId={userId}/>} origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/></DriverNavigation>
+            <DriverNavigation advanceBlocked={t.status==='arrived'&&t.payment_method==='pago_movil'&&!t.payment_reference?'Esperando que el pasajero envíe la referencia del pago móvil para iniciar el viaje.':t.status==='arrived'&&t.payment_method==='binance'&&t.payment_status!=='verified'?'Esperando que el pasajero pague con Binance Pay para iniciar el viaje.':undefined} contact={<TripContactButton tripId={t.id} viewerId={userId}/>} origin={t.origin} destination={t.destination} status={t.status} busy={busy||offline} onOpenChat={()=>navigate('messages')} onAdvance={()=>void act('advance',{id:t.id})}><DriverSharingStatus state={sharing.state} background={sharing.background} /><TripCancellation pending={!!t.cancel_requested} passenger={false} busy={busy||offline} onAction={(action,approved,reason)=>act(action,{id:t.id,approved,reason})}/></DriverNavigation>
           )}
         {role === "passenger" &&
-          t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved)=>act(action,{id:t.id,approved})}/>}
+          t.cancel_requested && <TripCancellation pending passenger busy={busy||offline} onAction={(action,approved,reason)=>act(action,{id:t.id,approved,reason})}/>}
         {role === "passenger" &&
           t.passenger_id === userId &&
           ["searching", "assigned", "arrived"].includes(t.status) && (
@@ -720,7 +725,7 @@ export function Dashboard({
             {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><PaymentMethodsSettings settings={settings} onSaved={text=>{setMessage(text);void load();}} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
             {settingsSection==="commission"&&<CommissionSettings settings={settings} busy={busy || offline} />}
-            {settingsSection==="drivers"&&<div className="settings-grid"><AvailabilitySettings /><CancelLimitSettings limit={(settings as {driver_cancel_limit?:number}).driver_cancel_limit??2} hours={(settings as {driver_cancel_hours?:number}).driver_cancel_hours??4} onSaved={text=>{setMessage(text);void load();}} /></div>}
+            {settingsSection==="drivers"&&<div className="settings-grid"><AvailabilitySettings /><CancelLimitSettings settings={settings as {driver_cancel_limit?:number;driver_cancel_hours?:number;passenger_cancel_limit?:number;passenger_cancel_hours?:number}} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="hours"&&<form
               className="trip-card"
               onSubmit={(e) => {
@@ -958,24 +963,23 @@ export function Dashboard({
       >
         <div className="sheet-handle" />
         <h2>¿Cancelar este viaje?</h2>
-        <p className="muted">
-          Tu solicitud dejará de estar disponible para los conductores.
-        </p>
-        <button
-          className="primary"
-          onClick={() => cancelDialog.current?.close()}
-        >
-          Seguir con el viaje
-        </button>
-        <button
-          className="secondary danger"
-          onClick={() => {
-            if (cancelId) void act("cancel", { id: cancelId });
-            cancelDialog.current?.close();
-          }}
-        >
-          Sí, cancelar solicitud
-        </button>
+        {(() => {
+          const ct = trips.find(x => x.id === cancelId), assigned = !!ct && ct.status !== "searching";
+          const blocked = assigned && !!cancelLimit?.blocked_until && new Date(cancelLimit.blocked_until).getTime() > Date.now();
+          return <>
+            <p className="muted">{assigned ? "Tu conductor ya va en camino. Cancelar ahora afecta a quien aceptó tu viaje." : "Tu solicitud dejará de estar disponible para los conductores."}</p>
+            {assigned && cancelLimit && (blocked
+              ? <p className="cancel-limit is-blocked" role="status">Alcanzaste el límite de {cancelLimit.limit} cancelaciones en {cancelLimit.hours} horas. Podrás volver a cancelar a las {new Date(cancelLimit.blocked_until!).toLocaleTimeString("es-VE", { hour: "numeric", minute: "2-digit" })}.</p>
+              : <p className="cancel-limit" role="status">Te {cancelLimit.limit - cancelLimit.used === 1 ? "queda 1 cancelación" : `quedan ${cancelLimit.limit - cancelLimit.used} cancelaciones`} en las próximas {cancelLimit.hours} horas.</p>)}
+            {assigned && !blocked && <CancelReasons key={cancelId ?? ""} who="passenger" onChange={setCancelReason} />}
+            <button className="primary" onClick={() => cancelDialog.current?.close()}>Seguir con el viaje</button>
+            <button className="secondary danger" disabled={busy || blocked || (assigned && cancelReason.length < 3)} onClick={async () => {
+              if (!cancelId) return;
+              const ok = await act("cancel", { id: cancelId, reason: assigned ? cancelReason : undefined });
+              if (ok) cancelDialog.current?.close();
+            }}>Sí, cancelar {assigned ? "viaje" : "solicitud"}</button>
+          </>;
+        })()}
       </dialog>
     </div>
   );

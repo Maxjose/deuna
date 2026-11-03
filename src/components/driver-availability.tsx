@@ -63,23 +63,44 @@ export function AvailabilitySettings(){
  </form>;
 }
 
-/** Límite de cancelaciones del conductor: tras N cancelaciones en X horas no puede volver a cancelar hasta que pase el plazo. */
-export function CancelLimitSettings({ limit, hours, onSaved }: { limit: number; hours: number; onSaved: (text: string) => void }) {
+/** Límites de cancelación: conductor y pasajero (cancelar después de «Llegué» cuenta doble). */
+export function CancelLimitSettings({ settings, onSaved }: { settings: { driver_cancel_limit?: number; driver_cancel_hours?: number; passenger_cancel_limit?: number; passenger_cancel_hours?: number }; onSaved: (text: string) => void }) {
  const [busy, setBusy] = useState(false), [err, setErr] = useState('');
  return <form className="trip-card" onSubmit={async e => {
   e.preventDefault(); const f = new FormData(e.currentTarget);
   setBusy(true); setErr('');
-  const { error } = await browserClient().rpc('admin_cancel_limit', { cancel_limit: Number(f.get('limit')), cancel_hours: Number(f.get('hours')) });
+  const { error } = await browserClient().rpc('admin_cancel_limit', { payload: { driver_limit: Number(f.get('dl')), driver_hours: Number(f.get('dh')), passenger_limit: Number(f.get('pl')), passenger_hours: Number(f.get('ph')) } });
   setBusy(false);
-  if (error) setErr('No se pudo guardar. Revisa los valores.'); else onSaved('Límite de cancelaciones guardado.');
+  if (error) setErr('No se pudo guardar. Revisa los valores.'); else onSaved('Límites de cancelación guardados.');
  }}>
-  <h2>Límite de cancelaciones</h2>
-  <p className="muted">Evita que un conductor cancele viajes para hacerlos por fuera de la app. Al llegar al límite, no podrá solicitar otra cancelación hasta que pase el plazo.</p>
+  <h2>Límites de cancelación</h2>
+  <p className="muted">Evitan que se cancelen viajes para hacerlos por fuera de la app. Al llegar al límite no se puede cancelar otro viaje hasta que pase el plazo. Cancelar después de «Llegué» cuenta doble y siempre se pide el motivo.</p>
+  <p className="commission-label">Conductores</p>
   <div className="two">
-   <label>Cancelaciones permitidas<input name="limit" type="number" min="1" max="20" step="1" required defaultValue={limit} disabled={busy} /></label>
-   <label>En un plazo de (horas)<input name="hours" type="number" min="1" max="72" step="1" required defaultValue={hours} disabled={busy} /></label>
+   <label>Cancelaciones permitidas<input name="dl" type="number" min="1" max="20" required defaultValue={settings.driver_cancel_limit ?? 2} disabled={busy} /></label>
+   <label>En un plazo de (horas)<input name="dh" type="number" min="1" max="72" required defaultValue={settings.driver_cancel_hours ?? 4} disabled={busy} /></label>
+  </div>
+  <p className="commission-label">Pasajeros (con conductor asignado)</p>
+  <div className="two">
+   <label>Cancelaciones permitidas<input name="pl" type="number" min="1" max="20" required defaultValue={settings.passenger_cancel_limit ?? 3} disabled={busy} /></label>
+   <label>En un plazo de (horas)<input name="ph" type="number" min="1" max="72" required defaultValue={settings.passenger_cancel_hours ?? 3} disabled={busy} /></label>
   </div>
   {err && <p className="payment-error" role="alert">{err}</p>}
-  <button className="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar límite'}</button>
+  <button className="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar límites'}</button>
  </form>;
+}
+
+/** Administración (ficha): cancelaciones de la persona en los últimos 7 días y las más recientes con su motivo. */
+export function AdminCancellations({ personId, driver }: { personId: string; driver: boolean }) {
+ type Item = { id: string; cancelled_at: string | null; cancelled_by: string; cancelled_stage: string | null; cancel_reason: string | null };
+ const [d, setD] = useState<{ as_driver_7d: number; as_passenger_7d: number; after_arrival_7d: number; recent: Item[]; state: { blocked_until: string | null } } | null>(null);
+ useEffect(() => { void browserClient().rpc('admin_cancellations', { person_id: personId }).then(({ data }) => { if (data) setD(data); }); }, [personId]);
+ if (!d) return null;
+ const total = driver ? d.as_driver_7d : d.as_passenger_7d;
+ const stage = (s: string | null) => s === 'arrived' ? 'en el punto de recogida' : s === 'ongoing' ? 'en curso' : 'antes de llegar';
+ return <div className="admin-cancellations">
+  <div className="row"><h3>Cancelaciones (7 días)</h3><strong className={total >= 3 || d.after_arrival_7d >= 2 ? 'is-warn' : ''}>{total}</strong></div>
+  <p className="muted">{d.after_arrival_7d} después de «Llegué»{d.state.blocked_until && new Date(d.state.blocked_until).getTime() > Date.now() ? ` · bloqueado hasta las ${new Date(d.state.blocked_until).toLocaleTimeString('es-VE', { hour: 'numeric', minute: '2-digit' })}` : ''}</p>
+  {d.recent.length > 0 && <ul className="wallet-movements">{d.recent.map(i => <li key={i.id}><span><strong>{i.cancel_reason || 'Sin motivo'}</strong><small>{stage(i.cancelled_stage)}{i.cancelled_at ? ' · ' + new Date(i.cancelled_at).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : ''}</small></span></li>)}</ul>}
+ </div>;
 }

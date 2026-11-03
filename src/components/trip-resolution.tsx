@@ -2,15 +2,17 @@
 import {useEffect,useMemo,useRef,useState,useSyncExternalStore,useCallback} from 'react';
 import {browserClient} from '@/lib/supabase/client';
 import {closeOnBackdrop} from '@/lib/dialog';
+import {CancelReasons} from './cancel-reasons';
 import {parseStoredPlace} from '@/lib/journey';
 import {participantKey,readParticipant,subscribeParticipant} from '@/lib/participant-cache';
 import {loadReputation,loadTripContact,type Reputation,type TripContact} from '@/lib/participant-data';
-export function TripCancellation({pending,passenger,busy,onAction}:{pending:boolean;passenger:boolean;busy:boolean;onAction:(action:string,approved?:boolean)=>Promise<boolean>}){
+export function TripCancellation({pending,passenger,busy,onAction}:{pending:boolean;passenger:boolean;busy:boolean;onAction:(action:string,approved?:boolean,reason?:string)=>Promise<boolean>}){
+ const [reason,setReason]=useState('');
  const sheet=useRef<HTMLDialogElement>(null);
  const [limit,setLimit]=useState<{limit:number;hours:number;used:number;blocked_until:string|null}|null>(null);
  const open=()=>{sheet.current?.showModal();sheet.current?.focus({preventScroll:true});if(!passenger)void browserClient().rpc('my_cancel_state').then(({data})=>{if(data)setLimit(data);});},close=()=>sheet.current?.close();
  const blocked=!passenger&&!!limit?.blocked_until&&new Date(limit.blocked_until).getTime()>Date.now();
- const run=async(action:string,approved?:boolean)=>{if(await onAction(action,approved))close();};
+ const run=async(action:string,approved?:boolean,why?:string)=>{if(await onAction(action,approved,why))close();};
  if(!pending&&passenger)return null;
  return <div className="trip-cancellation">
   {pending?<><p>{passenger?'Tu conductor solicita cancelar este viaje.':'Cancelación solicitada. El viaje continúa activo hasta que el cliente autorice.'}</p>{passenger&&<button className="secondary" disabled={busy} onClick={open}>Responder solicitud</button>}</>
@@ -28,8 +30,9 @@ export function TripCancellation({pending,passenger,busy,onAction}:{pending:bool
     {limit&&(blocked
       ?<p className="cancel-limit is-blocked" role="status">Alcanzaste el límite de {limit.limit} cancelaciones en {limit.hours} horas. Podrás volver a cancelar a las {new Date(limit.blocked_until!).toLocaleTimeString('es-VE',{hour:'numeric',minute:'2-digit'})}.</p>
       :<p className="cancel-limit" role="status">Te {limit.limit-limit.used===1?'queda 1 cancelación':`quedan ${limit.limit-limit.used} cancelaciones`} en las próximas {limit.hours} horas. Si llegas al límite, no podrás cancelar por un tiempo.</p>)}
+    {!blocked&&<CancelReasons key={String(pending)} who="driver" onChange={setReason} disabled={busy}/>}
     <button className="primary" disabled={busy} onClick={close}>Seguir con el viaje</button>
-    <button className="secondary danger" disabled={busy||blocked} onClick={()=>void run('request_cancel')}>{busy?'Enviando…':'Sí, solicitar cancelación'}</button>
+    <button className="secondary danger" disabled={busy||blocked||reason.length<3} onClick={()=>void run('request_cancel',undefined,reason)}>{busy?'Enviando…':'Sí, solicitar cancelación'}</button>
    </>}
   </dialog>
  </div>;

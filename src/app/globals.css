@@ -2815,3 +2815,16 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 @media (prefers-reduced-motion: reduce) { .promo-alert { animation: none; } }
 .cancel-limit { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fff8e6; color: #7a5300; font-size: 14px; }
 .cancel-limit.is-blocked { background: #fdf0f2; color: var(--danger); font-weight: 600; }
+
+/* Motivos y resumen de cancelaciones */
+.cancel-reasons { display: grid; gap: 8px; border: 0; padding: 0; margin: 4px 0; min-width: 0; }
+.cancel-reasons legend { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.cancel-reason-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cancel-reason-chips button { width: auto; margin: 0; min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.cancel-reason-chips button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.cancel-reasons textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font: inherit; resize: vertical; }
+.admin-cancellations { display: grid; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.admin-cancellations .row { display: flex; align-items: center; justify-content: space-between; }
+.admin-cancellations h3 { margin: 0; }
+.admin-cancellations strong.is-warn { color: var(--danger); }
+.admin-cancellations p { margin: 0; }

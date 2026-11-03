@@ -7,6 +7,7 @@ export type AdminTrip={id:string;origin:string;destination:string;zone:string|nu
 import {AdminCreateUser} from './admin-create-user';
 import {AdminWallet} from './wallet';
 import {AdminDriverEarnings} from './earnings';
+import {AdminCancellations} from './driver-availability';
 export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode}){
   const detail=useRef<HTMLDialogElement>(null);
  const [notice,setNotice]=useState(''),[memberTab,setMemberTab]=useState('info');
@@ -61,6 +62,7 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip}
         {person.role==='driver'?<button className="secondary" disabled={busy} onClick={()=>setOperation(person.approved?'suspend_driver':'approve_driver')}>{person.approved?'Suspender conductor':'Aprobar conductor'}</button>:<><button className="secondary" disabled={busy} onClick={()=>setOperation(person.suspended?'restore_account':'suspend_account')}>{person.suspended?'Reactivar cuenta':'Suspender cuenta'}</button><button className="secondary" disabled={busy||person.suspended} onClick={()=>setOperation('assign_driver')}>Asignar como conductor</button></>}
       </div>}
       {actionError&&<p role="alert">{actionError}</p>}
+      <AdminCancellations key={person.id} personId={person.id} driver={person.role==='driver'}/>
       </div>}
       {memberTab==='wallet'&&person.role==='passenger'&&<div className="member-info"><AdminWallet key={person.id} personId={person.id}/></div>}
       {memberTab==='payout'&&person.role==='driver'&&<AdminDriverEarnings key={person.id+'p'} driverId={person.id} view="payout"/>}
