@@ -9,12 +9,12 @@ def site = "de1na.app"
 
 android {
     namespace "com.de1na.app"
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.de1na.app"
         minSdk 24
-        targetSdk 35
+        targetSdk 36
         versionCode appVersion
         versionName "1." + appVersion
 

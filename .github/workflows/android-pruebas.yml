@@ -46,7 +46,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         if: steps.keys.outputs.ready == 'true'
         with:
-          gradle-version: "8.10.2"
+          gradle-version: "8.13"
 
       - name: Compilar y firmar el APK
         if: steps.keys.outputs.ready == 'true'
