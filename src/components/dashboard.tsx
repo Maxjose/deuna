@@ -37,7 +37,7 @@ import { Toast, useNotice } from "./toast";
 import { closeOnBackdrop } from "@/lib/dialog";
 import { parseStoredPlace } from "@/lib/journey";
 import { CommissionSettings, FareSettings } from "./fare-settings";
-import { DriverAvailability, AvailabilitySettings } from "./driver-availability";
+import { DriverAvailability, AvailabilitySettings, CancelLimitSettings } from "./driver-availability";
 import { usd, type FareSettings as FareConfig } from "@/lib/fare";
 import { useRouter } from "next/navigation";
 import { writeAppHash } from "@/lib/app-navigation";
@@ -271,7 +271,7 @@ export function Dashboard({
         await load();
         throw new Error(messages[failure.message || ''] || (failure.code === '23505' ? 'Ya tienes una solicitud activa o esta cotización ya fue utilizada. Revisa tus viajes.' : 'No se pudo solicitar el viaje. Comprueba tu conexión y vuelve a intentar.'));
       }
-      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':
+      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':(error as {message?:string}).message==='Límite de cancelaciones'?'Alcanzaste el límite de cancelaciones. Intenta más tarde.':
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
       await load();
@@ -720,7 +720,7 @@ export function Dashboard({
             {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><PaymentMethodsSettings settings={settings} onSaved={text=>{setMessage(text);void load();}} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
             {settingsSection==="commission"&&<CommissionSettings settings={settings} busy={busy || offline} />}
-            {settingsSection==="drivers"&&<AvailabilitySettings />}
+            {settingsSection==="drivers"&&<div className="settings-grid"><AvailabilitySettings /><CancelLimitSettings limit={(settings as {driver_cancel_limit?:number}).driver_cancel_limit??2} hours={(settings as {driver_cancel_hours?:number}).driver_cancel_hours??4} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="hours"&&<form
               className="trip-card"
               onSubmit={(e) => {

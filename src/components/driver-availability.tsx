@@ -62,3 +62,24 @@ export function AvailabilitySettings(){
   <Toast message={message}/>
  </form>;
 }
+
+/** Límite de cancelaciones del conductor: tras N cancelaciones en X horas no puede volver a cancelar hasta que pase el plazo. */
+export function CancelLimitSettings({ limit, hours, onSaved }: { limit: number; hours: number; onSaved: (text: string) => void }) {
+ const [busy, setBusy] = useState(false), [err, setErr] = useState('');
+ return <form className="trip-card" onSubmit={async e => {
+  e.preventDefault(); const f = new FormData(e.currentTarget);
+  setBusy(true); setErr('');
+  const { error } = await browserClient().rpc('admin_cancel_limit', { cancel_limit: Number(f.get('limit')), cancel_hours: Number(f.get('hours')) });
+  setBusy(false);
+  if (error) setErr('No se pudo guardar. Revisa los valores.'); else onSaved('Límite de cancelaciones guardado.');
+ }}>
+  <h2>Límite de cancelaciones</h2>
+  <p className="muted">Evita que un conductor cancele viajes para hacerlos por fuera de la app. Al llegar al límite, no podrá solicitar otra cancelación hasta que pase el plazo.</p>
+  <div className="two">
+   <label>Cancelaciones permitidas<input name="limit" type="number" min="1" max="20" step="1" required defaultValue={limit} disabled={busy} /></label>
+   <label>En un plazo de (horas)<input name="hours" type="number" min="1" max="72" step="1" required defaultValue={hours} disabled={busy} /></label>
+  </div>
+  {err && <p className="payment-error" role="alert">{err}</p>}
+  <button className="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar límite'}</button>
+ </form>;
+}

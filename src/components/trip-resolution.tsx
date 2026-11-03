@@ -7,7 +7,9 @@ import {participantKey,readParticipant,subscribeParticipant} from '@/lib/partici
 import {loadReputation,loadTripContact,type Reputation,type TripContact} from '@/lib/participant-data';
 export function TripCancellation({pending,passenger,busy,onAction}:{pending:boolean;passenger:boolean;busy:boolean;onAction:(action:string,approved?:boolean)=>Promise<boolean>}){
  const sheet=useRef<HTMLDialogElement>(null);
- const open=()=>{sheet.current?.showModal();sheet.current?.focus({preventScroll:true});},close=()=>sheet.current?.close();
+ const [limit,setLimit]=useState<{limit:number;hours:number;used:number;blocked_until:string|null}|null>(null);
+ const open=()=>{sheet.current?.showModal();sheet.current?.focus({preventScroll:true});if(!passenger)void browserClient().rpc('my_cancel_state').then(({data})=>{if(data)setLimit(data);});},close=()=>sheet.current?.close();
+ const blocked=!passenger&&!!limit?.blocked_until&&new Date(limit.blocked_until).getTime()>Date.now();
  const run=async(action:string,approved?:boolean)=>{if(await onAction(action,approved))close();};
  if(!pending&&passenger)return null;
  return <div className="trip-cancellation">
@@ -23,8 +25,11 @@ export function TripCancellation({pending,passenger,busy,onAction}:{pending:bool
    </>:<>
     <h2 id="trip-cancel-title">¿Cancelar este viaje?</h2>
     <p className="muted">Se pedirá autorización al pasajero. El viaje seguirá activo mientras responde.</p>
+    {limit&&(blocked
+      ?<p className="cancel-limit is-blocked" role="status">Alcanzaste el límite de {limit.limit} cancelaciones en {limit.hours} horas. Podrás volver a cancelar a las {new Date(limit.blocked_until!).toLocaleTimeString('es-VE',{hour:'numeric',minute:'2-digit'})}.</p>
+      :<p className="cancel-limit" role="status">Te {limit.limit-limit.used===1?'queda 1 cancelación':`quedan ${limit.limit-limit.used} cancelaciones`} en las próximas {limit.hours} horas. Si llegas al límite, no podrás cancelar por un tiempo.</p>)}
     <button className="primary" disabled={busy} onClick={close}>Seguir con el viaje</button>
-    <button className="secondary danger" disabled={busy} onClick={()=>void run('request_cancel')}>{busy?'Enviando…':'Sí, solicitar cancelación'}</button>
+    <button className="secondary danger" disabled={busy||blocked} onClick={()=>void run('request_cancel')}>{busy?'Enviando…':'Sí, solicitar cancelación'}</button>
    </>}
   </dialog>
  </div>;
