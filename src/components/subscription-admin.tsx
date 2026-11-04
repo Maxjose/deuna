@@ -87,7 +87,7 @@ export function PlanPayments({ refresh }: { refresh?: unknown }) {
   }
   return <article className="trip-card plan-payments">
     <h2>Planes de conductores</h2>
-    <div className="stats-grid plan-stats">
+    <div className="plan-stats">
       <article><strong>{usd(overview.collected_30d_cents)}</strong><span>Recaudado · 30 días ({overview.payments_30d})</span></article>
       <article><strong>{(counts.active || 0) + (counts.expiring || 0)}</strong><span>Planes activos</span></article>
       <article><strong>{(counts.grace || 0) + (counts.expired || 0) + (counts.none || 0)}</strong><span>Sin plan vigente</span></article>

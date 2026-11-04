@@ -2872,7 +2872,13 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .trip-vehicle svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .trip-vehicle b { margin-left: auto; padding: 2px 8px; border-radius: 6px; border: 1.5px solid currentColor; font-family: ui-monospace, monospace; letter-spacing: 1px; }
 .settings-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.plan-stats { margin: 6px 0 4px; }
+.plan-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 6px 0 4px; }
+.plan-stats article { display: grid; gap: 4px; align-content: start; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 16px; }
+.plan-stats article:first-child { background: var(--lime, #b9f46a); border-color: transparent; color: #122033; }
+.plan-stats strong { font-size: 20px; line-height: 1.1; font-weight: 800; white-space: nowrap; overflow-wrap: normal; }
+.plan-stats span { font-size: 12px; line-height: 1.3; color: var(--muted); }
+.plan-stats article:first-child span { color: #2c3a1c; }
+@media (max-width: 520px) { .plan-stats { grid-template-columns: 1fr 1fr; } .plan-stats article:first-child { grid-column: 1 / -1; } }
 .plan-pending { flex-wrap: wrap; }
 .plan-review-actions { display: flex !important; gap: 8px; }
 .plan-review-actions button { min-height: 38px; padding: 0 14px; }
