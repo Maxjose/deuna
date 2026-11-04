@@ -222,6 +222,13 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface public int appVersion() { return BuildConfig.APP_VERSION; }
 
+        /** Identificador del teléfono para esta app (limita la prueba gratis a una por dispositivo). */
+        @JavascriptInterface public String deviceId() {
+            if (!trusted()) return "";
+            String id = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            return id == null ? "" : "android:" + id;
+        }
+
         /** Consulta en Google Play si hay una versión nueva: responde el versionCode disponible o "none". */
         @JavascriptInterface public void checkPlayUpdate(String id) {
             if (!trusted()) { resolve(id, "none"); return; }

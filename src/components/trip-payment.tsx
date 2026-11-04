@@ -1,12 +1,14 @@
 "use client";
 import { readClipboardText } from "@/lib/native";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { usd } from "@/lib/fare";
-import { bs, bsAmount, cleanPhone, cleanReference, formatIdNumber, formatPhone, parseBs, paymentStatusLabel, rateValue, VE_BANKS, type PaymentSettings } from "@/lib/payments";
+import { bankName, bs, bsAmount, cleanPhone, cleanReference, formatIdNumber, formatPhone, parseBs, paymentStatusLabel, rateValue, VE_BANKS, type PaymentSettings } from "@/lib/payments";
 import { AppIcon } from "./app-icon";
 import {loadPaymentPreferences} from '@/lib/payment-preferences';
 import { BinancePayment } from "./binance-payment";
+import { participantKey, readParticipant, subscribeParticipant } from "@/lib/participant-cache";
+import { loadTripContact, type TripContact } from "@/lib/participant-data";
 
 export type PaymentTrip = {
   id: string;
@@ -18,6 +20,7 @@ export type PaymentTrip = {
   payment_status?: string | null;
   payment_note?: string | null;
   binance_tx?: string | null;
+  billing_mode?: string | null;
 };
 
 function Amount({ trip }: { trip: PaymentTrip }) {
@@ -47,7 +50,29 @@ export function CopyRow({ label, value, display }: { label: string; value: strin
 
 
 /** Pasajero: datos del pago móvil y envío de la referencia (con banco y teléfono de origen), o recordatorio de efectivo. */
-export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTrip; settings: PaymentSettings | null; offline: boolean }) {
+/** Modo suscripción: el pasajero transfiere directo a las cuentas del conductor. Sin referencia ni verificación. */
+function DirectPagoMovil({ trip, viewerId }: { trip: PaymentTrip; viewerId: string }) {
+  const key = participantKey(viewerId, "trip", trip.id);
+  const person = useSyncExternalStore(useCallback(l => subscribeParticipant(key, l), [key]), useCallback(() => readParticipant<TripContact>(key), [key]), () => null);
+  useEffect(() => { void loadTripContact(browserClient(), viewerId, trip.id).catch(() => {}); }, [viewerId, trip.id]);
+  if (trip.status === "searching") return <div className="payment-panel"><AppIcon name="phone" /><p><strong>Pago móvil al conductor</strong><span>Cuando un conductor acepte, aquí verás sus datos para transferir.</span></p></div>;
+  if (!["assigned", "arrived", "ongoing"].includes(trip.status)) return null;
+  const expected = trip.fare_cents != null ? bsAmount(trip.fare_cents, trip.exchange_rate) : null, pay = person?.payout;
+  return (
+    <div className="payment-panel">
+      <div className="payment-heading"><AppIcon name="phone" /><p><strong>Pago móvil a tu conductor</strong><span>Transfiere directamente al conductor y muéstrale el comprobante.</span></p></div>
+      <Amount trip={trip} />
+      {pay ? <div className="payment-data">
+        <CopyRow label="Banco" value={pay.bank} display={`${bankName(pay.bank)} (${pay.bank})`} />
+        <CopyRow label="Teléfono" value={pay.phone} display={formatPhone(pay.phone)} />
+        <CopyRow label="Cédula" value={pay.id_number} display={formatIdNumber(pay.id_number)} />
+        {expected != null && <CopyRow label="Monto" value={expected.toFixed(2).replace(".", ",")} display={bs(expected)} />}
+      </div> : <p className="muted">Cargando los datos del conductor…</p>}
+    </div>
+  );
+}
+
+export function PassengerPayment({ trip, settings, offline, viewerId }: { trip: PaymentTrip; settings: PaymentSettings | null; offline: boolean; viewerId?: string }) {
   const client = useMemo(() => browserClient(), []);
   const expected = trip.fare_cents != null ? bsAmount(trip.fare_cents, trip.exchange_rate) : null;
   const [draft, setDraft] = useState(""), [bank, setBank] = useState(""), [phone, setPhone] = useState(""), [amount, setAmount] = useState("");
@@ -74,6 +99,7 @@ export function PassengerPayment({ trip, settings, offline }: { trip: PaymentTri
   useEffect(() => { if (expected != null) setAmount(expected.toFixed(2).replace(".", ",")); }, [expected]);
   useEffect(() => { setSent(null); }, [trip.payment_reference, trip.payment_status]);
   if (trip.payment_method === "binance") return <BinancePayment trip={trip} settings={settings} offline={offline} />;
+  if (trip.payment_method === "pago_movil" && trip.billing_mode === "subscription") return viewerId ? <DirectPagoMovil trip={trip} viewerId={viewerId} /> : null;
   if (trip.payment_method === "wallet") {
     if (trip.fare_cents == null || !["searching", "assigned", "arrived", "ongoing"].includes(trip.status)) return null;
     return (
@@ -208,6 +234,16 @@ export function TripPaymentNote({ trip, viewer }: { trip: PaymentTrip; viewer: "
       <p className="payment-note is-pago-movil">
         <AppIcon name="wallet" />
         <span><strong>Pagado con saldo{viewer === "driver" ? " · no cobres en efectivo" : ""}</strong><small>{usd(trip.fare_cents)} ya pagados por el pasajero</small></span>
+      </p>
+    );
+  }
+  if (trip.payment_method === "pago_movil" && trip.billing_mode === "subscription") {
+    const amount = bsAmount(trip.fare_cents, trip.exchange_rate);
+    return (
+      <p className="payment-note is-pago-movil">
+        <AppIcon name="phone" />
+        <span><strong>{viewer === "driver" ? "Pago móvil a tu cuenta" : "Pago móvil directo al conductor"}</strong>
+          <small>{viewer === "driver" ? `Confirma que recibiste ${amount != null ? bs(amount) : usd(trip.fare_cents)} antes de terminar` : "Sin verificación de De1na"}</small></span>
       </p>
     );
   }

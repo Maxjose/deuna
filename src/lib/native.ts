@@ -11,6 +11,7 @@ type Bridge = {
   keepScreenOn(on: boolean): void;
   appVersion(): number;
   haptic?(): void;
+  deviceId?(): string;
   checkPlayUpdate?(id: string): void;
   startPlayUpdate?(): void;
 };
@@ -58,3 +59,6 @@ export async function playUpdateVersion() {
 
 /** App nativa: abre la actualización de Google Play (o la ficha de la tienda). */
 export function startPlayUpdate() { nativeBridge()?.startPlayUpdate?.(); }
+
+/** Identificador del teléfono (solo en la app nativa). */
+export function nativeDeviceId() { try { return nativeBridge()?.deviceId?.() || null; } catch { return null; } }

@@ -10,7 +10,7 @@ import { CopyRow, type PaymentTrip } from "./trip-payment";
 export const usdt = (cents: number) => (cents / 100).toFixed(2);
 
 /** Envía un ID de transacción de Binance Pay para verificarlo en el servidor. */
-export async function verifyBinance(payload: { kind: "trip" | "topup"; trip_id?: string; transaction_id: string }) {
+export async function verifyBinance(payload: { kind: "trip" | "topup" | "subscription"; trip_id?: string; plan?: "week" | "month"; transaction_id: string }) {
   const response = await fetch("/api/binance/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error || "No pudimos verificar el pago.");

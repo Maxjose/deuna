@@ -10,6 +10,7 @@ export type PaymentSettings = {
   binance_pay_id?: string | null;
   binance_pay_link?: string | null;
   wallet_topup_enabled?: boolean;
+  billing_mode?: 'commission' | 'subscription';
 };
 
 export function rateValue(rate: number | string | null | undefined) {

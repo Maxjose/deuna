@@ -56,7 +56,7 @@ export function DriverEarnings({ refresh, onOpenPayout, noCommission = false }: 
   const load = useCallback(async () => { const { data, error } = await client.rpc("my_earnings"); if (error) setError(true); else { setE(data); setError(false); } }, [client]);
   useEffect(() => { void load(); }, [load, refresh]);
   const [hasPayout, setHasPayout] = useState(true);
-  useEffect(() => { void client.auth.getUser().then(({ data }) => setHasPayout(!!(data.user?.user_metadata?.payout as { bank?: string } | undefined)?.bank)); }, [client]);
+  useEffect(() => { void client.rpc("my_driver_data").then(({ data }) => setHasPayout(!!(data as { payout?: unknown } | null)?.payout)); }, [client]);
   if (error && !e) return <p className="payment-error" role="alert">No pudimos cargar tus ganancias. <button className="text" onClick={() => void load()}>Reintentar</button></p>;
   if (!e) return <EarningsSkeleton />;
   return <div className="account-stack earnings">

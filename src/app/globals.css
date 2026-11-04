@@ -2844,3 +2844,38 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .legal-links { text-align: center; font-size: 13px; margin: 12px 0 0; }
 .legal-links a { color: var(--muted); }
 .delete-account { display: grid; gap: 10px; }
+
+/* Suscripción: Mi plan, Mi moto y administración de planes */
+.plan-status { display: grid; gap: 6px; border-left: 4px solid #3f8f12; }
+.plan-status.is-warn { border-left-color: #e0a100; }
+.plan-status.is-bad { border-left-color: var(--danger); }
+.plan-title { font-size: 22px; line-height: 1.2; font-weight: 800; }
+.plan-status p { margin: 0; }
+.plan-buy { display: grid; gap: 12px; }
+.plan-buy h2 { margin: 0; }
+.plan-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.plan-options button { display: grid; gap: 2px; text-align: left; padding: 14px; border: 1.5px solid var(--line); border-radius: 16px; background: transparent; color: inherit; cursor: pointer; transition: border-color .18s ease, background-color .18s ease; }
+.plan-options button.is-active { border-color: var(--lime-text); background: color-mix(in srgb, var(--lime-text) 8%, transparent); }
+.plan-options strong { font-size: 14px; }
+.plan-options span { font-size: 24px; font-weight: 800; }
+.plan-options small { color: var(--muted); font-size: 12px; }
+.plan-pay { display: grid; gap: 12px; }
+.plan-whatsapp { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: #25d366; border-color: #25d366; color: #0b2e17; }
+.plan-alert.is-bad { border-color: #f1b4ae; background: #fff1ef; }
+.plan-alert.is-bad .payout-alert-icon { background: #f8d4cf; color: var(--danger); }
+.plan-alert.is-bad small { color: #7a3a33; }
+.plan-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.plan-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #e7f5dc; color: #2f6d0c; }
+.plan-badge.is-warn { background: #fff3d6; color: #7a5300; }
+.plan-badge.is-bad { background: #fde4e1; color: #a1281d; }
+.trip-vehicle { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font-size: 13px; }
+.trip-vehicle svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.trip-vehicle b { margin-left: auto; padding: 2px 8px; border-radius: 6px; border: 1.5px solid currentColor; font-family: ui-monospace, monospace; letter-spacing: 1px; }
+.settings-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.plan-stats { margin: 6px 0 4px; }
+.plan-pending { flex-wrap: wrap; }
+.plan-review-actions { display: flex !important; gap: 8px; }
+.plan-review-actions button { min-height: 38px; padding: 0 14px; }
+.admin-driver-plan { display: grid; gap: 10px; }
+.admin-driver-plan h3 { margin: 8px 0 0; }
+@media (max-width: 420px) { .settings-pair { grid-template-columns: 1fr; } }

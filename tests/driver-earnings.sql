@@ -6,6 +6,7 @@ begin
   insert into auth.users(id,raw_user_meta_data) values(a,'{}'),(p,'{}'),(d,'{"payout":{"bank":"0102","id_number":"12345678","phone":"04121234567"}}');
   update public.profiles set role='admin' where id=a;
   update public.profiles set role='driver',approved=true where id=d;
+  insert into private.driver_payout(driver_id,bank,id_number,phone) values(d,'0102','12345678','04121234567');
   insert into public.trips(id,passenger_id,driver_id,origin,destination,status,fare_cents,payment_method,exchange_rate,payment_reference,payment_status)
    values(t1,p,d,'A','B','ongoing',400,'pago_movil',100,'123456','verified');
   update public.trips set status='finished' where id=t1;
