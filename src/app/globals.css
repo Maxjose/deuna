@@ -2885,3 +2885,13 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .admin-driver-plan { display: grid; gap: 10px; }
 .admin-driver-plan h3 { margin: 8px 0 0; }
 @media (max-width: 420px) { .settings-pair { grid-template-columns: 1fr; } }
+
+/* Escritorio (admin): aprovechar todo el ancho de la ventana */
+@media (min-width: 761px) {
+  .admin-shell .service-panel { max-width: none; }
+  .admin-shell .service-panel > .trip-card { max-width: none; }
+  .admin-shell .settings-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap: 22px; }
+  .admin-shell .service-panel > form.trip-card, .admin-shell .service-panel > .trip-card:only-child { max-width: 760px; }
+  .admin-shell .cards.history-list { max-width: none; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); }
+  .admin-shell .history-pagination { max-width: none; }
+}
