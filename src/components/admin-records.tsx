@@ -9,6 +9,7 @@ import {AdminWallet} from './wallet';
 import {AdminDriverEarnings} from './earnings';
 import {AdminDriverPlan,AdminDriverVehicle,PLAN_BADGE,usePlanOverview} from './subscription-admin';
 import {AdminCancellations} from './driver-availability';
+import {AdminDriverVip} from './admin-driver-vip';
 export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,subscription=false}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode;subscription?:boolean}){
   const detail=useRef<HTMLDialogElement>(null);
  const [notice,setNotice]=useState(''),[memberTab,setMemberTab]=useState('info');
@@ -60,6 +61,7 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,
       <DriverReputation viewerId={viewerId} personId={person.id}/>
       <p>{person.role==='driver'?'Conductor · Moto':'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
       {person.role==='driver'&&<p className="muted">{person.available?'Disponible para viajes':'Desconectado'}</p>}
+      {person.role==='driver'&&<AdminDriverVip key={person.id+'vip'} driverId={person.id}/>}
       {person.role==='driver'&&<AdminDriverVehicle key={person.id+'v'} driverId={person.id}/>}
       {operation?<div className="member-confirm"><p>¿Confirmar: {operationLabel(operation)}?</p><p className="muted">La cuenta no debe tener viajes activos.</p><button className="primary" disabled={saving||busy} onClick={()=>void manage()}>{saving?'Guardando…':'Confirmar cambio'}</button><button className="secondary" disabled={saving} onClick={()=>setOperation('')}>Cancelar</button></div>:<div className="member-actions">
         {person.role==='driver'?<button className="secondary" disabled={busy} onClick={()=>setOperation(person.approved?'suspend_driver':'approve_driver')}>{person.approved?'Suspender conductor':'Aprobar conductor'}</button>:<><button className="secondary" disabled={busy} onClick={()=>setOperation(person.suspended?'restore_account':'suspend_account')}>{person.suspended?'Reactivar cuenta':'Suspender cuenta'}</button><button className="secondary" disabled={busy||person.suspended} onClick={()=>setOperation('assign_driver')}>Asignar como conductor</button></>}
