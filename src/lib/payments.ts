@@ -1,4 +1,4 @@
-export type PaymentMethod = 'cash' | 'pago_movil' | 'wallet' | 'binance';
+export type PaymentMethod = 'cash' | 'pago_movil' | 'wallet' | 'binance' | 'test';
 export type PaymentSettings = {
   pago_movil_bank: string | null;
   pago_movil_phone: string | null;
@@ -11,6 +11,7 @@ export type PaymentSettings = {
   binance_pay_link?: string | null;
   wallet_topup_enabled?: boolean;
   billing_mode?: 'commission' | 'subscription';
+  test_trips_enabled?: boolean;
 };
 
 export function rateValue(rate: number | string | null | undefined) {

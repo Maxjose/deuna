@@ -28,7 +28,7 @@ import { DeleteAccount } from "./delete-account";
 import { CancelReasons } from "./cancel-reasons";
 import { AppPreferences } from "./app-preferences";
 import { isNativeApp, nativePushEndpoint } from "@/lib/native";
-import { PaymentMethodsSettings, SettleWithWallet, WalletSettings, WalletView, useWallet } from "./wallet";
+import { PaymentMethodsSettings, SettleWithWallet, TestTripsSettings, WalletSettings, WalletView, useWallet } from "./wallet";
 import { RideWaiting } from "./ride-waiting";
 import { RideRequest } from "./ride-request";
 import { PushPreferences } from "./push-preferences";
@@ -470,6 +470,7 @@ export function Dashboard({
         )}
         <div className="row">
           <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>
+          {t.payment_method === "test" && <span className="pill test-pill">Prueba</span>}
           <small>#{t.id.slice(0, 6)}</small>
         </div>
         {compact ? (
@@ -733,7 +734,7 @@ export function Dashboard({
               ))}
             </div>
             <div className="service-panel" role="tabpanel" key={settingsSection}>
-            {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><PaymentMethodsSettings settings={settings} onSaved={text=>{setMessage(text);void load();}} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /></div>}
+            {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><PaymentMethodsSettings settings={settings} onSaved={text=>{setMessage(text);void load();}} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /><TestTripsSettings enabled={settings.test_trips_enabled===true} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
             {settingsSection==="commission"&&<div className="settings-grid"><SubscriptionSettings key={String(settings.billing_mode)} settings={settings} busy={busy || offline} onSaved={text=>{setMessage(text);void load();}} />{subscription?<PlanPayments refresh={trips} />:<CommissionSettings settings={settings} busy={busy || offline} />}</div>}
             {settingsSection==="drivers"&&<div className="settings-grid"><AvailabilitySettings /><CancelLimitSettings settings={settings as {driver_cancel_limit?:number;driver_cancel_hours?:number;passenger_cancel_limit?:number;passenger_cancel_hours?:number}} onSaved={text=>{setMessage(text);void load();}} /></div>}

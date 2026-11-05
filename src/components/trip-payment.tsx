@@ -98,6 +98,10 @@ export function PassengerPayment({ trip, settings, offline, viewerId }: { trip: 
   }, [client,trip.payment_method]);
   useEffect(() => { if (expected != null) setAmount(expected.toFixed(2).replace(".", ",")); }, [expected]);
   useEffect(() => { setSent(null); }, [trip.payment_reference, trip.payment_status]);
+  if (trip.payment_method === "test") {
+    if (!["searching", "assigned", "arrived", "ongoing"].includes(trip.status)) return null;
+    return <div className="payment-panel is-cash"><AppIcon name="check" /><p><strong>Viaje de prueba</strong><span>No se cobra. Queda registrado como prueba.</span></p></div>;
+  }
   if (trip.payment_method === "binance") return <BinancePayment trip={trip} settings={settings} offline={offline} />;
   if (trip.payment_method === "pago_movil" && trip.billing_mode === "subscription") return viewerId ? <DirectPagoMovil trip={trip} viewerId={viewerId} /> : null;
   if (trip.payment_method === "wallet") {
@@ -220,6 +224,14 @@ export function PassengerPayment({ trip, settings, offline, viewerId }: { trip: 
 /** Conductor y administración: cómo se cobra este viaje. */
 export function TripPaymentNote({ trip, viewer }: { trip: PaymentTrip; viewer: "driver" | "admin" }) {
   if (trip.fare_cents == null) return null;
+  if (trip.payment_method === "test") {
+    return (
+      <p className="payment-note is-test">
+        <AppIcon name="check" />
+        <span><strong>Viaje de prueba{viewer === "driver" ? " · no cobres" : ""}</strong><small>Sin cobro ni ingresos</small></span>
+      </p>
+    );
+  }
   if (trip.payment_method === "binance") {
     return (
       <p className="payment-note is-pago-movil">

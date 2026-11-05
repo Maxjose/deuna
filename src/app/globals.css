@@ -2895,3 +2895,5 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .admin-shell .cards.history-list { max-width: none; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); }
   .admin-shell .history-pagination { max-width: none; }
 }
+.pill.test-pill { background: #e8eefc; color: #2b4aa0; }
+.payment-note.is-test strong { color: #2b4aa0; }

@@ -178,6 +178,25 @@ export function WalletSettings({ enabled, onSaved }: { enabled: boolean; onSaved
   </form>;
 }
 
+/** Administración: viajes de prueba (sin cobro) para tests de la app. */
+export function TestTripsSettings({ enabled, onSaved }: { enabled: boolean; onSaved: (text: string) => void }) {
+  const client = useMemo(() => browserClient(), []);
+  const [on, setOn] = useState(enabled), [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  return <form className="trip-card" onSubmit={async e => {
+    e.preventDefault(); setBusy(true); setErr("");
+    const { error } = await client.rpc("admin_test_trips", { enabled: on });
+    setBusy(false);
+    if (error) { setErr("No se pudo guardar."); return; }
+    onSaved(on ? "Viajes de prueba activados." : "Viajes de prueba desactivados.");
+  }}>
+    <h2>Viajes de prueba</h2>
+    <p className="muted">Método de pago para probar la app: el viaje funciona normal, pero no se cobra, no genera ganancias ni comisión y queda registrado como viaje de prueba.</p>
+    <label className="payment-switch"><input type="checkbox" role="switch" checked={on} onChange={e => setOn(e.target.checked)} /><span><strong>{on ? "Viaje de prueba activado" : "Viaje de prueba desactivado"}</strong><small>{on ? "Todos los pasajeros ven «Viaje de prueba» al elegir el pago." : "La opción no se muestra al solicitar."}</small></span></label>
+    {err && <p className="payment-error" role="alert">{err}</p>}
+    <button className="primary" disabled={busy}>{busy ? "Guardando…" : "Guardar"}</button>
+  </form>;
+}
+
 /** Administración: activar o desactivar pago móvil y Binance Pay (Pay ID de la cuenta receptora). */
 export function PaymentMethodsSettings({ settings, onSaved }: { settings: PaymentSettings; onSaved: (text: string) => void }) {
   const client = useMemo(() => browserClient(), []);

@@ -42,8 +42,9 @@ export function RideRequest({
   // Modo suscripción: el pasajero paga directo al conductor (efectivo o pago móvil a sus cuentas). Sin saldo ni Binance.
   const direct = payment?.billing_mode === "subscription";
   const rate = rateValue(payment?.exchange_rate);
+  const testTrips = payment?.test_trips_enabled === true;
   const pagoMovil = direct ? payment?.pago_movil_enabled !== false && rate != null : pagoMovilReady(payment), binance = !direct && binanceReady(payment);
-  useEffect(() => { if ((method === "pago_movil" && !pagoMovil) || (method === "binance" && !binance) || (method === "wallet" && direct)) setMethod("cash"); }, [pagoMovil, binance, method, direct]);
+  useEffect(() => { if ((method === "pago_movil" && !pagoMovil) || (method === "binance" && !binance) || (method === "wallet" && direct) || (method === "test" && !testTrips)) setMethod("cash"); }, [pagoMovil, binance, method, direct, testTrips]);
   const [step, setStep] = useState<Step>("home"),
     [active, setActive] = useState<"origin" | "destination">("destination"),
     [origin, setOrigin] = useState<Place>({ label: "", point: null }),
@@ -496,6 +497,11 @@ export function RideRequest({
                         <span><strong>Binance Pay</strong><small>Pago en USDT</small></span>
                         <span className="selection-dot" />
                       </button>}
+                      {testTrips && <button type="button" role="radio" aria-checked={method === "test"} className={"moto-option payment-option " + (method === "test" ? "is-selected" : "")} onClick={() => setMethod("test")}>
+                        <span className="service-icon"><AppIcon name="check" /></span>
+                        <span><strong>Viaje de prueba</strong><small>Solo para tests · sin cobro</small></span>
+                        <span className="selection-dot" />
+                      </button>}
                     </div>
                     <button className="primary" onClick={() => setStep("confirm")}>
                       Continuar
@@ -521,11 +527,11 @@ export function RideRequest({
                       </div>
                     </div>
                     <div className="confirmation-payment">
-                      <AppIcon name={method === "cash" ? "cash" : method === "wallet" || method === "binance" ? "wallet" : "phone"} />
+                      <AppIcon name={method === "test" ? "check" : method === "cash" ? "cash" : method === "wallet" || method === "binance" ? "wallet" : "phone"} />
                       <p>
                         <small>PAGO</small>
-                        <strong>{method === "cash" ? "Efectivo al conductor" : method === "wallet" ? "Saldo De1na" : method === "binance" ? "Binance Pay (USDT)" : "Pago móvil"}</strong>
-                        <span>{method === "cash" ? "Ten el monto listo al llegar." : method === "wallet" ? "Se descuenta de tu saldo al solicitar. Si se cancela, vuelve a tu saldo." : method === "binance" ? "Te mostraremos el Pay ID y el monto cuando un conductor acepte." : direct ? "Le transfieres al conductor. Verás sus datos cuando acepte." : "Te mostraremos los datos para transferir cuando un conductor acepte."}</span>
+                        <strong>{method === "test" ? "Viaje de prueba" : method === "cash" ? "Efectivo al conductor" : method === "wallet" ? "Saldo De1na" : method === "binance" ? "Binance Pay (USDT)" : "Pago móvil"}</strong>
+                        <span>{method === "test" ? "No se cobra ni genera ingresos. Queda registrado como prueba." : method === "cash" ? "Ten el monto listo al llegar." : method === "wallet" ? "Se descuenta de tu saldo al solicitar. Si se cancela, vuelve a tu saldo." : method === "binance" ? "Te mostraremos el Pay ID y el monto cuando un conductor acepte." : direct ? "Le transfieres al conductor. Verás sus datos cuando acepte." : "Te mostraremos los datos para transferir cuando un conductor acepte."}</span>
                       </p>
                       <button type="button" className="text" onClick={() => setStep("payment")}>Cambiar</button>
                     </div>
@@ -537,7 +543,7 @@ export function RideRequest({
                       onClick={async () => {
                         try {
                           if (!quote || expired) return;
-                          await onRequest({ quote: quote.quote, signature: quote.signature, payment_method: method === "wallet" && !direct ? "wallet" : method === "binance" && binance ? "binance" : method === "pago_movil" && pagoMovil ? "pago_movil" : "cash" });
+                          await onRequest({ quote: quote.quote, signature: quote.signature, payment_method: method === "test" && testTrips ? "test" : method === "wallet" && !direct ? "wallet" : method === "binance" && binance ? "binance" : method === "pago_movil" && pagoMovil ? "pago_movil" : "cash" });
                         } catch (error) {
                           setMessage(
                             error instanceof Error ? error.message : "No se pudo solicitar el viaje. Inténtalo otra vez.",
