@@ -47,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean ready = false, failed = false;
     private GeolocationPermissions.Callback geoCallback;
     private String geoOrigin, pendingPushId;
-    private String pendingLiveTrip;
     private ValueCallback<Uri[]> fileCallback;
     private final Handler main = new Handler(Looper.getMainLooper());
 
@@ -178,10 +177,6 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
         if (requestCode == LOCATION_REQUEST && geoCallback != null) { geoCallback.invoke(geoOrigin, hasLocation(), false); geoCallback = null; }
-        if (requestCode == 55 && pendingLiveTrip != null) {
-            String trip = pendingLiveTrip; pendingLiveTrip = null;
-            if (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) beginLiveTrip(trip);
-        }
         if (requestCode == NOTIFICATION_REQUEST && pendingPushId != null) { String id = pendingPushId; pendingPushId = null; fetchPushToken(id); }
     }
 
@@ -197,14 +192,6 @@ public class MainActivity extends AppCompatActivity {
     private void resolve(String id, String value) {
         String js = "window.__de1naNative&&window.__de1naNative.resolve(" + JSONObject.quote(id) + "," + (value == null ? "null" : JSONObject.quote(value)) + ")";
         main.post(() -> web.evaluateJavascript(js, null));
-    }
-
-    private void beginLiveTrip(String trip) {
-        TripLiveService.lastTripId=trip;TripLiveService.lastResult="starting";
-        Uri current=Uri.parse(web.getUrl());
-        String origin=current.getScheme()+"://"+current.getAuthority();
-        try { ContextCompat.startForegroundService(this, new Intent(this, TripLiveService.class).putExtra("trip", trip).putExtra("origin",origin)); }
-        catch (RuntimeException error) { TripLiveService.lastResult="start_failed";android.widget.Toast.makeText(this,"Abre el viaje y vuelve a activar su notificación.",android.widget.Toast.LENGTH_LONG).show(); }
     }
 
     private static final int PLAY_UPDATE_REQUEST = 54;
@@ -224,38 +211,6 @@ public class MainActivity extends AppCompatActivity {
 
     /** Puente expuesto a la web. Solo responde si la página es del propio sitio. */
     private class Bridge {
-        @JavascriptInterface public String liveTripStatus(String trip) {
-            if(!trusted())return "inactive";
-            android.app.NotificationManager manager=getSystemService(android.app.NotificationManager.class);
-            if(!manager.areNotificationsEnabled())return "blocked";
-            if(Build.VERSION.SDK_INT>=26){
-                android.app.NotificationChannel channel=manager.getNotificationChannel("live-trip");
-                if(channel!=null&&channel.getImportance()==android.app.NotificationManager.IMPORTANCE_NONE)return "blocked";
-            }
-            if(trip!=null&&trip.equals(TripLiveService.lastTripId)&&!"active".equals(TripLiveService.lastResult))return TripLiveService.lastResult;
-            return trip!=null&&trip.equals(TripLiveService.activeTripId)?"active":"inactive";
-        }
-        @JavascriptInterface public void openNotificationSettings() {
-            if(!trusted())return;
-            main.post(()->{
-                Intent settings=Build.VERSION.SDK_INT>=26
-                    ?new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE,getPackageName())
-                    :new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()));
-                startActivity(settings);
-            });
-        }
-        @JavascriptInterface public void startLiveTrip(String trip) {
-            if (!trusted() || trip == null || !trip.matches("[0-9a-fA-F-]{36}")) return;
-            main.post(() -> {
-                if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    pendingLiveTrip = trip;
-                    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 55);
-                } else beginLiveTrip(trip);
-            });
-        }
-        @JavascriptInterface public void stopLiveTrip() {
-            if (trusted()) main.post(() -> stopService(new Intent(MainActivity.this, TripLiveService.class)));
-        }
         private boolean trusted() {
             final String[] url = new String[1];
             // getUrl() debe leerse en el hilo principal; los métodos del puente corren en otro hilo.
@@ -304,12 +259,6 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface public void startTracking(String token, String url, String key) {
             if (!trusted() || !LocationService.validParams(token, url, key)) return;
             Uri data = Uri.parse("de1na-tracking://start").buildUpon().appendQueryParameter("token", token).appendQueryParameter("url", url).appendQueryParameter("key", key).build();
-            main.post(() -> startActivity(new Intent(MainActivity.this, TrackingActivity.class).setData(data)));
-        }
-
-        @JavascriptInterface public void startDriverTracking(String token, String url, String key, String trip) {
-            if (!trusted() || !LocationService.validParams(token,url,key) || trip == null || !trip.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")) return;
-            Uri data = Uri.parse("de1na-tracking://start").buildUpon().appendQueryParameter("token",token).appendQueryParameter("url",url).appendQueryParameter("key",key).appendQueryParameter("trip",trip).build();
             main.post(() -> startActivity(new Intent(MainActivity.this, TrackingActivity.class).setData(data)));
         }
 

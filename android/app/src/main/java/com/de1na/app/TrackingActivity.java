@@ -77,7 +77,6 @@ public class TrackingActivity extends Activity {
     private void start(Uri data) {
         Intent service = new Intent(this, LocationService.class)
             .setAction(LocationService.ACTION_START)
-            .putExtra("trip", data.getQueryParameter("trip"))
             .putExtra(LocationService.EXTRA_TOKEN, data.getQueryParameter("token"))
             .putExtra(LocationService.EXTRA_URL, data.getQueryParameter("url"))
             .putExtra(LocationService.EXTRA_KEY, data.getQueryParameter("key"));

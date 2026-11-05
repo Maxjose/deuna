@@ -7,7 +7,7 @@ on:
         description: "Novedades que verán los usuarios en el aviso de actualización"
         required: false
   push:
-    branches: [main, codex/android-live-updates, codex/wait-for-fare, codex/trip-notification-fix]
+    branches: [main, codex/remove-live-updates]
     paths:
       - "android/**"
       - ".github/workflows/android-pruebas.yml"
@@ -68,6 +68,9 @@ jobs:
         run: |
           APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
           "$APKSIGNER" verify --print-certs "$RUNNER_TEMP/de1na.apk"
+          "${APKSIGNER%apksigner}aapt" dump permissions "$RUNNER_TEMP/de1na.apk" > "$RUNNER_TEMP/permissions.txt"
+          if grep -E 'POST_PROMOTED_NOTIFICATIONS|FOREGROUND_SERVICE_DATA_SYNC' "$RUNNER_TEMP/permissions.txt"; then echo "::error::El APK conserva permisos retirados"; exit 1; fi
+          grep -q 'FOREGROUND_SERVICE_LOCATION' "$RUNNER_TEMP/permissions.txt"
           test -s "$RUNNER_TEMP/de1na.aab"
           unzip -l "$RUNNER_TEMP/de1na.aab" | grep -E 'META-INF/.*\.(RSA|DSA|EC)'
           jarsigner -verify "$RUNNER_TEMP/de1na.aab"

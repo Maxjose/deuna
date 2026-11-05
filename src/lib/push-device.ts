@@ -2,7 +2,6 @@
 import { browserClient } from './supabase/client';
 import { isNativeApp, nativePushEndpoint, nativeBridge } from './native';
 export async function disconnectPushDevice() {
-  nativeBridge()?.stopLiveTrip?.();
   nativeBridge()?.stopTracking();
   if (isNativeApp()) {
     const endpoint = await nativePushEndpoint();

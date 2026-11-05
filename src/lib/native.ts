@@ -4,12 +4,7 @@
  * llamando a `window.__de1naNative.resolve(id, value)`.
  */
 type Bridge = {
-  startLiveTrip?(tripId: string): void;
-  liveTripStatus?(tripId:string):string;
-  openNotificationSettings?():void;
-  stopLiveTrip?(): void;
   startTracking(token: string, url: string, key: string): void;
-  startDriverTracking?(token:string,url:string,key:string,tripId:string):void;
   stopTracking(): void;
   requestPushToken(id: string): void;
   readClipboard(id: string): void;
