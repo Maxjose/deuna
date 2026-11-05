@@ -29,3 +29,10 @@ test('espera a volver al primer plano y reintenta después de desbloquear notifi
 test('APK antiguo muestra que necesita actualización',()=>{
  const f=fixture(true,false);assert.equal(f.states.at(-1),'upgrade');assert.equal(f.starts.length,0);
 });
+test('muestra estados de arranque y error sin reiniciar silenciosamente el servicio',()=>{
+ const f=fixture();
+ for(const status of ['starting','session_required','trip_unavailable','offline','start_failed']){
+  f.status(status);f.check();assert.equal(f.states.at(-1),status);
+ }
+ assert.equal(f.starts.length,1);f.cleanup();
+});

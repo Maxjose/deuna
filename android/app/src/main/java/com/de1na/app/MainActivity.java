@@ -200,8 +200,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void beginLiveTrip(String trip) {
-        try { ContextCompat.startForegroundService(this, new Intent(this, TripLiveService.class).putExtra("trip", trip)); }
-        catch (RuntimeException error) { android.widget.Toast.makeText(this,"Abre el viaje y vuelve a activar su notificación.",android.widget.Toast.LENGTH_LONG).show(); }
+        TripLiveService.lastTripId=trip;TripLiveService.lastResult="starting";
+        Uri current=Uri.parse(web.getUrl());
+        String origin=current.getScheme()+"://"+current.getAuthority();
+        try { ContextCompat.startForegroundService(this, new Intent(this, TripLiveService.class).putExtra("trip", trip).putExtra("origin",origin)); }
+        catch (RuntimeException error) { TripLiveService.lastResult="start_failed";android.widget.Toast.makeText(this,"Abre el viaje y vuelve a activar su notificación.",android.widget.Toast.LENGTH_LONG).show(); }
     }
 
     private static final int PLAY_UPDATE_REQUEST = 54;
@@ -229,6 +232,7 @@ public class MainActivity extends AppCompatActivity {
                 android.app.NotificationChannel channel=manager.getNotificationChannel("live-trip");
                 if(channel!=null&&channel.getImportance()==android.app.NotificationManager.IMPORTANCE_NONE)return "blocked";
             }
+            if(trip!=null&&trip.equals(TripLiveService.lastTripId)&&!"active".equals(TripLiveService.lastResult))return TripLiveService.lastResult;
             return trip!=null&&trip.equals(TripLiveService.activeTripId)?"active":"inactive";
         }
         @JavascriptInterface public void openNotificationSettings() {
