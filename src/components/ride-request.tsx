@@ -424,6 +424,7 @@ export function RideRequest({
                     </div>
                     <div className="journey-picker-map">
                       <JourneyMap
+                        nearbyPlaces
                         origin={origin.point}
                         destination={destination.point}
                         picking
@@ -455,6 +456,7 @@ export function RideRequest({
                 <span className="journey-context-destination">{destination.label}</span><span className="journey-map-label">Mapa</span>
               </div>
               <JourneyMap
+                nearbyPlaces
                 key={quoteRevision}
                 origin={origin.point}
                 destination={destination.point}

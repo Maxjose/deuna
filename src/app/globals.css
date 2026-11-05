@@ -1648,6 +1648,14 @@ html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-be
   height: 100%;
   z-index: 0;
 }
+.map-poi-controls { position:absolute; z-index:500; top:84px; left:12px; max-width:calc(100% - 80px); display:flex; align-items:flex-start; gap:8px; }
+.map-poi-toggle { display:grid; place-items:center; flex:0 0 44px; width:44px; height:44px; min-height:44px; padding:10px; margin:0; border:1px solid #dce2e8; border-radius:50%; background:white; color:#122033; box-shadow:0 3px 12px #12203325; }
+.map-poi-toggle[aria-pressed='true'] { background:#122033; color:#b4f36a; border-color:#122033; }
+.map-poi-controls > span { background:white; color:#122033; padding:9px 12px; border-radius:12px; font-size:12px; box-shadow:0 3px 12px #12203325; }
+.journey-picker-map .map-poi-controls { top:12px; }
+.journey-poi { display:grid!important; place-items:center; background:transparent; border:0; }
+.journey-poi > span { width:12px; height:12px; border:2px solid white; border-radius:50%; background:#2876e8; box-shadow:0 1px 5px #12203380; }
+.journey-poi:focus-visible { outline:3px solid #56872b; border-radius:50%; }
 .journey-map-placeholder {
   flex: 1;
   min-height: 160px;
