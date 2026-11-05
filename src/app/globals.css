@@ -2820,17 +2820,20 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .layout-toggle { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
 .layout-toggle button { width: 36px; min-width: 36px; height: 32px; padding: 0; margin: 0; border: 0; border-radius: 999px; display: grid; place-items: center; background: transparent; color: var(--muted); cursor: pointer; transition: background .18s, color .18s; }
 .layout-toggle button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
-.cards.people-list { grid-template-columns: 1fr !important; gap: 8px; }
-.cards.people-list .team-person { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; align-items: center; column-gap: 16px; row-gap: 2px; padding: 12px 16px; border-radius: 16px; }
-.cards.people-list .team-person > * { margin: 0; }
-.cards.people-list .team-person h2 { grid-column: 1; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cards.people-list .team-person .team-email { grid-column: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cards.people-list .team-person > p:not(.team-email) { grid-column: 2; font-size: 13px; }
-.cards.people-list .team-person > button { grid-column: 3; grid-row: 1 / span 4; width: auto; padding: 0 16px; min-height: 40px; }
+.team-person .person-identity, .team-person .person-details { display: contents; }
+.cards.people-list { grid-template-columns: 1fr !important; gap: 6px; }
+.cards.people-list .team-person { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; align-items: center; gap: 6px 16px; padding: 10px 14px; border-radius: 12px; }
+.cards.people-list .person-identity { display: grid; gap: 2px; min-width: 0; }
+.cards.people-list .person-details { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-width: 0; }
+.cards.people-list .team-person h2, .cards.people-list .team-person p { margin: 0; line-height: 1.4; }
+.cards.people-list .team-person h2 { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cards.people-list .team-email { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cards.people-list .person-details p { font-size: 12px; }
+.cards.people-list .team-person > button { width: auto; padding: 0 14px; min-height: 40px; margin: 0; }
 @media (max-width: 600px) {
   .cards.people-list .team-person { grid-template-columns: minmax(0, 1fr) auto; }
-  .cards.people-list .team-person > p:not(.team-email) { grid-column: 1; }
-  .cards.people-list .team-person > button { grid-column: 2; }
+  .cards.people-list .person-details { grid-column: 1; }
+  .cards.people-list .team-person > button { grid-column: 2; grid-row: 1 / span 2; min-height: 44px; }
 }
 .admin-records-search .layout-toggle { flex: 0 0 auto; align-self: end; height: 48px; align-items: center; padding: 4px; }
 .admin-records-search .layout-toggle button { height: 38px; width: 40px; min-width: 40px; }
