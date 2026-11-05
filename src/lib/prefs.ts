@@ -1,6 +1,6 @@
 "use client";
 /** Preferencias de este dispositivo (Configuración): sonido de avisos y pantalla encendida en viajes. */
-export type PrefKey = 'sound' | 'awake';
+export type PrefKey = 'sound' | 'awake' | 'headingUp';
 const KEY = (k: PrefKey) => `de1na-pref-${k}`;
 export function readPref(key: PrefKey, fallback = true) {
   try { const v = localStorage.getItem(KEY(key)); return v == null ? fallback : v === '1'; } catch { return fallback; }

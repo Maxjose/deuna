@@ -16,6 +16,7 @@ export default function JourneyMap({
   navigation = false,
   livePosition,
   follow = false,
+  heading = null,
   extraPoint,
 }: {
   origin: MapPoint | null;
@@ -28,6 +29,8 @@ export default function JourneyMap({
   navigation?: boolean;
   livePosition?: (MapPoint & {accuracy:number}) | null;
   follow?: boolean;
+  /** Rumbo en grados (0 = norte). Con valor, el mapa gira para que la dirección de avance quede hacia arriba. */
+  heading?: number | null;
   extraPoint?: MapPoint|null;
 }) {
   const container = useRef<HTMLDivElement>(null),
@@ -55,9 +58,14 @@ export default function JourneyMap({
   useEffect(() => {
     let alive = true;
     void import("leaflet")
-      .then((L) => {
+      .then(async (L) => {
+        if (navigation) {
+          // leaflet-rotate amplía el Leaflet global; solo se carga en el mapa de navegación del conductor.
+          (window as unknown as { L: unknown }).L = (L as unknown as { default?: unknown }).default ?? L;
+          await import("leaflet-rotate");
+        }
         if (!alive || !container.current) return;
-        const map = L.map(container.current, { zoomControl: false }).setView(
+        const map = L.map(container.current, { zoomControl: false, ...(navigation ? { rotate: true, rotateControl: false, touchRotate: false, shiftKeyRotate: false, bearing: 0 } : {}) } as import("leaflet").MapOptions).setView(
           [11.087, -71.603],
           14,
         );
@@ -191,6 +199,11 @@ export default function JourneyMap({
     if(follow)map.setView(position,Math.max(16,map.getZoom()),{animate:false});
     return()=>{layer.remove();};
   },[livePosition,follow,library]);
+  useEffect(()=>{
+    const map=mapRef.current as (import("leaflet").Map & { setBearing?: (deg: number, options?: { animate?: boolean; duration?: number }) => void }) | null;
+    if(!map?.setBearing)return;
+    map.setBearing(heading == null ? 0 : (360 - heading) % 360, { animate: true, duration: 0.4 });
+  },[heading,library]);
   return (
     <div className="journey-map">
       <div
