@@ -2903,3 +2903,6 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 @media (prefers-reduced-motion: reduce) { .sheet-autoheight { transition: none; } }
 .fare-summary .approx { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 5px; border-radius: 50%; background: #eef1f5; color: var(--ink); font-size: 13px; font-weight: 800; line-height: 1; vertical-align: 1px; }
 .journey-preparation-sheet .moto-option:not(.payment-option) { margin-bottom: 14px; }
+/* Transición: el buscador del inicio se convierte en la cabecera de «Tu recorrido» */
+.search-morph { position: fixed; z-index: 2147483000; display: flex; align-items: center; padding: 0 18px 0 52px; background: var(--surface, #fff); box-shadow: 0 6px 24px #12203314; border-radius: 20px; pointer-events: none; overflow: hidden; box-sizing: border-box; }
+.search-morph span { font-size: 16px; font-weight: 600; color: var(--muted); white-space: nowrap; }

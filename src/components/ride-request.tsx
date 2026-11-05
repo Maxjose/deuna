@@ -69,6 +69,7 @@ export function RideRequest({
     const timer = setTimeout(() => setExpired(true), Math.max(0, quote.expires_at * 1000 - Date.now()));
     return () => clearTimeout(timer);
   }, [quote]);
+  const entryRef = useRef<HTMLButtonElement>(null), morphFrom = useRef<DOMRect | null>(null), morphBack = useRef<DOMRect | null>(null);
   const dialog = useRef<HTMLDialogElement>(null),
     quickHome = useRef(false),
     locationVersion = useRef(0),
@@ -82,6 +83,11 @@ export function RideRequest({
       if(step==='search')setActive(mapReferences.destination?'destination':mapReferences.origin?'origin':'destination');
     }
     if (step === "home") dialog.current?.close();
+    // Animación: el buscador del inicio se transforma en la cabecera de «Tu recorrido» (y al revés al volver).
+    const from = morphFrom.current; morphFrom.current = null;
+    if (from && step === "search" && dialog.current) requestAnimationFrame(() => morphSearch(dialog.current!, from, "open"));
+    const back = morphBack.current; morphBack.current = null;
+    if (back && step === "home") requestAnimationFrame(() => { const entry = entryRef.current; if (entry) morphSearch(document.body, back, "close", entry); });
   }, [step]);
   useEffect(() => () => { searchController.current?.abort(); locationVersion.current++; }, []);
   const stepRef = useRef(step), backRef = useRef<() => void>(() => {});
@@ -96,7 +102,8 @@ export function RideRequest({
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
-  function open() {
+  function open(fromEntry = false) {
+    if (fromEntry && entryRef.current) morphFrom.current = entryRef.current.getBoundingClientRect();
     setMapVisible(false);
     setMapCompact(false);
     setStep("search");
@@ -108,6 +115,7 @@ export function RideRequest({
     locationVersion.current++;
     setLocating(false);
     setMessage("");
+    if (step === "search") { const header = dialog.current?.querySelector(".journey-search-header"); if (header) morphBack.current = header.getBoundingClientRect(); }
     setStep(
       step === "confirm" ? "payment" : step === "payment" ? "choose" : step === "choose" ? "search" : "home",
     );
@@ -262,7 +270,7 @@ export function RideRequest({
   const current = active === "origin" ? origin : destination;
   return (
     <div className="ride-entry">
-      <button className="ride-search-entry" onClick={open}>
+      <button ref={entryRef} className="ride-search-entry" onClick={() => open(true)}>
         <AppIcon name="search" />
         <span>Selecciona tu destino</span>
       </button>
@@ -578,4 +586,39 @@ function AutoHeight({ children }: { children: React.ReactNode }) {
     return () => observer.disconnect();
   }, []);
   return <div className="sheet-autoheight" style={height == null ? undefined : { height }}><div ref={inner}>{children}</div></div>;
+}
+
+/** Transición compartida entre el buscador del inicio y la cabecera de búsqueda (técnica FLIP con Web Animations). */
+function morphSearch(host: HTMLElement, rect: DOMRect, mode: "open" | "close", entry?: HTMLElement) {
+  if (typeof window === "undefined" || !("animate" in host) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const target = mode === "open" ? host.querySelector<HTMLElement>(".journey-search-header") : entry;
+  if (!target) return;
+  const to = target.getBoundingClientRect(), from = rect, ease = "cubic-bezier(.22,1,.36,1)", duration = 420;
+  const start = from, end = to;
+  const ghost = document.createElement("div");
+  ghost.className = "search-morph";
+  ghost.innerHTML = '<span>Selecciona tu destino</span>';
+  Object.assign(ghost.style, { left: `${start.left}px`, top: `${start.top}px`, width: `${start.width}px`, height: `${start.height}px` });
+  host.appendChild(ghost);
+  const frames = [
+    { left: `${start.left}px`, top: `${start.top}px`, width: `${start.width}px`, height: `${start.height}px`, borderRadius: mode === "open" ? "20px" : "0px" },
+    { left: `${end.left}px`, top: `${end.top}px`, width: `${end.width}px`, height: `${end.height}px`, borderRadius: mode === "open" ? "0px" : "20px" },
+  ];
+  const move = ghost.animate(frames, { duration, easing: ease, fill: "forwards" });
+  ghost.firstElementChild?.animate([{ opacity: mode === "open" ? 1 : 0 }, { opacity: mode === "open" ? 0 : 1 }], { duration: duration * 0.5, easing: "ease-out", fill: "forwards" });
+  if (mode === "open") {
+    const dialog = host as HTMLDialogElement;
+    dialog.animate([{ backgroundColor: "rgba(0,0,0,0)" }, { backgroundColor: getComputedStyle(dialog).backgroundColor }], { duration: 300, easing: "ease-out" });
+    try { dialog.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, pseudoElement: "::backdrop" }); } catch { /* sin soporte */ }
+    for (const child of Array.from(dialog.children)) {
+      if (child === ghost) continue;
+      (child as HTMLElement).animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: child.classList.contains("journey-search-header") ? 300 : 180, easing: ease, fill: "backwards" });
+    }
+  } else {
+    target.animate([{ opacity: 0 }, { opacity: 0, offset: .85 }, { opacity: 1 }], { duration, fill: "backwards" });
+    const home = target.parentElement;
+    if (home) for (const child of Array.from(home.children)) if (child !== target && child.tagName !== "DIALOG")
+      (child as HTMLElement).animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: 140, easing: ease, fill: "backwards" });
+  }
+  move.finished.then(() => ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, fill: "forwards" }).finished).catch(() => {}).finally(() => ghost.remove());
 }
