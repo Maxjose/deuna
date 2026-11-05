@@ -7,7 +7,7 @@ on:
         description: "Novedades que verán los usuarios en el aviso de actualización"
         required: false
   push:
-    branches: [main, codex/remove-live-updates]
+    branches: [main, codex/notification-brand-icon]
     paths:
       - "android/**"
       - ".github/workflows/android-pruebas.yml"
@@ -71,6 +71,12 @@ jobs:
           "${APKSIGNER%apksigner}aapt" dump permissions "$RUNNER_TEMP/de1na.apk" > "$RUNNER_TEMP/permissions.txt"
           if grep -E 'POST_PROMOTED_NOTIFICATIONS|FOREGROUND_SERVICE_DATA_SYNC' "$RUNNER_TEMP/permissions.txt"; then echo "::error::El APK conserva permisos retirados"; exit 1; fi
           grep -q 'FOREGROUND_SERVICE_LOCATION' "$RUNNER_TEMP/permissions.txt"
+          test -s android/app/build/outputs/mapping/release/mapping.txt
+          for method in appVersion deviceId checkPlayUpdate startPlayUpdate haptic startTracking stopTracking requestPushToken readClipboard keepScreenOn; do
+            grep -E " -> ${method}$" android/app/build/outputs/mapping/release/mapping.txt
+          done
+          cp android/app/build/outputs/mapping/release/mapping.txt "$RUNNER_TEMP/mapping.txt"
+          unzip -l "$RUNNER_TEMP/de1na.aab" | grep -F BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map
           test -s "$RUNNER_TEMP/de1na.aab"
           unzip -l "$RUNNER_TEMP/de1na.aab" | grep -E 'META-INF/.*\.(RSA|DSA|EC)'
           jarsigner -verify "$RUNNER_TEMP/de1na.aab"
@@ -99,6 +105,7 @@ jobs:
             ${{ runner.temp }}/de1na.apk
             ${{ runner.temp }}/de1na.aab
             ${{ runner.temp }}/SHA256SUMS.txt
+            ${{ runner.temp }}/mapping.txt
 
       - name: Publicar en la versión "apk-pruebas"
         if: steps.keys.outputs.ready == 'true' && github.ref == 'refs/heads/main'
@@ -106,7 +113,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete apk-pruebas --yes --cleanup-tag 2>/dev/null || true
-          gh release create apk-pruebas "$RUNNER_TEMP/de1na.apk" "$RUNNER_TEMP/de1na.aab" "$RUNNER_TEMP/version.json" \
+          gh release create apk-pruebas "$RUNNER_TEMP/de1na.apk" "$RUNNER_TEMP/de1na.aab" "$RUNNER_TEMP/version.json" "$RUNNER_TEMP/mapping.txt" \
             --prerelease --target "$GITHUB_SHA" \
             --title "De1na Android (compilación ${{ github.run_number }})" \
             --notes "App Android de De1na (WebView nativo) generada automáticamente."
