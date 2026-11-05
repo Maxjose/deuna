@@ -5,9 +5,40 @@ import { browserClient } from '@/lib/supabase/client';
 import { validateCatalogDocument, type CatalogPlace, type CatalogRecord } from '@/lib/catalog';
 import { Toast, useNotice } from './toast';
 const JourneyMap=dynamic(()=>import('./journey-map'),{ssr:false});
+type MissingPlace={query_key:string;label:string;searches:number;users:number;last_seen:string};
+function MissingPlaces({onRegister}:{onRegister:(name:string)=>void}) {
+ const [rows,setRows]=useState<MissingPlace[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
+ const version=useRef(0);
+ const load=useCallback(async()=>{
+  const request=++version.current;setLoading(true);setError('');
+  const {data,error}=await browserClient().rpc('missing_places',{action:'list'});
+  if(request!==version.current)return;
+  if(error)setError('No pudimos cargar las búsquedas.');else setRows(data??[]);
+  setLoading(false);
+ },[]);
+ useEffect(()=>{void load();return()=>{version.current++;};},[load]);
+ return <section className="trip-card"><h2>Búsquedas sin resultados</h2>
+  <p className="muted">Top 100 de destinos buscados sin resultados. Se excluyen nombres y alias ya registrados, incluidos lugares inactivos. Los reintentos en menos de un minuto no suman.</p>
+  <button type="button" className="secondary" disabled={loading} onClick={()=>void load()}>Actualizar listado</button>
+  {error?<p role="alert">{error}</p>:loading?<p role="status">Cargando búsquedas…</p>:!rows.length?<p>No hay búsquedas pendientes.</p>:
+   <ol>{rows.map(row=><li key={row.query_key} className="catalog-item"><strong>{row.label}</strong>
+    <p>{row.searches} búsquedas · {row.users} usuarios distintos</p>
+    <p className="muted">Última búsqueda: {new Date(row.last_seen).toLocaleString('es-VE')}</p>
+    <button type="button" className="secondary" onClick={()=>onRegister(row.label)}>Registrar lugar</button>
+   </li>)}</ol>}
+ </section>;
+}
+
+export function PlacesCatalog() {
+ const [section,setSection]=useState<'catalog'|'missing'>('catalog'),[seed,setSeed]=useState('');
+ return <div className="account-stack"><div className="row" aria-label="Secciones de lugares">
+  <button type="button" className="secondary" aria-pressed={section==='catalog'} onClick={()=>{setSeed('');setSection('catalog');}}>Lugares registrados</button>
+  <button type="button" className="secondary" aria-pressed={section==='missing'} onClick={()=>setSection('missing')}>Búsquedas sin resultados</button>
+ </div>{section==='catalog'?<CatalogEditor seed={seed}/>:<MissingPlaces onRegister={name=>{setSeed(name);setSection('catalog');}}/>}</div>;
+}
 type ImportPlan={places:CatalogPlace[];warnings:string[];batches:string[];completed:number;inserted:number;updated:number};
 type Editor={source:string;external_id:string;name:string;latitude:string;longitude:string;aliases:string;address:string;municipality:string;category:string;reference:string;source_url:string;active:boolean;editing:boolean};
-export function PlacesCatalog() {
+function CatalogEditor({seed}:{seed:string}) {
   const [query,setQuery]=useState(''),[filter,setFilter]=useState(''),[page,setPage]=useState(0),[items,setItems]=useState<CatalogRecord[]>([]),
     [total,setTotal]=useState(0),[active,setActive]=useState(0),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),
     [errors,setErrors]=useState<string[]>([]),[plan,setPlan]=useState<ImportPlan|null>(null),[editor,setEditor]=useState<Editor|null>(null),[map,setMap]=useState(false);
@@ -33,6 +64,7 @@ export function PlacesCatalog() {
       {source:'propio',external_id:crypto.randomUUID(),name:'',latitude:'',longitude:'',aliases:'',address:'',municipality:'',category:'',reference:'',source_url:'',active:true,editing:false});
   }
   function change(key:keyof Editor,value:string|boolean){setEditor(current=>current?{...current,[key]:value}:null);}
+  useEffect(()=>{if(seed){edit();setEditor(current=>current?{...current,name:seed,aliases:seed.length<=80?seed:''}:null);}},[seed]);
   const point=useMemo(()=>{
     if(!editor?.latitude.trim()||!editor.longitude.trim())return null;
     const lat=Number(editor.latitude),lng=Number(editor.longitude);

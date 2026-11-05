@@ -138,3 +138,5 @@ Toda hoja, submenú o ventana emergente debe abrir y cerrar con una animación s
 - Para cerrar al tocar fuera, usa `onClick={closeOnBackdrop}` (`src/lib/dialog.ts`).
 - Otros elementos que aparecen o desaparecen (paneles que se despliegan, avisos, menús) también llevan una transición corta, de 150 a 320 ms y con desaceleración.
 - Respeta siempre `prefers-reduced-motion: reduce`.
+
+Administración → Lugares contiene subsecciones independientes: Lugares registrados y Búsquedas sin resultados. El ranking muestra las 100 búsquedas pendientes más frecuentes, cantidad de búsquedas, usuarios distintos y última búsqueda. Se registran destinos sin resultados cuando ambas fuentes terminan correctamente: al pulsar Buscar o después de dos segundos sin modificar una predicción fallida. Los reintentos se limitan a uno por minuto y usuario. Los nombres y alias ya registrados, incluidos los inactivos, se excluyen dinámicamente. Registrar lugar precarga el nombre y un alias cuando cabe en el límite del catálogo. Empieza a recopilar con esta entrega, sin datos históricos. Migración: missing_place_searches; prueba transaccional con rollback: supabase/tests/missing_places.sql.

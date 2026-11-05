@@ -133,9 +133,13 @@ export function RideRequest({
     setMessage("");
   }
   // Predicción mientras escribe: busca solo tras una pausa breve para no consultar en cada tecla.
+  const missingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const missingQuery = useRef('');
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (typingTimer.current) clearTimeout(typingTimer.current); }, []);
+  useEffect(() => () => { if (typingTimer.current) clearTimeout(typingTimer.current); if(missingTimer.current)clearTimeout(missingTimer.current); }, []);
   function predict(value: string) {
+    missingQuery.current=value.trim();
+    if (missingTimer.current) clearTimeout(missingTimer.current);
     if (typingTimer.current) clearTimeout(typingTimer.current);
     if (value.trim().length < 3) return;
     typingTimer.current = setTimeout(() => { void search(null, value); }, 350);
@@ -144,6 +148,7 @@ export function RideRequest({
     e?.preventDefault();
     if (e && typingTimer.current) clearTimeout(typingTimer.current);
     const query = (typed ?? (active === "origin" ? origin : destination).label).trim();
+    if(typed===undefined)missingQuery.current=query;
     if (typed !== undefined && query.length < 3) return;
     if (query.length < 3) {
       setMessage(
@@ -188,6 +193,11 @@ export function RideRequest({
       const places=mergeSearchPlaces(catalog,external,center);
       if(sources.every(source=>source.status==='rejected'))throw Error();
       if(!places.length&&sources.some(source=>source.status==='rejected'))throw Error();
+      if (!places.length && active === 'destination' && !controller.signal.aborted) {
+        if(missingTimer.current)clearTimeout(missingTimer.current);
+        const record=()=>{if(version===searchVersion.current&&missingQuery.current===query)void browserClient().rpc('missing_places',{action:'record',search_query:query}).then(()=>{},()=>{});};
+        if(typed===undefined)record();else missingTimer.current=setTimeout(record,2000);
+      }
       if (!places.length && typed === undefined) {
         setMapCompact(false);
         setMessage("No encontramos ese lugar en el Zulia. Puedes fijarlo en el mapa.");
