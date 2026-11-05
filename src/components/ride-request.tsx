@@ -434,6 +434,7 @@ export function RideRequest({
               />
               <section className="journey-bottom-sheet passenger-stage-sheet journey-preparation-sheet">
                 <div className="sheet-handle" />
+                <AutoHeight>
                 <div className="journey-preparation-steps" aria-label="Preparación del viaje"><span className={step==='choose'?'current':'done'}>1 · Transporte</span><span className={step==='payment'?'current':step==='confirm'?'done':''}>2 · Pago</span><span className={step==='confirm'?'current':''}>3 · Confirmar</span></div>
                 <h2>
                   {step === "choose"
@@ -444,7 +445,7 @@ export function RideRequest({
                 </h2>
                 <div className="fare-summary" aria-live="polite" aria-busy={!quote} aria-label={!quote ? "Calculando precio, distancia y tiempo" : undefined}>
                   <strong className={!quote ? "fare-placeholder" : undefined} aria-hidden={!quote}>{quote ? usd(quote.fare_cents) : '\u00a0'}</strong>
-                  <span className={!quote ? "fare-placeholder" : undefined} aria-hidden={!quote}>{quote ? `${(quote.distance_meters / 1000).toLocaleString('es-VE', { maximumFractionDigits: 2 })} km · ${Math.max(1, Math.round(quote.duration_seconds / 60))} min aprox.` : '\u00a0'}</span>
+                  <span className={!quote ? "fare-placeholder" : undefined} aria-hidden={!quote}>{quote ? <><span className="approx" title="Distancia aproximada" aria-label="aproximadamente">≈</span>{`${(quote.distance_meters / 1000).toLocaleString('es-VE', { maximumFractionDigits: 2 })} km · ${Math.max(1, Math.round(quote.duration_seconds / 60))} min aprox.`}</> : '\u00a0'}</span>
                   {quote && !!quote.night_percent && <small className="fare-night">🌙 Tarifa nocturna +{quote.night_percent}%</small>}
                   {quote && rate != null && <small className="fare-bs">≈ {bs(bsAmount(quote.fare_cents, rate) ?? 0)} · tasa {rate.toLocaleString("es-VE")} Bs/USD</small>}
                 </div>
@@ -556,6 +557,7 @@ export function RideRequest({
                     </button>
                   </>
                 )}
+                </AutoHeight>
               </section>
             </>
           ))}
@@ -563,4 +565,17 @@ export function RideRequest({
       </dialog>
     </div>
   );
+}
+
+/** Anima la altura de la tarjeta inferior cuando su contenido cambia (pasos transporte → pago → confirmar). */
+function AutoHeight({ children }: { children: React.ReactNode }) {
+  const inner = useRef<HTMLDivElement>(null), [height, setHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const el = inner.current; if (!el) return;
+    const update = () => setHeight(el.offsetHeight);
+    update();
+    const observer = new ResizeObserver(update); observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return <div className="sheet-autoheight" style={height == null ? undefined : { height }}><div ref={inner}>{children}</div></div>;
 }
