@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 /** Sincronización iniciada por el pasajero; no obtiene ubicación ni guarda credenciales. */
 public class TripLiveService extends Service {
+    static volatile String activeTripId;
     private static final int ID = 4202;
     private static final String CHANNEL = "live-trip";
     private final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
@@ -46,6 +47,7 @@ public class TripLiveService extends Service {
         if (next == null || !next.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")) { stopSelf(); return START_NOT_STICKY; }
         boolean first = trip == null;
         trip = next;
+        activeTripId = next;
         started = System.currentTimeMillis();
         lastSuccess = 0;
         startForeground(ID, notification("Consultando tu viaje", "Conectando con De1na…", null, false));
@@ -126,6 +128,7 @@ public class TripLiveService extends Service {
     @Override public void onTimeout(int startId, int fgsType) { stopSelf(); }
     @Override public void onDestroy() {
         stopped = true;
+        activeTripId = null;
         worker.shutdownNow();
         stopForeground(STOP_FOREGROUND_REMOVE);
         super.onDestroy();
