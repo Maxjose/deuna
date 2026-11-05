@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean ready = false, failed = false;
     private GeolocationPermissions.Callback geoCallback;
     private String geoOrigin, pendingPushId;
+    private String pendingLiveTrip;
     private ValueCallback<Uri[]> fileCallback;
     private final Handler main = new Handler(Looper.getMainLooper());
 
@@ -177,6 +178,10 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
         if (requestCode == LOCATION_REQUEST && geoCallback != null) { geoCallback.invoke(geoOrigin, hasLocation(), false); geoCallback = null; }
+        if (requestCode == 55 && pendingLiveTrip != null) {
+            String trip = pendingLiveTrip; pendingLiveTrip = null;
+            if (Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) beginLiveTrip(trip);
+        }
         if (requestCode == NOTIFICATION_REQUEST && pendingPushId != null) { String id = pendingPushId; pendingPushId = null; fetchPushToken(id); }
     }
 
@@ -192,6 +197,10 @@ public class MainActivity extends AppCompatActivity {
     private void resolve(String id, String value) {
         String js = "window.__de1naNative&&window.__de1naNative.resolve(" + JSONObject.quote(id) + "," + (value == null ? "null" : JSONObject.quote(value)) + ")";
         main.post(() -> web.evaluateJavascript(js, null));
+    }
+
+    private void beginLiveTrip(String trip) {
+        ContextCompat.startForegroundService(this, new Intent(this, TripLiveService.class).putExtra("trip", trip));
     }
 
     private static final int PLAY_UPDATE_REQUEST = 54;
@@ -211,6 +220,18 @@ public class MainActivity extends AppCompatActivity {
 
     /** Puente expuesto a la web. Solo responde si la página es del propio sitio. */
     private class Bridge {
+        @JavascriptInterface public void startLiveTrip(String trip) {
+            if (!trusted() || trip == null || !trip.matches("[0-9a-fA-F-]{36}")) return;
+            main.post(() -> {
+                if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    pendingLiveTrip = trip;
+                    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 55);
+                } else beginLiveTrip(trip);
+            });
+        }
+        @JavascriptInterface public void stopLiveTrip() {
+            if (trusted()) main.post(() -> stopService(new Intent(MainActivity.this, TripLiveService.class)));
+        }
         private boolean trusted() {
             final String[] url = new String[1];
             // getUrl() debe leerse en el hilo principal; los métodos del puente corren en otro hilo.

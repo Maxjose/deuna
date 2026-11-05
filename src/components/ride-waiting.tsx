@@ -3,6 +3,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import dynamic from 'next/dynamic';
 import {parseStoredPlace} from '@/lib/journey';
 import {usd} from '@/lib/fare';
+import {nativeBridge} from '@/lib/native';
 import {AppIcon} from './app-icon';
 import {TripProgress} from './trip-progress';
 import {TripPerson,TripCancellation,TripContactButton} from './trip-resolution';
@@ -17,6 +18,8 @@ export function RideWaiting({origin,destination,busy,onCancel,fareCents,tripId,s
  const assigned=status!=='searching';
  const live=useTripLiveLocation(assigned?tripId:null);
  const target=status==='ongoing'?to.point:from.point;
+ const [liveSupported,setLiveSupported]=useState(false);
+ useEffect(()=>{setLiveSupported(!!nativeBridge()?.startLiveTrip);},[]);
  return <><article className="trip-card passenger-trip-summary"><TripProgress status={status} headline={headlines[status]}/><p>{to.label}</p><button className="primary" onClick={()=>setOpened(true)}>Ver mi viaje</button>{assigned&&<div className="trip-contact-row"><button className="secondary" onClick={onMessage}><AppIcon name="messages"/>Mensaje</button><TripContactButton tripId={tripId} viewerId={viewerId}/></div>}</article>
  <dialog ref={sheet} tabIndex={-1} className="journey-flow-screen passenger-journey" aria-label="Tu viaje en curso" onClose={event=>{if(event.target===event.currentTarget)setOpened(false);}}>
   <header className="journey-context-header"><button className="icon-button" aria-label="Volver a Inicio" onClick={()=>sheet.current?.close()}><AppIcon name="back"/></button><span>Tu viaje</span><span className="journey-map-label">Mapa</span></header>
@@ -26,6 +29,7 @@ export function RideWaiting({origin,destination,busy,onCancel,fareCents,tripId,s
    {assigned?<div className="passenger-driver-card"><span className="passenger-driver-avatar"><AppIcon name="moto"/></span><TripPerson tripId={tripId} viewerId={viewerId} label="Tu conductor"/></div>:<div className="connecting-progress" aria-hidden="true"><span/><span/><span/></div>}
    {assigned&&<LiveDriverStatus live={live} status={status} target={target}/>}
    {payment}
+   {assigned&&liveSupported&&<button type="button" className="secondary" onClick={()=>nativeBridge()?.startLiveTrip?.(tripId)}>Seguir viaje desde las notificaciones</button>}
    {assigned&&<div className="trip-contact-row"><button className="primary passenger-message" onClick={()=>{sheet.current?.close();onMessage();}}><AppIcon name="messages"/>Mensaje</button><TripContactButton tripId={tripId} viewerId={viewerId}/></div>}
    <div className="passenger-stops"><p><small>RECOGIDA</small><strong>{from.label}</strong></p><p><small>DESTINO</small><strong>{to.label}</strong></p></div>
    <div className="passenger-stage-footer"><p>Tarifa acordada {fareCents!=null&&<strong>{usd(fareCents)}</strong>}</p>{['searching','assigned','arrived'].includes(status)&&<button className="text trip-cancel-link" disabled={busy} onClick={onCancel}>Cancelar viaje</button>}</div>

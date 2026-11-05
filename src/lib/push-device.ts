@@ -1,7 +1,8 @@
 "use client";
 import { browserClient } from './supabase/client';
-import { isNativeApp, nativePushEndpoint } from './native';
+import { isNativeApp, nativePushEndpoint, nativeBridge } from './native';
 export async function disconnectPushDevice() {
+  nativeBridge()?.stopLiveTrip?.();
   if (isNativeApp()) {
     const endpoint = await nativePushEndpoint();
     if (endpoint) await browserClient().rpc('push_manage', { action: 'unsubscribe', payload: { endpoint } });
