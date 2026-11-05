@@ -153,17 +153,16 @@ export function AuthForm({
               </label>
             )}
             <div className="auth-actions">
-            <button className="primary" disabled={busy}>
+            <button className="primary" disabled={busy} aria-busy={busy}>
               {busy
-                ? "Procesando…"
-                : reset
+                ? <><span className="auth-submit-spinner" aria-hidden="true"/><span className="sr-only">{!reset&&mode==='login'?'Iniciando sesión':'Procesando solicitud'}</span></>
+                : <>{reset
                   ? "Guardar contraseña"
                   : mode === "register"
                     ? "Crear cuenta"
                     : mode === "recover"
                       ? "Enviar instrucciones"
-                      : "Iniciar sesión"}{" "}
-              ↗
+                      : "Iniciar sesión"}{" "}↗</>}
             </button>
             {!reset && mode === "login" && <PasskeyLogin disabled={busy} onBusyChange={setBusy} />}
             </div>

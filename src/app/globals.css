@@ -789,6 +789,8 @@ main {
 html:has(.auth-layout), body:has(.auth-layout) { overflow: hidden; overscroll-behavior: none; }
 .auth-actions { display: flex; gap: 12px; align-items: center; }
 .auth-actions > .primary { flex: 1; min-width: 0; }
+.auth-submit-spinner { display:inline-block; width:22px; height:22px; box-sizing:border-box; vertical-align:middle; border:3px solid currentColor; border-right-color:transparent; border-radius:50%; animation:spin .8s linear infinite; }
+@media(prefers-reduced-motion:reduce) { .auth-submit-spinner { animation:none; } }
 .passkey-button { width: 54px; height: 54px; flex-shrink: 0; border-radius: 16px; display: grid; place-items: center; background: #eaf0e3; color: var(--ink); border: 1px solid #dbe5d2; }
 .passkey-button svg { width: 29px; height: 29px; }
 .auth-form h2 {
