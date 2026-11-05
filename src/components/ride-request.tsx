@@ -132,9 +132,19 @@ export function RideRequest({
     setResults([]);
     setMessage("");
   }
-  async function search(e: React.FormEvent) {
-    e.preventDefault();
-    const query = (active === "origin" ? origin : destination).label.trim();
+  // Predicción mientras escribe: busca solo tras una pausa breve para no consultar en cada tecla.
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (typingTimer.current) clearTimeout(typingTimer.current); }, []);
+  function predict(value: string) {
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    if (value.trim().length < 3) return;
+    typingTimer.current = setTimeout(() => { void search(null, value); }, 350);
+  }
+  async function search(e: React.FormEvent | null, typed?: string) {
+    e?.preventDefault();
+    if (e && typingTimer.current) clearTimeout(typingTimer.current);
+    const query = (typed ?? (active === "origin" ? origin : destination).label).trim();
+    if (typed !== undefined && query.length < 3) return;
     if (query.length < 3) {
       setMessage(
         "Escribe al menos tres caracteres o elige el punto en el mapa.",
@@ -178,12 +188,12 @@ export function RideRequest({
       const places=mergeSearchPlaces(catalog,external,center);
       if(sources.every(source=>source.status==='rejected'))throw Error();
       if(!places.length&&sources.some(source=>source.status==='rejected'))throw Error();
-      if (!places.length) {
+      if (!places.length && typed === undefined) {
         setMapCompact(false);
         setMessage("No encontramos ese lugar en el Zulia. Puedes fijarlo en el mapa.");
       }
     } catch {
-      if (version === searchVersion.current) {
+      if (version === searchVersion.current && typed === undefined) {
         setMapCompact(false);
         setMessage(
           "No pudimos buscar la dirección. Puedes elegirla en el mapa.",
@@ -334,6 +344,7 @@ export function RideRequest({
                         edit("origin");
                         setOrigin({ label: e.target.value, point: null });
                         setResults([]);
+                        predict(e.target.value);
                       }}
                       maxLength={110}
                       placeholder={locating ? "Buscando tu ubicación…" : "¿Dónde te buscamos?"}
@@ -355,6 +366,7 @@ export function RideRequest({
                         edit("destination");
                         setDestination({ label: e.target.value, point: null });
                         setResults([]);
+                        predict(e.target.value);
                       }}
                       maxLength={110}
                       placeholder="¿A dónde quieres ir?"
@@ -390,7 +402,7 @@ export function RideRequest({
                           <AppIcon name="ride" />
                         </span>
                         <span>
-                          <strong>{place.label}</strong>
+                          <strong><Highlight text={place.label} query={current.label} /></strong>
                           <small>Seleccionar ubicación</small>
                         </span>
                       </button>
@@ -621,4 +633,19 @@ function morphSearch(host: HTMLElement, rect: DOMRect, mode: "open" | "close", e
       (child as HTMLElement).animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: 140, easing: ease, fill: "backwards" });
   }
   move.finished.then(() => ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, fill: "forwards" }).finished).catch(() => {}).finally(() => ghost.remove());
+}
+
+/** Resalta la parte del lugar que coincide con lo escrito (sin distinguir tildes ni mayúsculas). */
+function Highlight({ text, query }: { text: string; query: string }) {
+  const fold = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const q = fold(query.trim());
+  if (q.length < 2) return <>{text}</>;
+  // La versión plegada conserva la longitud de cada letra (las tildes se eliminan tras NFD), así que se mapea por índice.
+  const chars = Array.from(text), folded = chars.map(c => fold(c)), joined = folded.join("");
+  const at = joined.indexOf(q);
+  if (at < 0) return <>{text}</>;
+  let pos = 0, start = -1, end = -1;
+  folded.forEach((f, i) => { if (start < 0 && pos >= at) start = i; pos += f.length; if (end < 0 && pos >= at + q.length) end = i + 1; });
+  if (start < 0 || end < 0) return <>{text}</>;
+  return <>{chars.slice(0, start).join("")}<span className="place-match">{chars.slice(start, end).join("")}</span>{chars.slice(end).join("")}</>;
 }
