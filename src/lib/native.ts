@@ -4,6 +4,8 @@
  * llamando a `window.__de1naNative.resolve(id, value)`.
  */
 type Bridge = {
+  startLiveTrip?(tripId: string): void;
+  stopLiveTrip?(): void;
   startTracking(token: string, url: string, key: string): void;
   stopTracking(): void;
   requestPushToken(id: string): void;
