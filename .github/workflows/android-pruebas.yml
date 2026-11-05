@@ -7,7 +7,7 @@ on:
         description: "Novedades que verán los usuarios en el aviso de actualización"
         required: false
   push:
-    branches: [main, codex/android-live-updates]
+    branches: [main, codex/android-live-updates, codex/wait-for-fare]
     paths:
       - "android/**"
       - ".github/workflows/android-pruebas.yml"

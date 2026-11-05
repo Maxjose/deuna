@@ -283,6 +283,12 @@ public class MainActivity extends AppCompatActivity {
             main.post(() -> startActivity(new Intent(MainActivity.this, TrackingActivity.class).setData(data)));
         }
 
+        @JavascriptInterface public void startDriverTracking(String token, String url, String key, String trip) {
+            if (!trusted() || !LocationService.validParams(token,url,key) || trip == null || !trip.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")) return;
+            Uri data = Uri.parse("de1na-tracking://start").buildUpon().appendQueryParameter("token",token).appendQueryParameter("url",url).appendQueryParameter("key",key).appendQueryParameter("trip",trip).build();
+            main.post(() -> startActivity(new Intent(MainActivity.this, TrackingActivity.class).setData(data)));
+        }
+
         @JavascriptInterface public void stopTracking() {
             if (!trusted()) return;
             main.post(() -> stopService(new Intent(MainActivity.this, LocationService.class)));

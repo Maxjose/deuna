@@ -98,7 +98,8 @@ export function useDriverLocationSharing(tripId: string | null) {
     if (!backgroundToken || !url || !key) return;
     // Debe ejecutarse dentro del toque del usuario: Chrome solo abre apps con un gesto.
     const bridge = nativeBridge();
-    if (bridge) bridge.startTracking(backgroundToken, url, key);
+    if (bridge?.startDriverTracking && tripId) bridge.startDriverTracking(backgroundToken,url,key,tripId);
+    else if (bridge) bridge.startTracking(backgroundToken, url, key);
     else window.location.href = trackingIntentUrl("start", { token: backgroundToken, url, key });
     setBackgroundActive(true);
   };

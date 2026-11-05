@@ -59,10 +59,14 @@ public class LocationService extends Service implements LocationListener {
     private Location latest, lastSent;
     private long lastSentAt;
     private boolean sending;
+    private String tripId, tripTitle = "Compartiendo tu ubicación", tripBody = "El pasajero ve tu posición durante el viaje.", tripChip;
+    private boolean refreshing;
+    private long lastStateAt;
 
     private final Runnable heartbeat = new Runnable() {
         @Override public void run() {
             if (latest != null && SystemClock.elapsedRealtime() - lastSentAt >= HEARTBEAT_MS) send(latest);
+            refreshTrip();
             handler.postDelayed(this, HEARTBEAT_MS);
         }
     };
@@ -79,6 +83,9 @@ public class LocationService extends Service implements LocationListener {
         String newToken = intent.getStringExtra(EXTRA_TOKEN), url = intent.getStringExtra(EXTRA_URL), key = intent.getStringExtra(EXTRA_KEY);
         if (!validParams(newToken, url, key)) { stopTracking(); return START_NOT_STICKY; }
         token = newToken;
+        tripId = intent.getStringExtra("trip");
+        if(tripId!=null&&!tripId.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"))tripId=null;
+        tripTitle="Compartiendo tu ubicación";tripBody="Consultando el estado de tu viaje…";tripChip=null;lastStateAt=0;
         endpoint = url.replaceAll("/+$", "") + "/rest/v1/rpc/share_location_token";
         apiKey = key;
         lastSent = null;
@@ -86,6 +93,7 @@ public class LocationService extends Service implements LocationListener {
         if (Build.VERSION.SDK_INT >= 29) startForeground(NOTIFICATION_ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
         else startForeground(NOTIFICATION_ID, notification());
         requestUpdates();
+        refreshTrip();
         handler.removeCallbacks(heartbeat);
         handler.postDelayed(heartbeat, HEARTBEAT_MS);
         return START_NOT_STICKY;
@@ -174,6 +182,48 @@ public class LocationService extends Service implements LocationListener {
         });
     }
 
+    private void refreshTrip() {
+        if(token==null||tripId==null||refreshing)return;
+        if(lastStateAt>0&&SystemClock.elapsedRealtime()-lastStateAt>60000){
+            tripTitle="Tu viaje en De1na";tripBody="Sin estado reciente. Abre la app para comprobar el viaje.";tripChip=null;
+            ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID,notification());
+        }
+        refreshing=true;
+        final String current=tripId;
+        network.execute(()->{
+            HttpURLConnection connection=null;
+            try{
+                String origin="https://"+getString(R.string.site_host);
+                String cookies=android.webkit.CookieManager.getInstance().getCookie(origin);
+                if(cookies==null||cookies.isEmpty())throw new java.io.IOException("No session");
+                connection=(HttpURLConnection)new URL(origin+"/api/trip-live?id="+current+"&viewer=driver").openConnection();
+                connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(8000);connection.setReadTimeout(8000);
+                connection.setRequestProperty("Cookie",cookies);connection.setRequestProperty("Cache-Control","no-cache");
+                int code=connection.getResponseCode();
+                if(code==401||code==403||code==404){handler.post(()->{if(current.equals(tripId))stopTracking();});return;}
+                if(code!=200)throw new java.io.IOException("State unavailable");
+                java.io.ByteArrayOutputStream buffer=new java.io.ByteArrayOutputStream();
+                try(InputStream stream=connection.getInputStream()){
+                    byte[] chunk=new byte[1024];int count;
+                    while((count=stream.read(chunk))!=-1){buffer.write(chunk,0,count);if(buffer.size()>8192)throw new java.io.IOException("Response too large");}
+                }
+                JSONObject state=new JSONObject(new String(buffer.toByteArray(),StandardCharsets.UTF_8));
+                for(java.util.Map.Entry<String,java.util.List<String>> header:connection.getHeaderFields().entrySet())
+                    if("Set-Cookie".equalsIgnoreCase(header.getKey()))for(String cookie:header.getValue())android.webkit.CookieManager.getInstance().setCookie(origin,cookie);
+                handler.post(()->{
+                    if(token==null||!current.equals(tripId))return;
+                    String status=state.optString("status");
+                    if(!status.equals("assigned")&&!status.equals("arrived")&&!status.equals("ongoing")){stopTracking();return;}
+                    tripTitle=state.optString("title");tripBody=state.optString("body");
+                    tripChip=status.equals("arrived")?"Llegó":state.isNull("eta")?"En viaje":state.optInt("eta")+" min";
+                    lastStateAt=SystemClock.elapsedRealtime();
+                    ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID,notification());
+                });
+            }catch(Exception ignored){ /* El siguiente latido reintenta sin interrumpir el envío GPS. */ }
+            finally{if(connection!=null)connection.disconnect();handler.post(()->refreshing=false);}
+        });
+    }
+
     private Notification notification() {
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= 26 && manager.getNotificationChannel(CHANNEL) == null) {
@@ -182,13 +232,18 @@ public class LocationService extends Service implements LocationListener {
             manager.createNotificationChannel(channel);
         }
         int flags = Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0;
-        Intent open = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        Intent open = new Intent(this,MainActivity.class).putExtra("url","/dashboard#home").addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openApp = open == null ? null : PendingIntent.getActivity(this, 0, open, flags);
         PendingIntent stop = PendingIntent.getService(this, 1, new Intent(this, LocationService.class).setAction(ACTION_STOP), flags);
-        return new NotificationCompat.Builder(this, CHANNEL)
+        Bundle extras=new Bundle();
+        extras.putBoolean("android.requestPromotedOngoing",lastStateAt>0&&SystemClock.elapsedRealtime()-lastStateAt<=60000);
+        Notification result = new NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Compartiendo tu ubicación")
-            .setContentText("El pasajero ve tu posición durante el viaje.")
+            .setContentTitle(tripTitle)
+            .setContentText(tripBody)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(tripBody))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setShowWhen(false).addExtras(extras)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -196,17 +251,20 @@ public class LocationService extends Service implements LocationListener {
             .setContentIntent(openApp)
             .addAction(0, "Detener", stop)
             .build();
+        if(Build.VERSION.SDK_INT>=36&&tripChip!=null)result=Notification.Builder.recoverBuilder(this,result).setShortCriticalText(tripChip).build();
+        return result;
     }
 
     private void stopTracking() {
         handler.removeCallbacks(heartbeat);
         if (locations != null) locations.removeUpdates(this);
         token = null;
+        tripId = null;
         if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE); else stopForeground(true);
         stopSelf();
     }
 
-    @Override public void onDestroy() { handler.removeCallbacks(heartbeat); if (locations != null) locations.removeUpdates(this); network.shutdownNow(); super.onDestroy(); }
+    @Override public void onDestroy() { token=null;tripId=null;handler.removeCallbacks(heartbeat); if (locations != null) locations.removeUpdates(this); network.shutdownNow();stopForeground(STOP_FOREGROUND_REMOVE);super.onDestroy(); }
     @Override public void onStatusChanged(String provider, int status, Bundle extras) { }
     @Override public void onProviderEnabled(String provider) { if (token != null) requestUpdates(); }
     @Override public void onProviderDisabled(String provider) { }
