@@ -23,6 +23,8 @@ import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
 import { DriverPayout, DriverVehicle } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
+import { PromoAdmin } from "./promo-admin";
+import { PromoPopup } from "./promo-popup";
 import { DriverPlan, planHeadline, usePlan } from "./driver-plan";
 import { DeleteAccount } from "./delete-account";
 import { CancelReasons } from "./cancel-reasons";
@@ -109,6 +111,7 @@ export function Dashboard({
   const [historyFilter,setHistoryFilter]=useState<"all"|"finished"|"cancelled">("all");
   const [historyPage,setHistoryPage]=useState(0);
   const [historyDate,setHistoryDate]=useState("");
+  const [noticeTab,setNoticeTab]=useState<"push"|"promos">("push");
   const [settingsSection,setSettingsSection]=useState<"hours"|"fares"|"commission"|"payment"|"drivers">("hours");
   const [balance,setBalance]=useState<Balance>({amount_cents:0,trips:[]});
   const [walletRole,setWalletRole]=useState(false);
@@ -725,7 +728,13 @@ export function Dashboard({
           ) : page === "places" && role === "admin" ? (
             <PlacesCatalog />
           ) : page === "notifications" && role === "admin" ? (
-            <PushCampaigns />
+            <div className="service-settings">
+              <div className="service-tabs" role="tablist" aria-label="Secciones de avisos">
+                {([["push","Notificaciones","notifications"],["promos","Promociones","package"]] as const).map(([value,label,icon])=>(
+                  <button key={value} type="button" role="tab" aria-selected={noticeTab===value} className={noticeTab===value?"is-active":""} onClick={()=>setNoticeTab(value)}><AppIcon name={icon}/><span>{label}</span></button>))}
+              </div>
+              <div className="service-panel" key={noticeTab}>{noticeTab==="push"?<PushCampaigns />:<PromoAdmin />}</div>
+            </div>
           ) : page === "settings" && settings ? (
             <div className="service-settings">
             <div className="service-tabs" role="tablist" aria-label="Secciones del servicio">
@@ -944,6 +953,7 @@ export function Dashboard({
         </dialog>
       )}
       <Toast message={message} />
+      {role!=='admin'&&!profile?.suspended&&<PromoPopup enabled={page==='home'&&!currentTrip}/>}
       {role!=='admin'&&!profile?.suspended&&<TripCompletion refresh={trips} onDone={()=>navigate('home')}/>}
       <dialog ref={acceptDialog} className="action-sheet" aria-labelledby="accept-title" onClose={()=>setAcceptTrip(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
         <div className="sheet-handle"/>
