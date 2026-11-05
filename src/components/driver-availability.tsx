@@ -7,6 +7,14 @@ type Presence={available:boolean;reason:'signal'|'idle'|null;confirmation_due:bo
 export function DriverAvailability({available,occupied,onRefresh}:{available:boolean;occupied:boolean;onRefresh:()=>Promise<void>}){
  const [state,setState]=useState<Presence|null>(null),[busy,setBusy]=useState(false),[failed,setFailed]=useState(false);
  const activity=useRef(false),dialog=useRef<HTMLDialogElement>(null);
+ const [showDisconnection,setShowDisconnection]=useState(false);
+ const disconnectionReason=!available&&!state?.available?state?.reason:null;
+ useEffect(()=>{
+  setShowDisconnection(!!disconnectionReason);
+  if(!disconnectionReason)return;
+  const timer=setTimeout(()=>setShowDisconnection(false),8000);
+  return()=>clearTimeout(timer);
+ },[disconnectionReason]);
  const client=browserClient();
  const send=useCallback(async(action:string)=>{
   const {data,error}=await client.rpc('driver_presence',{action,payload:{activity:activity.current}});
@@ -27,7 +35,7 @@ export function DriverAvailability({available,occupied,onRefresh}:{available:boo
  const due=available&&!occupied&&state?.available&&state.confirmation_due;
  useEffect(()=>{if(due){if(!dialog.current?.open)dialog.current?.showModal();dialog.current?.focus();}else dialog.current?.close();},[due]);
  return <>
-  {!available&&state?.reason&&<p className="availability-notice" role="status">{state.reason==='signal'?'Te desconectamos por falta de señal de la app.':'Te desconectamos por inactividad.'} Puedes volver a conectarte cuando estés disponible.</p>}
+  {showDisconnection&&disconnectionReason&&<p className="availability-notice" role="status">{disconnectionReason==='signal'?'Te desconectamos por falta de señal de la app.':'Te desconectamos por inactividad.'} Puedes volver a conectarte cuando estés disponible.</p>}
   {available&&failed&&<p className="availability-notice" role="status">No pudimos confirmar tu conexión. Revisa internet para mantenerte disponible.</p>}
   <dialog ref={dialog} tabIndex={-1} className="action-sheet" aria-labelledby="availability-title" onCancel={e=>e.preventDefault()}>
    <div className="sheet-handle"/><h2 id="availability-title">¿Sigues disponible?</h2>
