@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { closeOnBackdrop } from "@/lib/dialog";
 import { browserClient } from "@/lib/supabase/client";
 import { usd } from "@/lib/fare";
 import { VE_BANKS, bankName, bs, cleanPhone, formatPhone } from "@/lib/payments";
@@ -56,6 +57,7 @@ export function DriverPlan({ plan, onChanged, driverName, email }: { plan: PlanS
   const [choice, setChoice] = useState<"week" | "month">("week"), [via, setVia] = useState<"pago_movil" | "binance">("pago_movil");
   const [form, setForm] = useState({ bank: "", phone: "", reference: "" }), [tx, setTx] = useState("");
   const [busy, setBusy] = useState(false), [err, setErr] = useState(""), [ok, setOk] = useState("");
+  const renewSheet = useRef<HTMLDialogElement>(null), historySheet = useRef<HTMLDialogElement>(null);
   if (!plan) return <div className="skeleton-group" role="status" aria-label="Cargando tu plan"><div className="skeleton" /><div className="skeleton" /></div>;
   const head = planHeadline(plan), cents = choice === "week" ? plan.week_cents : plan.month_cents;
   const rate = plan.exchange_rate != null ? Number(plan.exchange_rate) : null, amountBs = rate ? Math.round(cents * rate) / 100 : null;
@@ -80,68 +82,89 @@ export function DriverPlan({ plan, onChanged, driverName, email }: { plan: PlanS
     catch (error) { setErr(error instanceof Error ? error.message : "No pudimos verificar el pago."); }
     finally { setBusy(false); }
   }
+  const open = (d: React.RefObject<HTMLDialogElement | null>) => { setErr(""); setOk(""); d.current?.showModal(); };
+  const until = plan.paid_until ? new Date(plan.paid_until).toLocaleDateString("es-VE", { day: "numeric", month: "short", year: "numeric" }) : null;
+  const chip = { active: "Activo", expiring: "Vence pronto", grace: "En gracia", expired: "Vencido", none: "Sin plan", not_applicable: "" }[plan.status];
   return <div className="account-stack driver-plan">
-    <article className={"trip-card plan-status is-" + head.tone}>
-      <span className="wallet-eyebrow">MI PLAN</span>
-      <strong className="plan-title">{head.title}</strong>
-      <p className="muted">{head.text}</p>
+    <article className={"plan-card is-" + head.tone}>
+      <span className="plan-card-icon" aria-hidden="true"><AppIcon name="wallet" /></span>
+      <span className="plan-card-text">
+        <small>MI PLAN</small>
+        <strong>{until && (plan.status === "active" || plan.status === "expiring") ? `Activo hasta el ${until}` : head.title}</strong>
+        <span>{head.text}</span>
+      </span>
+      {chip && <b className="plan-card-chip">{chip}</b>}
     </article>
+    {pending && <p className="cancel-limit" role="status">Tienes un pago {STATUS[pending.status].toLowerCase()} ({PLAN[pending.plan]}). Te avisaremos cuando se apruebe.</p>}
+    <div className="plan-actions">
+      <button type="button" className="primary" onClick={() => open(renewSheet)}><AppIcon name="refresh" />{plan.status === "active" || plan.status === "expiring" ? "Renovar plan" : "Elegir plan"}</button>
+      <button type="button" className="secondary" onClick={() => open(historySheet)}><AppIcon name="history" />Historial</button>
+    </div>
 
-    <article className="trip-card plan-buy">
-      <h2>{plan.status === "active" || plan.status === "expiring" ? "Renovar plan" : "Elegir plan"}</h2>
-      <div className="plan-options" role="radiogroup" aria-label="Plan">
-        {([["week", "Semanal", plan.week_cents, "7 días"], ["month", "Mensual", plan.month_cents, "30 días"]] as const).map(([value, label, price, days]) =>
-          <button key={value} type="button" role="radio" aria-checked={choice === value} className={choice === value ? "is-active" : ""} onClick={() => setChoice(value)}>
-            <strong>{label}</strong><span>{usd(price)}</span><small>{days}{value === "month" && plan.week_cents * 4 > plan.month_cents ? ` · ahorras ${usd(plan.week_cents * 4 - plan.month_cents)}` : ""}</small>
-          </button>)}
+    <dialog ref={renewSheet} className="action-sheet inbox-sheet plan-sheet" aria-labelledby="plan-renew-title" onClick={closeOnBackdrop}>
+      <header className="inbox-heading"><div className="sheet-handle" /><div className="row"><h2 id="plan-renew-title">{plan.status === "active" || plan.status === "expiring" ? "Renovar plan" : "Elegir plan"}</h2><button type="button" className="icon-button" aria-label="Cerrar" onClick={() => renewSheet.current?.close()}><AppIcon name="close" /></button></div></header>
+      <div className="inbox-list plan-sheet-body">
+        <div className="plan-options" role="radiogroup" aria-label="Plan">
+          {([["week", "Semanal", plan.week_cents, "7 días"], ["month", "Mensual", plan.month_cents, "30 días"]] as const).map(([value, label, price, days]) =>
+            <button key={value} type="button" role="radio" aria-checked={choice === value} className={choice === value ? "is-active" : ""} onClick={() => setChoice(value)}>
+              <span className="plan-option-head"><strong>{label}</strong><i className="selection-dot" /></span>
+              <span className="plan-option-price">{usd(price)}</span>
+              <small>{days}{value === "month" && plan.week_cents * 4 > plan.month_cents ? ` · ahorras ${usd(plan.week_cents * 4 - plan.month_cents)}` : ""}</small>
+            </button>)}
+        </div>
+        <p className="muted plan-note">Los días se suman a tu plan actual. Si ya venció, cuentan desde hoy.</p>
+
+        {!plan.auto ? <>
+          <p className="plan-note">Para activar o renovar tu plan escríbenos por WhatsApp y te indicamos cómo pagar.</p>
+          <a className="primary plan-whatsapp" href={wa} target="_blank" rel="noopener"><AppIcon name="messages" />Contactar a De1na por WhatsApp</a>
+        </> : pending ? <p className="cancel-limit" role="status">Ya tienes un pago {STATUS[pending.status].toLowerCase()}. Espera a que se apruebe para registrar otro.</p> : <>
+          {pmReady && bnReady && <div className="service-tabs plan-method" role="radiogroup" aria-label="Método de pago">
+            <button type="button" role="radio" aria-checked={methodVia === "pago_movil"} className={methodVia === "pago_movil" ? "is-active" : ""} onClick={() => setVia("pago_movil")}>Pago móvil</button>
+            <button type="button" role="radio" aria-checked={methodVia === "binance"} className={methodVia === "binance" ? "is-active" : ""} onClick={() => setVia("binance")}>Binance Pay</button>
+          </div>}
+          {methodVia === "pago_movil" && <form className="plan-pay" onSubmit={payPagoMovil}>
+            <details className="plan-pm-data">
+              <summary><span><strong>Datos del pago móvil</strong><small>{amountBs != null ? `Monto: ${bs(amountBs)}` : "Toca para ver"}</small></span><AppIcon name="arrow" /></summary>
+              <div className="payment-data">
+                <CopyRow label="Banco" value={plan.pago_movil.bank!} display={`${bankName(plan.pago_movil.bank)} (${plan.pago_movil.bank})`} />
+                {plan.pago_movil.phone && <CopyRow label="Teléfono" value={plan.pago_movil.phone} display={formatPhone(plan.pago_movil.phone)} />}
+                {plan.pago_movil.id && <CopyRow label="Cédula / RIF" value={plan.pago_movil.id} />}
+                {amountBs != null && <CopyRow label="Monto" value={amountBs.toFixed(2).replace(".", ",")} display={bs(amountBs)} />}
+              </div>
+            </details>
+            <label>Banco de origen<select value={form.bank} onChange={e => setForm({ ...form, bank: e.target.value })} required disabled={busy}><option value="">Selecciona tu banco</option>{VE_BANKS.map(([c, n]) => <option key={c} value={c}>{n} ({c})</option>)}</select></label>
+            <label>Teléfono de origen<input type="tel" inputMode="tel" placeholder="0412 1234567" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required disabled={busy} /></label>
+            <label>Referencia
+              <span className="payment-reference-field">
+                <input inputMode="numeric" placeholder="Últimos 6 dígitos" value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value.replace(/\D/g, "").slice(-6) })} required disabled={busy} />
+                <button type="button" disabled={busy} onClick={async () => { try { setForm(f => ({ ...f, reference: "" })); const t = await readClipboardText(); setForm(f => ({ ...f, reference: t.replace(/\D/g, "").slice(-6) })); } catch { setErr("No pudimos leer el portapapeles."); } }}>Pegar</button>
+              </span>
+            </label>
+            <button className="primary" disabled={busy}>{busy ? "Enviando…" : `Pagar ${usd(cents)} y activar`}</button>
+          </form>}
+          {methodVia === "binance" && <form className="plan-pay" onSubmit={payBinance}>
+            <p className="plan-note">Envía <strong>{(cents / 100).toFixed(2)} USDT</strong> a De1na y pega el ID de la transacción.</p>
+            {plan.binance?.link ? <a className="primary binance-open" href={plan.binance.link} target="_blank" rel="noopener"><AppIcon name="wallet" />Pagar en Binance</a>
+              : <div className="payment-data"><CopyRow label="Pay ID de De1na" value={plan.binance!.pay_id!} /></div>}
+            <TxField value={tx} onChange={setTx} disabled={busy} />
+            <button className="primary" disabled={busy || tx.length < 6}>{busy ? "Verificando…" : "Verificar y activar"}</button>
+          </form>}
+          {!methodVia && <p className="muted">Los pagos no están disponibles por ahora. <a href={wa} target="_blank" rel="noopener">Escríbenos por WhatsApp</a>.</p>}
+        </>}
+        {err && <p className="payment-error" role="alert">{err}</p>}
+        {ok && <p className="admin-create-notice" role="status">{ok}</p>}
       </div>
-      <p className="muted">Los días se suman a tu plan actual. Si ya venció, cuentan desde hoy.</p>
+    </dialog>
 
-      {!plan.auto ? <>
-        <p>Para activar o renovar tu plan escríbenos por WhatsApp y te indicamos cómo pagar.</p>
-        <a className="primary plan-whatsapp" href={wa} target="_blank" rel="noopener"><AppIcon name="messages" />Contactar a De1na por WhatsApp</a>
-      </> : pending ? <p className="cancel-limit" role="status">Tienes un pago {STATUS[pending.status].toLowerCase()} ({PLAN[pending.plan]}). Te avisaremos cuando se apruebe.</p> : <>
-        {pmReady && bnReady && <div className="service-tabs" role="radiogroup" aria-label="Método de pago">
-          <button type="button" role="radio" aria-checked={methodVia === "pago_movil"} className={methodVia === "pago_movil" ? "is-active" : ""} onClick={() => setVia("pago_movil")}>Pago móvil</button>
-          <button type="button" role="radio" aria-checked={methodVia === "binance"} className={methodVia === "binance" ? "is-active" : ""} onClick={() => setVia("binance")}>Binance Pay</button>
-        </div>}
-        {methodVia === "pago_movil" && <form className="plan-pay" onSubmit={payPagoMovil}>
-          <div className="payment-data">
-            <CopyRow label="Banco" value={plan.pago_movil.bank!} display={`${bankName(plan.pago_movil.bank)} (${plan.pago_movil.bank})`} />
-            {plan.pago_movil.phone && <CopyRow label="Teléfono" value={plan.pago_movil.phone} display={formatPhone(plan.pago_movil.phone)} />}
-            {plan.pago_movil.id && <CopyRow label="Cédula / RIF" value={plan.pago_movil.id} />}
-            {amountBs != null && <CopyRow label="Monto" value={amountBs.toFixed(2).replace(".", ",")} display={bs(amountBs)} />}
-          </div>
-          <label>Banco de origen<select value={form.bank} onChange={e => setForm({ ...form, bank: e.target.value })} required disabled={busy}><option value="">Selecciona tu banco</option>{VE_BANKS.map(([c, n]) => <option key={c} value={c}>{n} ({c})</option>)}</select></label>
-          <label>Teléfono de origen<input type="tel" inputMode="tel" placeholder="0412 1234567" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required disabled={busy} /></label>
-          <label>Referencia
-            <span className="payment-reference-field">
-              <input inputMode="numeric" placeholder="Últimos 6 dígitos" value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value.replace(/\D/g, "").slice(-6) })} required disabled={busy} />
-              <button type="button" disabled={busy} onClick={async () => { try { setForm(f => ({ ...f, reference: "" })); const t = await readClipboardText(); setForm(f => ({ ...f, reference: t.replace(/\D/g, "").slice(-6) })); } catch { setErr("No pudimos leer el portapapeles."); } }}>Pegar</button>
-            </span>
-          </label>
-          <button className="primary" disabled={busy}>{busy ? "Enviando…" : `Pagar ${usd(cents)} y activar`}</button>
-        </form>}
-        {methodVia === "binance" && <form className="plan-pay" onSubmit={payBinance}>
-          <p>Envía <strong>{(cents / 100).toFixed(2)} USDT</strong> a De1na y pega el ID de la transacción.</p>
-          {plan.binance?.link ? <a className="primary binance-open" href={plan.binance.link} target="_blank" rel="noopener"><AppIcon name="wallet" />Pagar en Binance</a>
-            : <div className="payment-data"><CopyRow label="Pay ID de De1na" value={plan.binance!.pay_id!} /></div>}
-          <TxField value={tx} onChange={setTx} disabled={busy} />
-          <button className="primary" disabled={busy || tx.length < 6}>{busy ? "Verificando…" : "Verificar y activar"}</button>
-        </form>}
-        {!methodVia && <p className="muted">Los pagos no están disponibles por ahora. <a href={wa} target="_blank" rel="noopener">Escríbenos por WhatsApp</a>.</p>}
-      </>}
-      {err && <p className="payment-error" role="alert">{err}</p>}
-      {ok && <p className="admin-create-notice" role="status">{ok}</p>}
-    </article>
-
-    <article className="trip-card">
-      <h2>Historial</h2>
-      {plan.payments.length === 0 ? <p className="muted">Aún no tienes pagos.</p> :
-        <ul className="wallet-movements">{plan.payments.map(p => <li key={p.id}>
-          <span><strong>{PLAN[p.plan]} · {p.days} días</strong><small>{METHOD[p.method]}{p.reference ? ` · Ref. ${p.reference}` : ""} · {date(p.created_at)}</small></span>
-          <b className={p.status === "approved" ? "is-in" : p.status === "rejected" ? "is-out" : ""}>{p.amount_cents ? usd(p.amount_cents) : "Gratis"}{p.status !== "approved" ? ` · ${STATUS[p.status]}` : ""}</b>
-        </li>)}</ul>}
-    </article>
+    <dialog ref={historySheet} className="action-sheet inbox-sheet plan-sheet" aria-labelledby="plan-history-title" onClick={closeOnBackdrop}>
+      <header className="inbox-heading"><div className="sheet-handle" /><div className="row"><h2 id="plan-history-title">Historial del plan</h2><button type="button" className="icon-button" aria-label="Cerrar" onClick={() => historySheet.current?.close()}><AppIcon name="close" /></button></div></header>
+      <div className="inbox-list">
+        {plan.payments.length === 0 ? <div className="inbox-empty"><AppIcon name="history" /><h3>Sin movimientos</h3><p>Aquí verás tus pagos y días del plan.</p></div> :
+          plan.payments.map(p => <article className="inbox-notice plan-history-item" key={p.id}>
+            <div><strong>{PLAN[p.plan]} · {p.days} días</strong><p>{METHOD[p.method]}{p.reference ? ` · Ref. ${p.reference}` : ""}</p><time dateTime={p.created_at}>{date(p.created_at)}</time></div>
+            <b className={p.status === "approved" ? "is-in" : p.status === "rejected" ? "is-out" : ""}>{p.amount_cents ? usd(p.amount_cents) : "Gratis"}{p.status !== "approved" && <small>{STATUS[p.status]}</small>}</b>
+          </article>)}
+      </div>
+    </dialog>
   </div>;
 }
