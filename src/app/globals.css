@@ -2684,6 +2684,17 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .member-info { display: grid; gap: 8px; align-content: start; }
 .member-info p { margin: 0; }
 .member-history h3 { margin: 0 0 10px; }
+.admin-shell .cards.member-trip-list { grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 12px; }
+.admin-shell .member-trip-list > .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); gap: 10px 24px; padding: 20px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
+.member-trip-list .trip-status-row { grid-column: 1 / -1; }
+.member-trip-list .route { grid-column: 1; grid-row: 2 / span 4; margin: 0; }
+.member-trip-list .route > div { margin: 10px 0; }
+.member-trip-list .route span { font-size: 15px; }
+.member-trip-list .trip-card > p { margin: 0; }
+.member-trip-list .trip-card > :not(.trip-status-row):not(.route) { grid-column: 2; min-width: 0; }
+@media (max-width: 600px) {
+  .admin-shell .member-trip-list > .trip-card { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; }
+}
 @media (min-width: 900px) {
   .member-sheet.action-sheet { width: min(1240px, calc(100vw - 48px)); }
   .member-layout { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
