@@ -2327,6 +2327,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .passenger-driver-card .trip-person > strong { font-size:16px; }
 .passenger-driver-card .reputation { margin:4px 0 0; font-size:12px; color:var(--muted); }
 .passenger-message.primary { display:flex; justify-content:center; align-items:center; gap:10px; margin:12px 0; border-radius:24px; }
+.trip-notification-button { margin-bottom:16px; }
 .passenger-message svg { color:var(--lime); }
 .passenger-stops { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
 .passenger-stops p { margin:10px 0; min-width:0; }
