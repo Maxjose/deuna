@@ -475,7 +475,7 @@ export function Dashboard({
         {page === "home" && role === "driver" && t.driver_id === userId && ["assigned", "arrived", "ongoing"].includes(t.status) && (
           <DriverSharingStatus state={sharing.state} background={sharing.background} />
         )}
-        <div className="row">
+        <div className="row trip-status-row">
           <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>
           {t.payment_method === "test" && <span className="pill test-pill">Prueba</span>}
           <small>#{t.id.slice(0, 6)}</small>

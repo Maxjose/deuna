@@ -506,6 +506,9 @@ main {
   color: var(--muted);
   font-size: 12px;
 }
+.trip-status-row { flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
+.trip-status-row > .pill { flex: 0 0 auto; white-space: nowrap; align-items: center; line-height: 1.4; }
+.trip-status-row > small { margin-left: auto; white-space: nowrap; }
 .route {
   position: relative;
   margin: 26px 0;
@@ -2903,6 +2906,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .admin-shell .history-pagination { max-width: none; }
 }
 .pill.test-pill { background: #e8eefc; color: #2b4aa0; }
+.admin-shell[data-admin-theme='dark'] .pill.test-pill { background: #263951; color: #bdceff; }
 .payment-note.is-test strong { color: #2b4aa0; }
 /* Tarjeta de preparación del viaje: la altura cambia con animación entre pasos */
 .sheet-autoheight { overflow: hidden; transition: height .34s cubic-bezier(.22,1,.36,1); will-change: height; }
