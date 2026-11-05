@@ -50,6 +50,8 @@ Los datos viven en tablas privadas sin acceso directo del navegador. catalog_adm
 
 ## Notificaciones Web Push
 
+El emisor usa `https://www.de1na.app/api/push/dispatch`, el dominio canónico de producción sin redirecciones. Si cambia el hosting, actualizar `private.push_config.dispatch_url` y verificar la respuesta HTTP desde `pg_net`: un 404 deja las notificaciones en cola sin intentos de envío. El dominio antiguo de Vercel ya no existe.
+
 Cuenta → Notificaciones registra este dispositivo al pulsar Activar y conceder el permiso del navegador. En iPhone requiere la PWA agregada a inicio (iOS 16.4+). La opción de promociones es independiente y comienza desactivada. Cerrar sesión cancela la suscripción de este dispositivo y cierra sus avisos visibles. No se envían direcciones precisas en avisos de viajes.
 
 Administración → Avisos permite redactar título/mensaje, elegir clientes, motorizados o todos los suscritos y revisar la vista previa con número de usuarios/dispositivos. El envío ocurre solo al pulsar Enviar publicidad. El historial distingue pendientes, aceptadas por proveedor, fallidas y omitidas; no mide lectura ni garantiza entrega en el teléfono. Reintentar la misma confirmación no duplica la campaña. Retención: 30 días.
