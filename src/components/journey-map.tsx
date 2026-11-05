@@ -5,6 +5,8 @@ import { decodeRoute } from "@/lib/journey";
 import type { Place } from "@/lib/journey";
 import type { FareQuote } from "@/lib/fare";
 import "leaflet/dist/leaflet.css";
+import {browserClient} from '@/lib/supabase/client';
+import {AppIcon} from './app-icon';
 export default function JourneyMap({
   origin,
   destination,
@@ -18,6 +20,7 @@ export default function JourneyMap({
   follow = false,
   heading = null,
   extraPoint,
+  nearbyPlaces = false,
 }: {
   origin: MapPoint | null;
   destination: MapPoint | null;
@@ -32,6 +35,7 @@ export default function JourneyMap({
   /** Rumbo en grados (0 = norte). Con valor, el mapa gira para que la dirección de avance quede hacia arriba. */
   heading?: number | null;
   extraPoint?: MapPoint|null;
+  nearbyPlaces?: boolean;
 }) {
   const container = useRef<HTMLDivElement>(null),
     mapRef = useRef<import("leaflet").Map | null>(null),
@@ -39,6 +43,7 @@ export default function JourneyMap({
   const [library, setLibrary] = useState<typeof import("leaflet") | null>(null),
     [message, setMessage] = useState(""),
     [retry, setRetry] = useState(0);
+  const [showPlaces,setShowPlaces]=useState(false),[placesMessage,setPlacesMessage]=useState('');
   callbacks.current = { onPick, onRoute, onQuote };
   const cameraFollow=useRef(follow);
   cameraFollow.current=follow;
@@ -102,6 +107,41 @@ export default function JourneyMap({
     observer.observe(container.current);
     return()=>{observer.disconnect();cancelAnimationFrame(frame);};
   },[library]);
+  useEffect(()=>{
+    const map=mapRef.current,L=library;
+    if(!map||!L||!nearbyPlaces||!showPlaces)return;
+    const layer=L.layerGroup().addTo(map);
+    const markers=new Map<string,import('leaflet').Marker>();
+    let alive=true,version=0,timer:ReturnType<typeof setTimeout>,controller:AbortController|null=null;
+    async function load(){
+      const request=++version;
+      controller?.abort();controller=new AbortController();
+      const center=map!.getCenter(),radius=Math.min(5000,Math.max(250,map!.distance(center,map!.getBounds().getNorthEast())));
+      setPlacesMessage('Cargando puntos de interés…');
+      try{
+        const {data,error}=await browserClient().rpc('catalog_nearby',{center_lat:center.lat,center_lng:center.lng,radius_m:radius}).abortSignal(controller.signal);
+        if(!alive||request!==version)return;
+        if(error)throw error;
+        const visible=new Set<string>();
+        for(const place of data??[]){
+          if(typeof place.id!=='string'||typeof place.name!=='string'||!Number.isFinite(place.latitude)||!Number.isFinite(place.longitude))continue;
+          visible.add(place.id);
+          if(markers.has(place.id))continue;
+          const label=document.createElement('span');label.textContent=place.name;
+          const marker=L!.marker([place.latitude,place.longitude],{
+            icon:L!.divIcon({className:'journey-poi',html:'<span></span>',iconSize:[36,36],iconAnchor:[18,18]}),
+            title:place.name,alt:place.name,bubblingMouseEvents:false,zIndexOffset:-100,
+          }).bindPopup(label).addTo(layer);
+          markers.set(place.id,marker);
+        }
+        for(const [id,marker] of markers)if(!visible.has(id)){layer.removeLayer(marker);markers.delete(id);}
+        setPlacesMessage(data?.length?'':'No hay lugares registrados cerca. Mueve el mapa para explorar.');
+      }catch{if(alive&&request===version)setPlacesMessage('No pudimos cargar los lugares. Toca el icono para ocultarlos y vuelve a intentarlo.');}
+    }
+    function moved(){version++;controller?.abort();clearTimeout(timer);timer=setTimeout(()=>void load(),400);}
+    void load();map.on('moveend',moved);
+    return()=>{alive=false;version++;clearTimeout(timer);controller?.abort();map.off('moveend',moved);layer.remove();};
+  },[library,nearbyPlaces,showPlaces]);
   useEffect(() => {
     const map = mapRef.current,
       L = library;
@@ -206,6 +246,9 @@ export default function JourneyMap({
   },[heading,library]);
   return (
     <div className="journey-map">
+      {nearbyPlaces&&<div className="map-poi-controls"><button type="button" className="map-poi-toggle" aria-label={showPlaces?'Ocultar puntos de interés':'Mostrar puntos de interés'} title={showPlaces?'Ocultar puntos de interés':'Mostrar puntos de interés'} aria-pressed={showPlaces} onClick={()=>setShowPlaces(value=>!value)}><AppIcon name="places"/></button>
+        {showPlaces&&placesMessage&&<span role="status">{placesMessage}</span>}
+      </div>}
       <div
         ref={container}
         className="journey-map-canvas"
