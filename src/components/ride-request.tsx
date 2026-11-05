@@ -244,6 +244,17 @@ export function RideRequest({
   useEffect(() => {
     if (step === "search" && !origin.point) { const goHome=quickHome.current;quickHome.current=false;locate(goHome); }
   }, [step]);
+  function selectPlace(place:Place,kind:'origin'|'destination'=active){
+    if(!place.point||!place.label.trim())return;
+    searchVersion.current++;searchController.current?.abort();
+    if(typingTimer.current)clearTimeout(typingTimer.current);
+    if(missingTimer.current)clearTimeout(missingTimer.current);
+    if(kind==='origin'){locationVersion.current++;setLocating(false);}
+    (kind==='origin'?setOrigin:setDestination)(place);
+    setMapReferences(previous=>({...previous,[kind]:false}));
+    setResults([]);setLoading(false);setMapVisible(true);setMapCompact(false);
+    setQuote(null);setRouteReady(false);setMessage('');
+  }
   async function pickPoint(point:MapPoint){
     const kind=active,setPlace=kind==='origin'?setOrigin:setDestination;
     const version=++searchVersion.current;
@@ -397,15 +408,7 @@ export function RideRequest({
                       <button
                         key={i}
                         onClick={() => {
-                          searchVersion.current++;
-                          searchController.current?.abort();
-                          setLoading(false);
-                          setMapCompact(false);
-                          setMapVisible(true);
-                          update(place);
-                          setMapReferences(previous=>({...previous,[active]:false}));
-                          setResults([]);
-                          setMessage("");
+                          selectPlace(place);
                         }}
                       >
                         <span className="place-symbol">
@@ -425,6 +428,8 @@ export function RideRequest({
                     <div className="journey-picker-map">
                       <JourneyMap
                         nearbyPlaces
+                        onPlacePick={place=>selectPlace(place)}
+                        placePickLabel={active==='origin'?'Usar como recogida':'Usar como destino'}
                         origin={origin.point}
                         destination={destination.point}
                         picking
@@ -432,7 +437,7 @@ export function RideRequest({
                       />
                       {mapCompact&&<button type="button" className="expand-picker-map" onClick={()=>setMapCompact(false)}>Ver mapa</button>}
                     </div>
-                    {(mapReferences[active]||!current.label.trim())&&current.point&&<ReferenceInput key={active} label={current.label} point={current.point} disabled={loading} onChange={label=>update({...current,label})} onSelect={place=>{if(!place.point)return;update(place);setQuote(null);setRouteReady(false);setMapCompact(false);setMessage('');}}/>}</>}
+                    {(mapReferences[active]||!current.label.trim())&&current.point&&<ReferenceInput key={active} label={current.label} point={current.point} disabled={loading} onChange={label=>update({...current,label})} onSelect={place=>selectPlace(place)}/>}</>}
                     {!mapVisible&&<button type="button" className="show-picker-map" aria-label="Mostrar mapa" title="Mostrar mapa" onClick={()=>{setMapVisible(true);setMapCompact(false);}}><AppIcon name="map"/></button>}
 
               </div>
@@ -457,6 +462,8 @@ export function RideRequest({
               </div>
               <JourneyMap
                 nearbyPlaces
+                onPlacePick={place=>selectPlace(place,'destination')}
+                placePickLabel="Usar como destino"
                 key={quoteRevision}
                 origin={origin.point}
                 destination={destination.point}

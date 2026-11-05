@@ -7,6 +7,7 @@ import type { FareQuote } from "@/lib/fare";
 import "leaflet/dist/leaflet.css";
 import {browserClient} from '@/lib/supabase/client';
 import {AppIcon} from './app-icon';
+import {decodeCatalogPlaces} from '@/lib/catalog';
 export default function JourneyMap({
   origin,
   destination,
@@ -21,6 +22,8 @@ export default function JourneyMap({
   heading = null,
   extraPoint,
   nearbyPlaces = false,
+  onPlacePick,
+  placePickLabel = 'Usar este lugar',
 }: {
   origin: MapPoint | null;
   destination: MapPoint | null;
@@ -36,15 +39,17 @@ export default function JourneyMap({
   heading?: number | null;
   extraPoint?: MapPoint|null;
   nearbyPlaces?: boolean;
+  onPlacePick?: (place: Place) => void;
+  placePickLabel?: string;
 }) {
   const container = useRef<HTMLDivElement>(null),
     mapRef = useRef<import("leaflet").Map | null>(null),
-    callbacks = useRef({ onPick, onRoute, onQuote });
+    callbacks = useRef({ onPick, onRoute, onQuote, onPlacePick, placePickLabel });
   const [library, setLibrary] = useState<typeof import("leaflet") | null>(null),
     [message, setMessage] = useState(""),
     [retry, setRetry] = useState(0);
   const [showPlaces,setShowPlaces]=useState(false),[placesMessage,setPlacesMessage]=useState('');
-  callbacks.current = { onPick, onRoute, onQuote };
+  callbacks.current = { onPick, onRoute, onQuote, onPlacePick, placePickLabel };
   const cameraFollow=useRef(follow);
   cameraFollow.current=follow;
   const overviewBounds=useRef<import('leaflet').LatLngBounds|null>(null);
@@ -127,11 +132,25 @@ export default function JourneyMap({
           if(typeof place.id!=='string'||typeof place.name!=='string'||!Number.isFinite(place.latitude)||!Number.isFinite(place.longitude))continue;
           visible.add(place.id);
           if(markers.has(place.id))continue;
-          const label=document.createElement('span');label.textContent=place.name;
+          const selected=decodeCatalogPlaces([place])[0];
+          if(!selected)continue;
+          const label=document.createElement('div');
+          const name=document.createElement('span');name.textContent=selected.label;label.append(name);
+          const select=document.createElement('button');select.type='button';select.className='map-place-select';select.hidden=!callbacks.current.onPlacePick;
+          select.textContent=callbacks.current.placePickLabel;label.append(select);
+          select.addEventListener('click',event=>{
+            event.preventDefault();event.stopPropagation();
+            callbacks.current.onPlacePick?.(selected);map!.closePopup();
+          });
+          L!.DomEvent.disableClickPropagation(label);
           const marker=L!.marker([place.latitude,place.longitude],{
             icon:L!.divIcon({className:'journey-poi',html:'<span></span>',iconSize:[36,36],iconAnchor:[18,18]}),
             title:place.name,alt:place.name,bubblingMouseEvents:false,zIndexOffset:-100,
           }).bindPopup(label).addTo(layer);
+          marker.on('popupopen',()=>{
+            select.hidden=!callbacks.current.onPlacePick;
+            select.textContent=callbacks.current.placePickLabel;
+          });
           markers.set(place.id,marker);
         }
         for(const [id,marker] of markers)if(!visible.has(id)){layer.removeLayer(marker);markers.delete(id);}
