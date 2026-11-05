@@ -59,6 +59,7 @@ export function RideRequest({
   const [mapVisible,setMapVisible]=useState(false);
   const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
   const quotePlaces = useMemo(() => ({ origin, destination }), [origin, destination]);
+  const fareReady = routeReady && quote !== null && !expired;
   const { message, notify: setMessage } = useNotice(step);
   useEffect(() => {
     if (step === "confirm" && !enabled) setMessage("Las solicitudes no están disponibles en este horario.");
@@ -507,8 +508,8 @@ export function RideRequest({
                     </button>
                     <button
                       className="primary"
-                      disabled={!moto}
-                      onClick={() => setStep("payment")}
+                      disabled={!moto || !fareReady}
+                      onClick={() => { if (moto && fareReady) setStep("payment"); }}
                     >
                       Elegir Moto
                       <AppIcon name="arrow" />
@@ -543,7 +544,7 @@ export function RideRequest({
                         <span className="selection-dot" />
                       </button>}
                     </div>
-                    <button className="primary" onClick={() => setStep("confirm")}>
+                    <button className="primary" disabled={!fareReady} onClick={() => { if (fareReady) setStep("confirm"); }}>
                       Continuar
                       <AppIcon name="arrow" />
                     </button>

@@ -200,7 +200,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void beginLiveTrip(String trip) {
-        ContextCompat.startForegroundService(this, new Intent(this, TripLiveService.class).putExtra("trip", trip));
+        try { ContextCompat.startForegroundService(this, new Intent(this, TripLiveService.class).putExtra("trip", trip)); }
+        catch (RuntimeException error) { android.widget.Toast.makeText(this,"Abre el viaje y vuelve a activar su notificación.",android.widget.Toast.LENGTH_LONG).show(); }
     }
 
     private static final int PLAY_UPDATE_REQUEST = 54;
@@ -220,6 +221,25 @@ public class MainActivity extends AppCompatActivity {
 
     /** Puente expuesto a la web. Solo responde si la página es del propio sitio. */
     private class Bridge {
+        @JavascriptInterface public String liveTripStatus(String trip) {
+            if(!trusted())return "inactive";
+            android.app.NotificationManager manager=getSystemService(android.app.NotificationManager.class);
+            if(!manager.areNotificationsEnabled())return "blocked";
+            if(Build.VERSION.SDK_INT>=26){
+                android.app.NotificationChannel channel=manager.getNotificationChannel("live-trip");
+                if(channel!=null&&channel.getImportance()==android.app.NotificationManager.IMPORTANCE_NONE)return "blocked";
+            }
+            return trip!=null&&trip.equals(TripLiveService.activeTripId)?"active":"inactive";
+        }
+        @JavascriptInterface public void openNotificationSettings() {
+            if(!trusted())return;
+            main.post(()->{
+                Intent settings=Build.VERSION.SDK_INT>=26
+                    ?new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE,getPackageName())
+                    :new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()));
+                startActivity(settings);
+            });
+        }
         @JavascriptInterface public void startLiveTrip(String trip) {
             if (!trusted() || trip == null || !trip.matches("[0-9a-fA-F-]{36}")) return;
             main.post(() -> {
@@ -280,6 +300,12 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface public void startTracking(String token, String url, String key) {
             if (!trusted() || !LocationService.validParams(token, url, key)) return;
             Uri data = Uri.parse("de1na-tracking://start").buildUpon().appendQueryParameter("token", token).appendQueryParameter("url", url).appendQueryParameter("key", key).build();
+            main.post(() -> startActivity(new Intent(MainActivity.this, TrackingActivity.class).setData(data)));
+        }
+
+        @JavascriptInterface public void startDriverTracking(String token, String url, String key, String trip) {
+            if (!trusted() || !LocationService.validParams(token,url,key) || trip == null || !trip.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")) return;
+            Uri data = Uri.parse("de1na-tracking://start").buildUpon().appendQueryParameter("token",token).appendQueryParameter("url",url).appendQueryParameter("key",key).appendQueryParameter("trip",trip).build();
             main.post(() -> startActivity(new Intent(MainActivity.this, TrackingActivity.class).setData(data)));
         }
 

@@ -22,3 +22,12 @@ App propia (`com.de1na.app`) que muestra https://de1na.app en un WebView a panta
 Se compila y firma en GitHub Actions (`.github/workflows/android-pruebas.yml`) con los secretos
 `TWA_PRUEBAS_KEYSTORE_B64` y `TWA_PRUEBAS_KEYSTORE_PASSWORD`, y se publica en la versión `apk-pruebas` como `de1na.apk`.
 `app/google-services.json` es la configuración pública del proyecto de Firebase `de1na-app`.
+
+## Live Updates del conductor
+Al pulsar Mantener ubicación activa, las versiones nuevas pasan el ID del viaje al servicio LOCATION existente y este actualiza su misma notificación con Recoger al pasajero, En la recogida o Llevar al pasajero. No inicia un segundo servicio ni añade permisos. El servidor exige sesión y coincidencia con driver_id; pasajeros siguen limitados a passenger_id. La notificación abre el viaje, ofrece Detener y deja de promoverse tras un minuto sin estado reciente. Finalización, cancelación, pérdida de autorización y cierre de sesión detienen el seguimiento. Mantiene compatibilidad con APK anteriores sin el puente nuevo.
+
+Para Play Console: declarar DATA_SYNC para la sincronización del pasajero y LOCATION para ubicación/seguimiento del conductor. Incluir demostraciones separadas de activación voluntaria, funcionamiento al minimizar, notificación y detención. La aparición en Now Bar depende del equipo, Android y permisos. Probar ambos roles en un teléfono antes de presentar la versión en Play.
+
+Corrección de activación: el pasajero ya no necesita pulsar un botón independiente. Al asignarse conductor, con la app visible, inicia la notificación y pide permiso si falta; si estaba minimizada, lo intenta al volver. La pantalla distingue servicio activo, notificaciones bloqueadas (con acceso a Ajustes) y APK antiguo que requiere actualizarse. Detener manualmente no provoca reinicios periódicos. Esto no garantiza promoción a Now Bar: depende del sistema y de sus preferencias.
+
+Cuenta del pasajero: en modo subscription (pago directo al conductor), no se muestra Mi saldo, su panel ni su aviso en Inicio; enlaces guardados a wallet/balance regresan a Cuenta. En modo commission, desactivar recargas no elimina el acceso a fondos existentes.

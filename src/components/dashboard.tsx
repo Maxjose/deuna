@@ -177,7 +177,7 @@ export function Dashboard({
     setTrips(t.data);
     setSettings(s.data);
     setServiceOpen(service.data?.open===true);
-    setWalletRole(own?.role==='passenger');
+    setWalletRole(own?.role==='passenger' && s.data?.billing_mode!=='subscription');
     const debt=await client.rpc('my_balance');
     if(!debt.error&&debt.data)setBalance(debt.data as Balance);
   }, [client, userId]);
@@ -295,6 +295,10 @@ export function Dashboard({
         !["finished", "cancelled"].includes(t.status),
     );
   const subscription = (settings as Settings | null)?.billing_mode === "subscription";
+  const walletAvailable = settings !== null && !subscription;
+  useEffect(()=>{
+    if(settings&&!walletAvailable&&profile?.role==='passenger'&&(accountSection==='wallet'||accountSection==='balance'))openSection('overview');
+  },[settings,walletAvailable,profile?.role,accountSection]);
   const { plan, reload: reloadPlan } = usePlan(role === "driver" && subscription);
   useEffect(() => { if (page === "earnings" || page === "home") void reloadPlan(); }, [page, reloadPlan]);
   const planAlert = plan && ["expiring", "grace", "expired", "none"].includes(plan.status) ? planHeadline(plan) : null;
@@ -642,7 +646,7 @@ export function Dashboard({
             <>
               <span className={"page-context " + (serviceOpen ? "is-open" : "")}>{settings && <i />}{settings ? serviceLabel : "\u00a0"}</span>
               <h1 className="home-greeting">{displayName ? `Hola, ${displayName.split(" ")[0]}.` : "Hola."}</h1>
-              {balance.amount_cents > 0 && (
+              {walletAvailable && balance.amount_cents > 0 && (
                 <button type="button" className="balance-alert" onClick={() => { openSection("wallet"); window.scrollTo({ top: 0, behavior: "instant" }); }}>
                   <span className="balance-alert-icon" aria-hidden="true">!</span>
                   <span><strong>Tienes un saldo pendiente de {usd(balance.amount_cents)}</strong><small>Solvéntalo para seguir disfrutando del servicio.</small></span>
@@ -694,7 +698,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi moto","moto"],["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi moto","moto"],["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].filter(([section])=>section!=="wallet"||walletAvailable).map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -719,7 +723,7 @@ export function Dashboard({
               {accountSection==="payout"&&role==="driver"&&<DriverPayout />}
               {accountSection==="vehicle"&&role==="driver"&&<DriverVehicle />}
               {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
-              {(accountSection==="wallet"||accountSection==="balance")&&role==="passenger"&&<>{balance.amount_cents>0&&pendingBalance()}<WalletView wallet={wallet} settings={settings} onChanged={()=>void reloadWallet()} /></>}
+              {(accountSection==="wallet"||accountSection==="balance")&&role==="passenger"&&walletAvailable&&<>{balance.amount_cents>0&&pendingBalance()}<WalletView wallet={wallet} settings={settings} onChanged={()=>void reloadWallet()} /></>}
               {accountSection==="favorites"&&role==="passenger"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
               {accountSection==="preferences"&&<><PushPreferences /><AppPreferences driver={role==="driver"} />{!nativeApp&&<InstallApp />}</>}
             </div>

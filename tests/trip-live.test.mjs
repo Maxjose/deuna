@@ -32,6 +32,16 @@ function api({user={id:'passenger'},result=trip,error=null}={}) {
  return {get:id=>GET(new Request('http://localhost/api/trip-live?id='+id)),filters};
 }
 const id='12345678-1234-1234-1234-123456789012';
+test('conductor ve recogida, espera y destino con su propio filtro de autorización',async()=>{
+ assert.equal(tripLiveSummary(trip,location,now,true).title,'Recoger al pasajero');
+ assert.equal(tripLiveSummary({...trip,status:'arrived'},location,now,true).title,'En la recogida');
+ assert.equal(tripLiveSummary({...trip,status:'ongoing'},location,now,true).title,'Llevar al pasajero');
+ const driver=api({result:{status:'finished'}});
+ assert.equal((await driver.get(id+'&viewer=driver')).status,200);
+ assert.ok(driver.filters.some(([key,value])=>key==='driver_id'&&value==='passenger'));
+ assert.ok(!driver.filters.some(([key])=>key==='passenger_id'));
+ assert.equal((await api({result:null}).get(id+'&viewer=driver')).status,404);
+});
 test('endpoint exige sesión y propiedad del pasajero, sin exponer direcciones',async()=>{
  assert.equal((await api({user:null}).get(id)).status,401);
  assert.equal((await api({result:null}).get(id)).status,404);
