@@ -2215,6 +2215,7 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .active-trip-text small { font-size: 13px; color: #c9d3dd; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .active-trip-text small.alert { color: #ffb4c0; font-weight: 700; }
 .more-sheet { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+.more-sheet:focus { outline: none; }
 .more-group { display: block; margin: 10px 6px 2px; font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); }
 .more-item { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 4px 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: inherit; text-align: left; }
 .more-item.selected { background: var(--success-soft); }

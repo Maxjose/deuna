@@ -120,7 +120,7 @@ export function Dashboard({
   const detailDialog=useRef<HTMLDialogElement>(null),dateDialog=useRef<HTMLDialogElement>(null);
   const moreDialog=useRef<HTMLDialogElement>(null);
   const dragStart=useRef<number|null>(null);
-  useEffect(()=>{if(moreOpen)moreDialog.current?.showModal();else moreDialog.current?.close();},[moreOpen]);
+  useEffect(()=>{if(moreOpen){moreDialog.current?.showModal();moreDialog.current?.focus({preventScroll:true});}else moreDialog.current?.close();},[moreOpen]);
   const openSection=(section:string)=>{
     setPage('account');setAccountSection(section);setMoreOpen(false);
     writeAppHash(window,section==="overview"?"account":`account/${section}`);
@@ -936,6 +936,7 @@ export function Dashboard({
       {role === "admin" && (
         <dialog
           ref={moreDialog}
+          tabIndex={-1}
           className="action-sheet more-sheet"
           aria-label="Más secciones"
           onClose={() => setMoreOpen(false)}
