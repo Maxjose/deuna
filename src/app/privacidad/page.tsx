@@ -23,6 +23,7 @@ export default function Privacy() {
       </ul>
 
       <h2>2. Para qué usamos tus datos</h2>
+      <p>Si solicitas soporte, guardamos el motivo, el estado de atención y los mensajes para gestionar tu consulta. Solo tu cuenta y el equipo de administración pueden consultar esa conversación. El agente puede ver los datos básicos de tu perfil, el estado del plan, la documentación y el identificador de un viaje activo para ayudarte. El historial de soporte se conserva mientras tengas la cuenta y se elimina al borrarla.</p>
       <p>Los conductores adjuntan Carnet de Circulación, Responsabilidad Civil, Trimestres, Licencia de Conducir y Carta Médica para una revisión manual antes de aceptar viajes. Estos archivos pueden contener datos de identidad, del vehículo y de salud. Se guardan en almacenamiento privado de Supabase, accesible al titular y a administración para esa revisión, y no se muestran a pasajeros u otros conductores. Al reemplazar un archivo se elimina el anterior; al eliminar la cuenta se borran también estos documentos.</p>
       <ul>
         <li>Prestar el servicio: calcular precios, asignar conductores, mostrar la ubicación del conductor y permitir el contacto entre pasajero y conductor.</li>
