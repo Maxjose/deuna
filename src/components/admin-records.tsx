@@ -9,6 +9,7 @@ import {AdminWallet} from './wallet';
 import {AdminDriverEarnings} from './earnings';
 import {AdminDriverPlan,AdminDriverVehicle,PLAN_BADGE,usePlanOverview} from './subscription-admin';
 import {AdminCancellations} from './driver-availability';
+import {DriverDocuments} from "./driver-documents";
 import {AdminDriverVip} from './admin-driver-vip';
 export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,subscription=false}:{viewerId:string;section:'team'|'users'|'trips'|`person:${string}`;busy:boolean;refresh:unknown;onDriver:(id:string,approved:boolean)=>Promise<boolean>;renderTrip:(trip:AdminTrip)=>ReactNode;subscription?:boolean}){
   const detail=useRef<HTMLDialogElement>(null);
@@ -70,6 +71,7 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,
       <AdminCancellations key={person.id} personId={person.id} driver={person.role==='driver'}/>
       </div>}
       {memberTab==='wallet'&&person.role==='passenger'&&<div className="member-info"><AdminWallet key={person.id} personId={person.id}/></div>}
+      {memberTab==='documents'&&person.role==='driver'&&<DriverDocuments key={person.id+'docs'} driverId={person.id} admin/>}
       {memberTab==='payout'&&person.role==='driver'&&<AdminDriverEarnings key={person.id+'p'} driverId={person.id} view="payout"/>}
       {memberTab==='plan'&&person.role==='driver'&&<AdminDriverPlan key={person.id+'plan'} driverId={person.id}/>}
       {memberTab==='movements'&&person.role==='driver'&&<AdminDriverEarnings key={person.id+'m'} driverId={person.id} view="movements"/>}

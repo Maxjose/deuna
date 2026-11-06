@@ -2684,6 +2684,14 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .member-info { display: grid; gap: 8px; align-content: start; }
 .member-info p { margin: 0; }
 .member-history h3 { margin: 0 0 10px; }
+.driver-documents { display: grid; gap: 16px; min-width: 0; }
+.driver-documents > h2, .driver-documents > p { margin: 0; }
+.document-list { display: grid; gap: 12px; }
+.document-item { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); min-width: 0; }
+.document-item h3, .document-item p { margin: 0 0 8px; }
+.document-item input[type='file'] { max-width: 100%; font-size: 13px; }
+.document-item .pill { white-space: normal; }
+.document-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .admin-shell .cards.member-trip-list { grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 12px; }
 .admin-shell .member-trip-list > .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); gap: 10px 24px; padding: 20px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
 .member-trip-list .trip-status-row { grid-column: 1 / -1; }

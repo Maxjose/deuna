@@ -23,6 +23,13 @@ export function DeleteAccount() {
   return <form className="trip-card delete-account" onSubmit={async e => {
     e.preventDefault(); if (busy) return;
     setBusy(true); setErr("");
+    const preparation = await client.rpc('prepare_document_deletion', { confirmation: text });
+    if (preparation.error) { setBusy(false); setErr(ERRORS[preparation.error.message] || 'No pudimos preparar la eliminación. Inténtalo de nuevo.'); return; }
+    const paths = preparation.data as string[];
+    if (paths.length) {
+      const removed = await client.storage.from('driver-documents').remove(paths);
+      if (removed.error) { setBusy(false); setErr('No pudimos eliminar los archivos. Reintenta para completar la eliminación de tu cuenta.'); return; }
+    }
     const { error } = await client.rpc("delete_my_account", { confirmation: text });
     if (error) { setBusy(false); setErr(ERRORS[error.message] || "No pudimos eliminar la cuenta. Inténtalo de nuevo."); return; }
     try { await disconnectPushDevice(); } catch { /* el dispositivo ya no está asociado */ }

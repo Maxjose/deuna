@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = { title: "Política de privacidad · De1na", description: "Cómo De1na recoge, usa y protege tus datos." };
 
-const UPDATED = "3 de noviembre de 2026";
+const UPDATED = "5 de noviembre de 2026";
 
 export default function Privacy() {
   return <main className="legal-page">
@@ -23,6 +23,7 @@ export default function Privacy() {
       </ul>
 
       <h2>2. Para qué usamos tus datos</h2>
+      <p>Los conductores adjuntan Carnet de Circulación, Responsabilidad Civil, Trimestres, Licencia de Conducir y Carta Médica para una revisión manual antes de aceptar viajes. Estos archivos pueden contener datos de identidad, del vehículo y de salud. Se guardan en almacenamiento privado de Supabase, accesible al titular y a administración para esa revisión, y no se muestran a pasajeros u otros conductores. Al reemplazar un archivo se elimina el anterior; al eliminar la cuenta se borran también estos documentos.</p>
       <ul>
         <li>Prestar el servicio: calcular precios, asignar conductores, mostrar la ubicación del conductor y permitir el contacto entre pasajero y conductor.</li>
         <li>Verificar pagos con el banco o con Binance, gestionar el saldo, los reembolsos y las ganancias de los conductores.</li>
