@@ -2692,6 +2692,20 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .document-item input[type='file'] { max-width: 100%; font-size: 13px; }
 .document-item .pill { white-space: normal; }
 .document-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.document-upload { position: relative; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px dashed var(--lime-text); border-radius: 14px; background: var(--success-soft); color: var(--ink); cursor: pointer; min-width: 0; }
+.document-upload-input { position: absolute; width: 1px; height: 1px; opacity: 0; padding: 0; overflow: hidden; }
+.document-upload:focus-within { outline: 2px solid var(--lime-text); outline-offset: 3px; }
+.document-upload.is-disabled { opacity: .65; cursor: wait; }
+.document-upload > span:nth-of-type(2) { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.document-upload strong { font-size: 14px; }
+.document-upload small { font-size: 12px; overflow-wrap: anywhere; color: var(--muted); }
+.document-upload-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--surface); color: var(--lime-text); flex-shrink: 0; }
+.document-upload svg { width: 22px; height: 22px; flex-shrink: 0; }
+.document-availability-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; margin: 0 0 18px; border-color: #b58b32; background: #fff8e6; color: #5c410d; }
+.document-notice-icon { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: #ffedb7; }
+.document-notice-icon svg { width: 22px; height: 22px; }
+.document-availability-notice > span:nth-child(2) { flex: 1; min-width: 160px; }
+.document-availability-notice > button { color: inherit; font-weight: 750; padding: 8px 0; }
 .admin-shell .cards.member-trip-list { grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 12px; }
 .admin-shell .member-trip-list > .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); gap: 10px 24px; padding: 20px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
 .member-trip-list .trip-status-row { grid-column: 1 / -1; }

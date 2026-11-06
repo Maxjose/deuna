@@ -280,7 +280,7 @@ export function Dashboard({
         await load();
         throw new Error(messages[failure.message || ''] || (failure.code === '23505' ? 'Ya tienes una solicitud activa o esta cotización ya fue utilizada. Revisa tus viajes.' : 'No se pudo solicitar el viaje. Comprueba tu conexión y vuelve a intentar.'));
       }
-      setMessage((error as {message?:string}).message==='Documentos pendientes'?'Completa y espera la aprobaci?n de tus documentos en Cuenta ? Documentos para conectarte y aceptar viajes.':(error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':(error as {message?:string}).message==='Límite de cancelaciones'?'Alcanzaste el límite de cancelaciones. Intenta más tarde.':(error as {message?:string}).message==='Motivo requerido'?'Elige el motivo de la cancelación.':(error as {message?:string}).message==='Plan vencido'?'Tu plan venció. Renuévalo en «Mi plan» para conectarte y aceptar viajes.':(error as {message?:string}).message==='Faltan datos del conductor'?'El conductor debe registrar su moto y sus cuentas antes de ser aprobado.':
+      setMessage((error as {message?:string}).message==='Documentos pendientes'?'Completa y espera la aprobación de tus documentos en Cuenta → Documentos para conectarte y aceptar viajes.':(error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':(error as {message?:string}).message==='Límite de cancelaciones'?'Alcanzaste el límite de cancelaciones. Intenta más tarde.':(error as {message?:string}).message==='Motivo requerido'?'Elige el motivo de la cancelación.':(error as {message?:string}).message==='Plan vencido'?'Tu plan venció. Renuévalo en «Mi plan» para conectarte y aceptar viajes.':(error as {message?:string}).message==='Faltan datos del conductor'?'El conductor debe registrar su moto y sus cuentas antes de ser aprobado.':
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
       await load();
@@ -830,7 +830,7 @@ export function Dashboard({
             <>
               {role === "driver" && page === "home" && !driverActive && (
                 <>
-                  <div className="availability-notice"><span>Revisa el estado de tus documentos para aceptar viajes.</span> <button className="text" onClick={()=>openSection("documents")}>Ver documentos</button></div>
+                  <div className="availability-notice document-availability-notice"><span className="document-notice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m12 3 10 18H2L12 3ZM12 9v5m0 3v1"/></svg></span><span>Revisa el estado de tus documentos para aceptar viajes.</span><button className="text" onClick={()=>openSection("documents")}>Ver documentos</button></div>
                   {planAlert && profile.approved && <div className={"payout-alert plan-alert is-" + planAlert.tone} role="status">
                     <span className="payout-alert-icon" aria-hidden="true"><AppIcon name="wallet" /></span>
                     <span><strong>{planAlert.title}</strong><small>{planAlert.text}</small></span>

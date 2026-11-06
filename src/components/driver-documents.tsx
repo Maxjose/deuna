@@ -2,6 +2,7 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {browserClient} from '@/lib/supabase/client';
 import {DOCUMENTS,documentExtension} from '@/lib/driver-documents';
+import {AppIcon} from './app-icon';
 type Document={kind:string;path:string;status:'pending'|'approved'|'rejected';reason:string};
 type State={ready:boolean;exempt:boolean;documents:Document[]};
 const STATUS={pending:'Pendiente de revisión',approved:'Aprobado',rejected:'Rechazado'};
@@ -9,6 +10,7 @@ export function DriverDocuments({driverId,admin=false}:{driverId:string;admin?:b
  const client=useMemo(()=>browserClient(),[]);
  const [data,setData]=useState<State|null>(null),[busy,setBusy]=useState(''),[error,setError]=useState(''),[message,setMessage]=useState('');
  const [reasons,setReasons]=useState<Record<string,string>>({});
+ const [uploadName,setUploadName]=useState('');
  const load=useCallback(async()=>{
   const {data,error}=await client.rpc('driver_documents',{action:'list',payload:{driver_id:driverId}});
   if(error){setError('No pudimos cargar los documentos.');return;}
@@ -53,7 +55,7 @@ export function DriverDocuments({driverId,admin=false}:{driverId:string;admin?:b
      <div><h3>{title}</h3><span className={'pill '+(doc?.status==='approved'?'green':doc?.status==='rejected'?'cancelled':'')}>{doc?STATUS[doc.status]:'Sin adjuntar'}</span></div>
      {doc?.reason&&<p>Motivo del rechazo: {doc.reason}</p>}
      {doc&&<button type="button" className="secondary" disabled={!!busy} onClick={()=>void run(kind,()=>view(doc))}>Ver documento</button>}
-     {!admin&&<label>{doc?'Reemplazar archivo':'Adjuntar archivo'}<input type="file" accept="image/jpeg,image/png,application/pdf" disabled={!!busy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void run(kind,()=>upload(kind,file));}}/></label>}
+     {!admin&&<label className={'document-upload'+(busy?' is-disabled':'')}><input className="document-upload-input" type="file" aria-label={`${doc?'Reemplazar':'Adjuntar'} ${title}`} accept="image/jpeg,image/png,application/pdf" disabled={!!busy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file){setUploadName(file.name);void run(kind,()=>upload(kind,file)).finally(()=>setUploadName(''));}}}/><span className="document-upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 16V3m-4 4 4-4 4 4M4 15v6h16v-6"/></svg></span><span><strong>{busy===kind&&uploadName?'Subiendo documento…':doc?'Reemplazar documento':'Adjuntar documento'}</strong><small>{busy===kind&&uploadName?uploadName:'JPG, PNG o PDF · Hasta 10 MB'}</small></span><AppIcon name="arrow"/></label>}
      {!admin&&doc?.status==='approved'&&<small>Si lo reemplazas, el nuevo archivo necesitará otra aprobación.</small>}
      {admin&&doc&&<><label>Motivo si se rechaza<textarea maxLength={500} value={reasons[kind]||''} disabled={!!busy} onChange={e=>setReasons(r=>({...r,[kind]:e.target.value}))}/></label><div className="document-actions"><button type="button" className="secondary" disabled={!!busy||!(reasons[kind]?.trim().length>=3)} onClick={()=>void run(kind,()=>change('review',{kind,path:doc.path,approve:false,reason:reasons[kind]}))}>Rechazar</button><button type="button" className="primary" disabled={!!busy||doc.status==='approved'} onClick={()=>void run(kind,()=>change('review',{kind,path:doc.path,approve:true}))}>Aprobar</button></div></>}
      {busy===kind&&<p role="status">Procesando…</p>}
