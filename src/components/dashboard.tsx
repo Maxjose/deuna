@@ -21,7 +21,7 @@ import { AdminThemeToggle, useAdminTheme } from "./admin-theme-toggle";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
-import { DriverDocuments } from "./driver-documents";
+import { DriverDocuments, DriverDocumentNotice } from "./driver-documents";
 import { DriverPayout, DriverVehicle } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
 import { PromoAdmin } from "./promo-admin";
@@ -830,7 +830,7 @@ export function Dashboard({
             <>
               {role === "driver" && page === "home" && !driverActive && (
                 <>
-                  <div className="availability-notice document-availability-notice"><span className="document-notice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m12 3 10 18H2L12 3ZM12 9v5m0 3v1"/></svg></span><span>Revisa el estado de tus documentos para aceptar viajes.</span><button className="text" onClick={()=>openSection("documents")}>Ver documentos</button></div>
+                  <DriverDocumentNotice onOpen={()=>openSection("documents")}/>
                   {planAlert && profile.approved && <div className={"payout-alert plan-alert is-" + planAlert.tone} role="status">
                     <span className="payout-alert-icon" aria-hidden="true"><AppIcon name="wallet" /></span>
                     <span><strong>{planAlert.title}</strong><small>{planAlert.text}</small></span>

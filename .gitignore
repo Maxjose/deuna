@@ -8,3 +8,5 @@
 *.tsbuildinfo
 
 supabase/.temp/
+
+/public/pdfjs/
