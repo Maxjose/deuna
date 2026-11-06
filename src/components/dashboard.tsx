@@ -21,6 +21,7 @@ import { AdminThemeToggle, useAdminTheme } from "./admin-theme-toggle";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
+import { DriverDocuments } from "./driver-documents";
 import { DriverPayout, DriverVehicle } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
 import { PromoAdmin } from "./promo-admin";
@@ -279,7 +280,7 @@ export function Dashboard({
         await load();
         throw new Error(messages[failure.message || ''] || (failure.code === '23505' ? 'Ya tienes una solicitud activa o esta cotización ya fue utilizada. Revisa tus viajes.' : 'No se pudo solicitar el viaje. Comprueba tu conexión y vuelve a intentar.'));
       }
-      setMessage((error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':(error as {message?:string}).message==='Límite de cancelaciones'?'Alcanzaste el límite de cancelaciones. Intenta más tarde.':(error as {message?:string}).message==='Motivo requerido'?'Elige el motivo de la cancelación.':(error as {message?:string}).message==='Plan vencido'?'Tu plan venció. Renuévalo en «Mi plan» para conectarte y aceptar viajes.':(error as {message?:string}).message==='Faltan datos del conductor'?'El conductor debe registrar su moto y sus cuentas antes de ser aprobado.':
+      setMessage((error as {message?:string}).message==='Documentos pendientes'?'Completa y espera la aprobaci?n de tus documentos en Cuenta ? Documentos para conectarte y aceptar viajes.':(error as {message?:string}).message==='Falta referencia de pago'?'El pasajero aún no envía la referencia del pago móvil.':(error as {message?:string}).message==='Falta pago Binance'?'El pasajero aún no paga con Binance Pay.':(error as {message?:string}).message==='Límite de cancelaciones'?'Alcanzaste el límite de cancelaciones. Intenta más tarde.':(error as {message?:string}).message==='Motivo requerido'?'Elige el motivo de la cancelación.':(error as {message?:string}).message==='Plan vencido'?'Tu plan venció. Renuévalo en «Mi plan» para conectarte y aceptar viajes.':(error as {message?:string}).message==='Faltan datos del conductor'?'El conductor debe registrar su moto y sus cuentas antes de ser aprobado.':
         "No se pudo completar la acción. El viaje puede haber cambiado; revisa disponibilidad, permisos y horario.",
       );
       await load();
@@ -310,7 +311,7 @@ export function Dashboard({
           ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
           : ["home", "history", "earnings", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
-      setAccountSection(value === "account" && ["info","security","wallet","balance","favorites","vehicle","payout","payment-data","preferences"].includes(section) ? section : "overview");
+      setAccountSection(value === "account" && ["info","security","wallet","balance","favorites","vehicle","documents","payout","payment-data","preferences"].includes(section) ? section : "overview");
       setMoreOpen(false);
     };
     syncPage();
@@ -383,7 +384,7 @@ export function Dashboard({
   const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceOpen ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
     page === "account"
-      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",vehicle:"Mi moto",balance:"Mi saldo",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
+      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",vehicle:"Mi moto",documents:"Documentos",balance:"Mi saldo",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
       : ({history:"Viajes",earnings:subscription&&role==="driver"?"Mi plan":"Ganancias",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
@@ -698,7 +699,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi moto","moto"],["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].filter(([section])=>section!=="wallet"||walletAvailable).map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi moto","moto"],["documents","Documentos","history"],["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].filter(([section])=>section!=="wallet"||walletAvailable).map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -722,6 +723,7 @@ export function Dashboard({
               {accountSection==="security"&&<><ChangePassword /><PasskeySecurity /><DeleteAccount /><p className="muted legal-links"><a href="/privacidad">Política de privacidad</a></p></>}
               {accountSection==="payout"&&role==="driver"&&<DriverPayout />}
               {accountSection==="vehicle"&&role==="driver"&&<DriverVehicle />}
+              {accountSection==="documents"&&role==="driver"&&<DriverDocuments driverId={userId}/>}
               {accountSection==="payment-data"&&role==="passenger"&&<PaymentPreferences />}
               {(accountSection==="wallet"||accountSection==="balance")&&role==="passenger"&&walletAvailable&&<>{balance.amount_cents>0&&pendingBalance()}<WalletView wallet={wallet} settings={settings} onChanged={()=>void reloadWallet()} /></>}
               {accountSection==="favorites"&&role==="passenger"&&<FavoritePlaces userId={userId} favorites={savedPlaces.favorites} onSave={savedPlaces.reload} setupHome={setupHome} onSetupHandled={()=>setSetupHome(false)}/>}
@@ -828,6 +830,7 @@ export function Dashboard({
             <>
               {role === "driver" && page === "home" && !driverActive && (
                 <>
+                  <div className="availability-notice"><span>Revisa el estado de tus documentos para aceptar viajes.</span> <button className="text" onClick={()=>openSection("documents")}>Ver documentos</button></div>
                   {planAlert && profile.approved && <div className={"payout-alert plan-alert is-" + planAlert.tone} role="status">
                     <span className="payout-alert-icon" aria-hidden="true"><AppIcon name="wallet" /></span>
                     <span><strong>{planAlert.title}</strong><small>{planAlert.text}</small></span>
