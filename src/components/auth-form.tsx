@@ -65,9 +65,11 @@ export function AuthForm({
           "Si existe una cuenta con ese correo, recibirás las instrucciones de recuperación.",
         );
       }
-    } catch {
+    } catch (error) {
       setMessage(
-        "No pudimos completar la solicitud. Revisa tus datos y la conexión o inténtalo más tarde.",
+        (error as { code?: string } | null)?.code === 'email_not_confirmed'
+          ? 'Tu correo aún no está verificado. Abre el correo de confirmación que te enviamos y pulsa el enlace para activar tu cuenta. Revisa también la carpeta de spam y luego vuelve a iniciar sesión.'
+          : "No pudimos completar la solicitud. Revisa tus datos y la conexión o inténtalo más tarde.",
       );
     } finally {
       setBusy(false);
