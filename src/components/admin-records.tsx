@@ -21,11 +21,11 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,
   useEffect(()=>{if(person)detail.current?.showModal();},[person]);
   const isPeople=section==='team'||section==='users';
   const {overview}=usePlanOverview(subscription&&section==='team',refresh);
-  const client=useMemo(()=>browserClient(),[]),request=useRef(0),list=useRef<HTMLDivElement>(null);
-  const [query,setQuery]=useState(''),[filter,setFilter]=useState(''),[page,setPage]=useState(0),[items,setItems]=useState<(Person|AdminTrip)[]>([]),[total,setTotal]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState(''),[height,setHeight]=useState(0);
+  const client=useMemo(()=>browserClient(),[]),request=useRef(0);
+  const [query,setQuery]=useState(''),[filter,setFilter]=useState(''),[page,setPage]=useState(0),[items,setItems]=useState<(Person|AdminTrip)[]>([]),[total,setTotal]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
   const load=useCallback(async()=>{const version=++request.current;setLoading(true);const {data,error}=await client.rpc('admin_records',{section,search_query:filter,page_number:page});if(version!==request.current)return;if(error)setError('No pudimos cargar los resultados. Inténtalo de nuevo.');else{setItems(data.items);setTotal(data.total);setError('');}setLoading(false);},[client,section,filter,page]);
   useEffect(()=>{void load();return()=>{request.current++;};},[load,refresh]);
-  function turn(next:number){setHeight(Math.max(height,list.current?.getBoundingClientRect().height||0));setPage(next);}
+  function turn(next:number){setPage(next);}
   function operationLabel(value:string){return ({suspend_account:'suspender cuenta',restore_account:'reactivar cuenta',assign_driver:'asignar como conductor',approve_driver:'aprobar conductor',suspend_driver:'suspender conductor'} as Record<string,string>)[value]||value;}
   async function manage(){
     if(!person||!operation||saving)return;setSaving(true);setActionError('');
@@ -36,14 +36,14 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,
   return <div className="admin-records">
     {(section==='users'||section==='team')&&<AdminCreateUser defaultRole={section==='team'?'driver':'passenger'} onCreated={text=>{setNotice(text);setPage(0);setFilter('');setQuery('');void load();}}/>}
     {notice&&<p className="admin-create-notice" role="status">{notice}</p>}
-    <form className="admin-records-search" onSubmit={e=>{e.preventDefault();setPage(0);setHeight(0);setFilter(query.trim());}}><label>{isPeople?(section==='team'?'Buscar equipo':'Buscar usuarios'):'Buscar viajes'}<input type="search" value={query} maxLength={120} onChange={e=>setQuery(e.target.value)} placeholder={isPeople?'Nombre, correo o teléfono':'Pasajero, conductor, destino o código'}/></label><button className="secondary" disabled={loading}>Buscar</button>
+    <form className="admin-records-search" onSubmit={e=>{e.preventDefault();setPage(0);setFilter(query.trim());}}><label>{isPeople?(section==='team'?'Buscar equipo':'Buscar usuarios'):'Buscar viajes'}<input type="search" value={query} maxLength={120} onChange={e=>setQuery(e.target.value)} placeholder={isPeople?'Nombre, correo o teléfono':'Pasajero, conductor, destino o código'}/></label><button className="secondary" disabled={loading}>Buscar</button>
     {isPeople&&<div className="layout-toggle" role="group" aria-label="Vista del listado">
       <button type="button" aria-pressed={layout==='grid'} aria-label="Vista en cuadrícula" onClick={()=>setLayout('grid')}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button>
       <button type="button" aria-pressed={layout==='list'} aria-label="Vista en lista" onClick={()=>setLayout('list')}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
     </div>}</form>
     <p className="muted" role="status">{loading?'Cargando…':`${total} resultados`}</p>
     {error&&<p role="alert">{error}<button className="secondary" onClick={()=>void load()}>Reintentar</button></p>}
-    <div className={"cards"+(isPeople&&layout==='list'?" people-list":"")+(section.startsWith('person:')?' member-trip-list':'')} ref={list} style={{minHeight:height||undefined}} aria-busy={loading}>{items.map(item=>{
+    <div className={"cards"+(isPeople&&layout==='list'?" people-list":"")+(section.startsWith('person:')?' member-trip-list':'')} aria-busy={loading}>{items.map(item=>{
       if(!isPeople)return renderTrip(item as AdminTrip);
       const p=item as Person;return <article className="trip-card team-person" key={p.id}><div className="person-identity"><h2>{p.name||p.email||'Usuario sin nombre'}</h2>{p.email&&<p className="team-email">{p.email}</p>}</div><div className="person-details">{p.phone&&<p className="muted">{p.phone}</p>}<p>{p.role==='admin'?'Administrador':p.role==='driver'?'Conductor':'Pasajero'} · {p.role==='driver'?(p.approved?'Aprobado':'Sin habilitaci\u00f3n'):'Usuario'}</p><p className="muted">{p.suspended?'Cuenta suspendida':p.role==='driver'?(p.available?'Disponible':'Desconectado'):'Cuenta activa'}</p>{p.role==='driver'&&overview?.drivers[p.id]&&<p className="plan-badges">{PLAN_BADGE[overview.drivers[p.id].status]&&<span className={'plan-badge is-'+PLAN_BADGE[overview.drivers[p.id].status][1]}>{PLAN_BADGE[overview.drivers[p.id].status][0]}</span>}{overview.drivers[p.id].duplicate&&<span className="plan-badge is-bad">Cuenta de cobro repetida</span>}</p>}</div><button className="secondary" disabled={busy||loading} onClick={()=>{setOperation('');setActionError('');setMemberTab('info');setPerson(p);}}>Gestionar</button></article>;
     })}{!loading&&!items.length&&!error&&<p className="muted">No hay resultados para esta búsqueda.</p>}</div>
