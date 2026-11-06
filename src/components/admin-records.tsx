@@ -51,7 +51,7 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,
     {isPeople&&<dialog ref={detail} className="action-sheet member-sheet" aria-label="Gestionar cuenta" onCancel={e=>{if(saving)e.preventDefault();}} onClose={()=>{setPerson(null);setOperation('');}}>
       {person&&<><div className="member-top">
       <div className="service-tabs member-tabs" role="tablist" aria-label="Secciones de la cuenta">
-        {(person.role==='driver'?[['info','Información'],['payout','Cuenta de cobro'],...(subscription?[['plan','Plan']]:[]),['trips','Historial de viajes'],['movements','Movimientos']]:[['info','Información'],['wallet','Saldo'],['trips','Historial de viajes']]).map(([value,label])=>
+        {(person.role==='driver'?[['info','Información'],['documents','Documentos'],['payout','Cuenta de cobro'],...(subscription?[['plan','Plan']]:[]),['trips','Historial de viajes'],['movements','Movimientos']]:[['info','Información'],['wallet','Saldo'],['trips','Historial de viajes']]).map(([value,label])=>
           <button key={value} type="button" role="tab" aria-selected={memberTab===value} className={memberTab===value?'is-active':''} onClick={()=>setMemberTab(value)}>{label}</button>)}
       </div>
       <button className="icon-button" disabled={saving} aria-label="Cerrar ficha" onClick={()=>detail.current?.close()}>×</button></div>
