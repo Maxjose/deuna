@@ -2733,10 +2733,11 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .document-notice-expanded > button { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; color: inherit; font-weight: 750; }
 .document-notice-expanded > button svg { width: 18px; height: 18px; }
 .document-delete-confirm { padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
-.support-center { display: grid; gap: 18px; min-width: 0; }
+.support-center { display: grid; gap: 18px; min-width: 0; align-content: start; overflow-anchor: none; }
 .support-center > h2, .support-center > p { margin: 0; }
-.support-faq { display: grid; gap: 16px; }
-.support-faq h3 { margin: 0 0 8px; font-size: 15px; }
+.support-faq { display: grid; gap: 28px; }
+.support-faq h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-size: 15px; }
+.support-faq h3::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--lime-text); flex-shrink: 0; }
 .support-faq details { border-bottom: 1px solid var(--line); }
 .support-faq summary { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; list-style: none; cursor: pointer; font-weight: 650; }
 .support-faq summary::-webkit-details-marker { display: none; }
@@ -2748,16 +2749,30 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .support-thread span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .support-thread strong { overflow-wrap: anywhere; }
 .support-thread small { color: var(--muted); font-size: 11px; }
-.support-thread.is-selected { border-color: var(--lime-text); box-shadow: inset 3px 0 var(--lime-text); }
+.support-thread.is-selected { border-color: var(--line); background: var(--success-soft); box-shadow: none; }
 .support-profile { background: var(--paper); border-radius: 12px; padding: 12px; margin: 14px 0; }
 .support-profile summary { font-weight: 750; cursor: pointer; }
 .support-profile dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; font-size: 13px; }
 .support-profile dd { margin: 0; overflow-wrap: anywhere; }
 .support-messages { height: 360px; max-height: 55dvh; overflow: auto; min-height: 180px; }
 .support-conversation > header p { white-space: pre-wrap; overflow-wrap: anywhere; }
-.support-center .chat-compose { display: flex; gap: 10px; align-items: end; }
-.support-center .chat-compose textarea { min-width: 0; flex: 1; }
-.support-center .chat-compose button { width: auto; }
+.support-center button, .support-center textarea, .support-center input { border-radius: 12px; }
+.support-center .chat-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.support-center .chat-compose textarea { min-width: 0; min-height: 48px; height: 48px; max-height: 160px; margin: 0; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+.support-center .chat-compose .primary { display: grid; place-items: center; width: auto; min-width: 88px; max-width: none; height: 48px; margin: 0; padding: 0 16px; flex: 0 0 auto; }
+.support-center .chat-bubble, .support-center .chat-bubble.mine { border-radius: 12px; }
+.support-user-workspace { grid-template-columns: minmax(0, 1fr); }
+.support-user-workspace .support-inbox { max-height: none; padding: 0; border: 0; background: transparent; overflow: visible; }
+.support-user-workspace .support-conversation { padding: 0; border: 0; background: transparent; }
+.support-back { display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 8px 0; }
+.support-new-request { margin-top: 14px; }
+.support-user-workspace .support-thread { padding: 16px; background: var(--surface); border-radius: 12px; }
+.support-user-workspace .support-thread small { font-size: 12px; }
+.support-center .chat-bubble { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.support-center .chat-bubble.mine { background: #e3f5ce; color: #122033; }
+.support-user-workspace h2 { margin: 0 0 18px; font-size: 23px; }
+.content:has(.support-center[data-support-view='inbox']) > .account-section-heading,
+.content:has(.support-center[data-support-view='chat']) > .account-section-heading { display: none; }
 @media (max-width: 800px) { .support-workspace { grid-template-columns: minmax(0, 1fr); } .support-inbox { max-height: 340px; overflow: auto; } }
 .admin-shell .cards.member-trip-list { grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 12px; }
 .admin-shell .member-trip-list > .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); gap: 10px 24px; padding: 20px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
