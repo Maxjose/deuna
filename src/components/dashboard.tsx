@@ -21,6 +21,8 @@ import { AdminThemeToggle, useAdminTheme } from "./admin-theme-toggle";
 import { InstallApp } from "./install-app";
 import { PasskeySecurity } from "./passkey-security";
 import { ChangePassword } from "./change-password";
+import dynamic from 'next/dynamic';
+const Support = dynamic(() => import("./support").then(module => module.Support));
 import { DriverDocuments, DriverDocumentNotice } from "./driver-documents";
 import { DriverPayout, DriverVehicle } from "./driver-payout";
 import { DriverEarnings } from "./earnings";
@@ -308,10 +310,10 @@ export function Dashboard({
       const [value, section = "overview"] = window.location.hash.slice(1).split("/");
       const allowed =
         profile?.role === "admin"
-          ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "account"]
+          ? ["home", "history", "payments", "settings", "places", "drivers", "users", "notifications", "support", "account"]
           : ["home", "history", "earnings", "messages", "account"];
       setPage(allowed.includes(value) ? value : "home");
-      setAccountSection(value === "account" && ["info","security","wallet","balance","favorites","vehicle","documents","payout","payment-data","preferences"].includes(section) ? section : "overview");
+      setAccountSection(value === "account" && ["info","security","wallet","balance","favorites","vehicle","documents","support","payout","payment-data","preferences"].includes(section) ? section : "overview");
       setMoreOpen(false);
     };
     syncPage();
@@ -352,6 +354,7 @@ export function Dashboard({
           ["home", "Inicio", "Operación"],
           ["history", "Viajes", "Operación"],
           ["payments", "Pagos", "Operación"],
+          ["support", "Soporte", "Operaci\u00f3n"],
           ["drivers", "Equipo", "Personas"],
           ["users", "Usuarios", "Personas"],
           ["settings", "Servicio", "Configuración"],
@@ -371,6 +374,7 @@ export function Dashboard({
     users: "Pasajeros registrados",
     settings: "Horario, tarifas y solicitudes",
     places: "Catálogo de destinos",
+    support: "Solicitudes y conversaciones",
     notifications: "Notificaciones y campañas",
     account: displayName || email,
   };
@@ -384,8 +388,8 @@ export function Dashboard({
   const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceOpen ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
     page === "account"
-      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",vehicle:"Mi moto",documents:"Documentos",balance:"Mi saldo",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
-      : ({history:"Viajes",earnings:subscription&&role==="driver"?"Mi plan":"Ganancias",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",messages:"Mensajes"} as Record<string,string>)[page] ||
+      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",vehicle:"Mi moto",documents:"Documentos",support:"Ayuda y soporte",balance:"Mi saldo",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
+      : ({history:"Viajes",earnings:subscription&&role==="driver"?"Mi plan":"Ganancias",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",support:"Soporte",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
   const pageContext =
@@ -699,7 +703,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi moto","moto"],["documents","Documentos","history"],["payout","Mis cuentas","payments"]]:[]),["preferences","Configuración","settings"]].filter(([section])=>section!=="wallet"||walletAvailable).map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi moto","moto"],["documents","Documentos","history"],["payout","Mis cuentas","payments"]]:[]),["support","Ayuda y soporte","support"],["preferences","Configuración","settings"]].filter(([section])=>section!=="wallet"||walletAvailable).map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -720,6 +724,7 @@ export function Dashboard({
                 </label>
                 <button className="primary" disabled={busy || offline || !draftName.trim()}>{busy ? "Guardando…" : "Guardar datos"}</button>
               </form>}
+              {accountSection==="support"&&<Support userId={userId} role={role}/>}
               {accountSection==="security"&&<><ChangePassword /><PasskeySecurity /><DeleteAccount /><p className="muted legal-links"><a href="/privacidad">Política de privacidad</a></p></>}
               {accountSection==="payout"&&role==="driver"&&<DriverPayout />}
               {accountSection==="vehicle"&&role==="driver"&&<DriverVehicle />}
@@ -731,6 +736,8 @@ export function Dashboard({
             </div>
           ) : page === "payments" && role === "admin" ? (
             <AdminPayments onMessage={setMessage} />
+          ) : page === "support" && role === "admin" ? (
+            <Support userId={userId} role={role}/>
           ) : page === "places" && role === "admin" ? (
             <PlacesCatalog />
           ) : page === "notifications" && role === "admin" ? (
