@@ -2721,6 +2721,18 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .document-availability-notice small { margin-top: 4px; line-height: 1.5; }
 .document-availability-notice.is-exempt { background: #eff9e5; border-color: #7b9c52; color: #34521e; }
 .document-availability-notice.is-exempt .document-notice-icon { background: #d9edc4; }
+.document-availability-notice { display: block; padding: 0; }
+.document-availability-notice > summary { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; list-style: none; }
+.document-availability-notice > summary::-webkit-details-marker { display: none; }
+.document-availability-notice > summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 14px; }
+.document-availability-notice > summary strong { flex: 1; font-size: 13px; }
+.document-notice-chevron { width: 20px; height: 20px; flex-shrink: 0; transition: transform .15s; }
+.document-availability-notice[open] .document-notice-chevron { transform: rotate(180deg); }
+.document-notice-expanded { padding: 0 16px 10px; }
+.document-notice-expanded p { margin: 0; font-size: 13px; line-height: 1.6; }
+.document-notice-expanded > button { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; color: inherit; font-weight: 750; }
+.document-notice-expanded > button svg { width: 18px; height: 18px; }
+.document-delete-confirm { padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
 .admin-shell .cards.member-trip-list { grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 12px; }
 .admin-shell .member-trip-list > .trip-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, .45fr); gap: 10px 24px; padding: 20px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; }
 .member-trip-list .trip-status-row { grid-column: 1 / -1; }

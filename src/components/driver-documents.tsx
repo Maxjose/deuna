@@ -1,5 +1,5 @@
 "use client";
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {browserClient} from '@/lib/supabase/client';
 import {DOCUMENTS,documentExtension} from '@/lib/driver-documents';
 import dynamic from 'next/dynamic';
@@ -18,7 +18,10 @@ export function DriverDocumentNotice({onOpen}:{onOpen:()=>void}){
   return()=>{active=false;clearInterval(timer);document.removeEventListener('visibilitychange',check);};
  },[]);
  if(status?.ready&&!status.exempt)return null;
- return <div className={'availability-notice document-availability-notice'+(status?.exempt?' is-exempt':'')} role="status"><span className="document-notice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d={status?.exempt?'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8 12l3 3 5-6':'m12 3 10 18H2L12 3ZM12 9v5m0 3v1'}/></svg></span><span>{status?.exempt?<><strong>Autorización especial activa</strong><small>Puedes trabajar por autorización de administración. Revisa y completa tus documentos para evitar bloqueos cuando termine esta autorización.</small></>:'Revisa el estado de tus documentos para aceptar viajes.'}</span><button className="text" onClick={onOpen}>Ver documentos</button></div>;
+ return <details className={'availability-notice document-availability-notice'+(status?.exempt?' is-exempt':'')} key={status?.exempt?'exempt':'pending'}>
+  <summary><span className="document-notice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d={status?.exempt?'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM8 12l3 3 5-6':'m12 3 10 18H2L12 3ZM12 9v5m0 3v1'}/></svg></span><strong>{status?.exempt?'Autorizaci\u00f3n especial activa':'Revisi\u00f3n de documentos'}</strong><svg className="document-notice-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+  <div className="document-notice-expanded"><p>{status?.exempt?'Puedes trabajar por autorizaci\u00f3n de administraci\u00f3n. Revisa y completa tus documentos para evitar bloqueos cuando termine esta autorizaci\u00f3n.':'Revisa el estado de tus documentos para aceptar viajes. Debes completar los cinco requisitos y esperar su aprobaci\u00f3n.'}</p><button type="button" className="text" onClick={onOpen}>Ver documentos<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+ </details>;
 }
 export function DriverDocuments({driverId,admin=false}:{driverId:string;admin?:boolean}){
  const client=useMemo(()=>browserClient(),[]);
@@ -26,6 +29,9 @@ export function DriverDocuments({driverId,admin=false}:{driverId:string;admin?:b
  const [reasons,setReasons]=useState<Record<string,string>>({});
  const [uploadName,setUploadName]=useState('');
  const [preview,setPreview]=useState<Document|null>(null);
+ const [deleteTarget,setDeleteTarget]=useState<Document|null>(null);
+ const deleteConfirmation=useRef<HTMLDivElement>(null);
+ useEffect(()=>{if(deleteTarget)deleteConfirmation.current?.focus();},[deleteTarget]);
  const load=useCallback(async()=>{
   const {data,error}=await client.rpc('driver_documents',{action:'list',payload:{driver_id:driverId}});
   if(error){setError('No pudimos cargar los documentos.');return;}
@@ -51,6 +57,7 @@ export function DriverDocuments({driverId,admin=false}:{driverId:string;admin?:b
  }
  return <section className="driver-documents">
   <h2>Documentos</h2>
+  {admin&&deleteTarget&&<div className="document-delete-confirm" role="alert" ref={deleteConfirmation} tabIndex={-1}><strong>¿Borrar {DOCUMENTS.find(([kind])=>kind===deleteTarget.kind)?.[1]}?</strong><p>El archivo se eliminará y el conductor deberá adjuntarlo nuevamente. Sin la exención activa, no podrá aceptar nuevos viajes hasta que se aprueben sus documentos.</p><div className="document-actions"><button type="button" className="secondary danger" disabled={!!busy} onClick={()=>void run('delete',async()=>{await change('delete',{kind:deleteTarget.kind,path:deleteTarget.path});const {error}=await client.storage.from('driver-documents').remove([deleteTarget.path]);if(error)throw new Error('No se pudo eliminar el archivo. Pulsa Borrar para reintentar.');setDeleteTarget(null);setPreview(null);setMessage('Documento eliminado.');})}>{busy==='delete'?'Borrando…':'Borrar documento'}</button><button type="button" className="secondary" disabled={!!busy} onClick={()=>setDeleteTarget(null)}>Cancelar</button></div></div>}
   <p>Para aceptar viajes necesitas los cinco documentos aprobados por administración. Adjunta JPG, PNG o PDF de hasta 10 MB por documento.</p>
   {error&&<p role="alert" className="payment-error">{error}</p>}
   {message&&<p role="status">{message}</p>}
@@ -66,7 +73,7 @@ export function DriverDocuments({driverId,admin=false}:{driverId:string;admin?:b
      {doc&&<button type="button" className="secondary" disabled={!!busy} onClick={()=>setPreview(doc)}>Ver documento</button>}
      {!admin&&<label className={'document-upload'+(busy?' is-disabled':'')}><input className="document-upload-input" type="file" aria-label={`${doc?'Reemplazar':'Adjuntar'} ${title}`} accept="image/jpeg,image/png,application/pdf" disabled={!!busy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file){setUploadName(file.name);void run(kind,()=>upload(kind,file)).finally(()=>setUploadName(''));}}}/><span className="document-upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 16V3m-4 4 4-4 4 4M4 15v6h16v-6"/></svg></span><span><strong>{busy===kind&&uploadName?'Subiendo documento…':doc?'Reemplazar documento':'Adjuntar documento'}</strong><small>{busy===kind&&uploadName?uploadName:'JPG, PNG o PDF · Hasta 10 MB'}</small></span><AppIcon name="arrow"/></label>}
      {!admin&&doc?.status==='approved'&&<small>Si lo reemplazas, el nuevo archivo necesitará otra aprobación.</small>}
-     {admin&&doc&&<><label>Motivo si se rechaza<textarea maxLength={500} value={reasons[kind]||''} disabled={!!busy} onChange={e=>setReasons(r=>({...r,[kind]:e.target.value}))}/></label><div className="document-actions"><button type="button" className="secondary" disabled={!!busy||!(reasons[kind]?.trim().length>=3)} onClick={()=>void run(kind,()=>change('review',{kind,path:doc.path,approve:false,reason:reasons[kind]}))}>Rechazar</button><button type="button" className="primary" disabled={!!busy||doc.status==='approved'} onClick={()=>void run(kind,()=>change('review',{kind,path:doc.path,approve:true}))}>Aprobar</button></div></>}
+     {admin&&doc&&<><button type="button" className="text danger" disabled={!!busy} onClick={()=>{setError('');setDeleteTarget(doc);}}>Borrar documento</button><label>Motivo si se rechaza<textarea maxLength={500} value={reasons[kind]||''} disabled={!!busy} onChange={e=>setReasons(r=>({...r,[kind]:e.target.value}))}/></label><div className="document-actions"><button type="button" className="secondary" disabled={!!busy||!(reasons[kind]?.trim().length>=3)} onClick={()=>void run(kind,()=>change('review',{kind,path:doc.path,approve:false,reason:reasons[kind]}))}>Rechazar</button><button type="button" className="primary" disabled={!!busy||doc.status==='approved'} onClick={()=>void run(kind,()=>change('review',{kind,path:doc.path,approve:true}))}>Aprobar</button></div></>}
      {busy===kind&&<p role="status">Procesando…</p>}
     </article>;
    })}</div>
