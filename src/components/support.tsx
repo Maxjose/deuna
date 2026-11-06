@@ -17,6 +17,7 @@ const FAQ=[
 const DRIVER_FAQ=[['¿Por qué no puedo conectarme?','Verifica que tu cuenta esté aprobada, que tengas registrados los datos de tu moto y cobro y que tus documentos estén aprobados. Si tu cuenta utiliza un plan, revisa también su vigencia.'],['¿Cómo adjunto mis documentos?','En Cuenta → Documentos adjunta cada requisito. Administración debe aprobarlos. Si reemplazas un archivo aprobado, el nuevo vuelve a revisión.'],['¿Por qué me desconectó la app?','Puede ocurrir por inactividad o falta de señal de la app. Revisa la conexión y vuelve a conectarte cuando estés disponible. Las autorizaciones especiales dependen de administración.']] as const;
 export function Support({userId,role}:{userId:string;role:string}){
  const admin=role==='admin',client=useMemo(()=>browserClient(),[]);
+ const [confirmDelete,setConfirmDelete]=useState(false);
  const [view,setView]=useState<SupportView>('help');
  const root=useRef<HTMLElement>(null);
  const go=(next:SupportView,id='')=>{
@@ -55,7 +56,7 @@ export function Support({userId,role}:{userId:string;role:string}){
   setMessages(previous=>Array.from(new Map([...previous,...data.messages].map((m:Message)=>[m.id,m])).values()).sort((a,b)=>a.seq-b.seq));
   if(before||!messages.length)setMore(data.messages.length===100);
  },[client,selected,messages.length]);
- useEffect(()=>{setThread(null);setMessages([]);setProfile(null);setDraft('');setMore(false);pending.current=null;nearBottom.current=true;return()=>{chatVersion.current++;};},[selected]);
+ useEffect(()=>{setConfirmDelete(false);setThread(null);setMessages([]);setProfile(null);setDraft('');setMore(false);pending.current=null;nearBottom.current=true;return()=>{chatVersion.current++;};},[selected]);
  useEffect(()=>{
   let active=true,running=false;
   const refresh=async()=>{if(!active||running||document.hidden)return;running=true;try{await Promise.all([loadList(),loadChat()]);}finally{running=false;}};
@@ -70,6 +71,7 @@ export function Support({userId,role}:{userId:string;role:string}){
    const {data,error}=await client.rpc('support',{action,payload:{id:selected,...payload}});
    if(error)throw error;
    if(action==='request'){go('chat',data.id);setSubject('');}
+   if(action==='delete'){setSelected('');setConfirmDelete(false);await loadList();return;}
    if(action==='send'){pending.current=null;setDraft('');nearBottom.current=true;}
    await Promise.all([loadList(),action==='request'?Promise.resolve():loadChat()]);
   }catch(e){const message=(e as {message?:string}).message;setError(message==='Conversacion no disponible'?'Otro agente ya tomó la conversación. Actualiza la lista.':message==='Espera atencion'?'Espera a que soporte tome tu solicitud antes de escribir.':message==='Limite de solicitudes'?'Alcanzaste el límite de solicitudes de hoy. Revisa tus conversaciones.':'No pudimos completar la acción. Reintenta; tu mensaje no se duplicará.');}
@@ -92,6 +94,7 @@ export function Support({userId,role}:{userId:string;role:string}){
    {admin&&thread.status==='active'&&<div className="document-actions">{thread.assigned_to===userId?<><button className="secondary" disabled={busy} onClick={()=>void act('resolve')}>Marcar como resuelto</button><button className="text" disabled={busy} onClick={()=>void act('release')}>Devolver a la espera</button></>:<p>Esta conversación está siendo atendida por otro agente.</p>}</div>}
    <div className="chat-messages support-messages" ref={log} role="log" aria-label="Mensajes de soporte" aria-live="polite" onScroll={e=>{const el=e.currentTarget;nearBottom.current=el.scrollHeight-el.scrollTop-el.clientHeight<80;}}>{more&&<button className="secondary" onClick={()=>void loadChat(messages[0]?.seq)}>Ver mensajes anteriores</button>}{messages.map(m=><article key={m.id} className={'chat-bubble '+(m.sender_id===userId?'mine':'')}><small>{m.staff?'Soporte':'Usuario'}</small><p>{m.body}</p><time dateTime={m.created_at}>{new Date(m.created_at).toLocaleString('es-VE')}</time></article>)}</div>
    {canSend&&<form className="chat-compose" onSubmit={e=>{e.preventDefault();const body=draft.trim();if(!body)return;if(!pending.current||pending.current.body!==body||pending.current.thread!==selected)pending.current={id:crypto.randomUUID(),body,thread:selected};void act('send',{body,message_id:pending.current.id});}}><label className="sr-only" htmlFor="support-message">Mensaje a soporte</label><textarea id="support-message" value={draft} maxLength={2000} disabled={busy} onChange={e=>setDraft(e.target.value)} placeholder="Escribe un mensaje"/><button className="primary" disabled={busy||!draft.trim()}>{busy?'Enviando…':'Enviar'}</button></form>}
+   {admin&&thread.status==='resolved'&&<div className="support-delete">{!confirmDelete?<button type="button" className="secondary danger" disabled={busy} onClick={()=>setConfirmDelete(true)}>Eliminar conversación</button>:<div role="alert"><strong>¿Eliminar esta conversación?</strong><p>Se borrarán el chat y todos sus mensajes. Esta acción no se puede deshacer.</p><div className="document-actions"><button type="button" className="secondary danger" disabled={busy} onClick={()=>void act('delete',{confirmation:'ELIMINAR'})}>{busy?'Eliminando…':'Sí, eliminar'}</button><button type="button" className="secondary" disabled={busy} onClick={()=>setConfirmDelete(false)}>Cancelar</button></div></div>}</div>}
    {thread.status==='resolved'&&<p role="status">Conversación resuelta. Si necesitas más ayuda, puedes solicitar una nueva atención.</p>}
   </>}</div>}</div>}
  </section>;
