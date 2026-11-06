@@ -14,7 +14,7 @@ export function InstallGate({children}:{children:ReactNode}){
   const platform=installPlatform(navigator.userAgent,navigator.maxTouchPoints);
   const update=()=>{
    // Páginas públicas (privacidad, eliminar cuenta) siempre accesibles desde el navegador.
-   if(window.location.pathname==='/auth/continue'||['/privacidad','/eliminar-cuenta'].some(path=>window.location.pathname.startsWith(path))){setMode('allowed');return;}
+   if(['/auth/continue','/auth/confirmation','/reset-password'].includes(window.location.pathname)||['/privacidad','/eliminar-cuenta'].some(path=>window.location.pathname.startsWith(path))){setMode('allowed');return;}
    const standalone=display.matches||full.matches||(navigator as Navigator&{standalone?:boolean}).standalone===true;
    setMode(requiresInstallation(platform,standalone,detectTwa())?(platform==='ios'?'ios':'android'):'allowed');
   };

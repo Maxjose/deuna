@@ -2766,6 +2766,18 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .support-user-workspace .support-conversation { padding: 0; border: 0; background: transparent; }
 .support-back { display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 8px 0; }
 .support-new-request { margin-top: 14px; }
+.email-confirmation-page { min-height: 100dvh; display: grid; place-items: center; padding: 28px 18px; background: radial-gradient(ellipse at top, #dff5be 0, #f5f7f8 65%); color: #122033; }
+.email-confirmation-card { width: min(100%, 480px); padding: clamp(24px,5vw,40px); border-radius: 24px; border: 1px solid #dfe6dc; background: white; box-shadow: 0 16px 50px #1220330d; text-align: center; }
+.email-confirmation-brand { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 28px; font-weight: 850; margin-bottom: 32px; }
+.email-confirmation-brand > span > span { color: #587f2c; }
+.email-confirmation-symbol { display: inline-grid; place-items: center; width: 80px; height: 80px; border-radius: 20px; background: #eef2f5; margin-bottom: 18px; }
+.email-confirmation-symbol.is-confirmed { background: #b4f36a; }
+.email-confirmation-symbol svg { width: 38px; height: 38px; }
+.email-confirmation-card h1 { font-size: 28px; line-height: 1.25; margin: 10px 0 18px; }
+.email-confirmation-card p { line-height: 1.7; }
+.email-confirmation-card .eyebrow { color: #587f2c; font-size: 11px; }
+.email-confirmation-note { background: #f5f7f8; padding: 16px; margin: 24px 0; border-radius: 12px; color: #596775; font-size: 13px; line-height: 1.6; }
+.email-confirmation-card > small { color: #587f2c; font-weight: 750; }
 .support-user-workspace .support-thread { padding: 16px; background: var(--surface); border-radius: 12px; }
 .support-user-workspace .support-thread small { font-size: 12px; }
 .support-center .chat-bubble { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
