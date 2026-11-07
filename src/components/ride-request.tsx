@@ -7,7 +7,7 @@ import { PromoBanners } from "./promo-banners";
 import type { Favorite } from './favorite-places';
 import { binanceReady, bs, bsAmount, pagoMovilReady, rateValue, type PaymentMethod, type PaymentSettings } from '@/lib/payments';
 import { Toast, useNotice } from "./toast";
-import { usd, type FareQuote } from "@/lib/fare";
+import { usd, type FareQuote, type VehicleType } from "@/lib/fare";
 import { type Place, placeDistanceMeters, placeSearchUrl, localPlaces, mergeSearchPlaces, searchCenter } from "@/lib/journey";
 import { decodeCatalogPlaces } from "@/lib/catalog";
 import { browserClient } from "@/lib/supabase/client";
@@ -52,13 +52,17 @@ export function RideRequest({
     [results, setResults] = useState<Place[]>([]),
     [locating, setLocating] = useState(false),
     [loading, setLoading] = useState(false),
-    [moto, setMoto] = useState(false),
+    [vehicle, setVehicle] = useState<VehicleType | null>(null),
     [routeReady, setRouteReady] = useState(false);
   const [mapReferences,setMapReferences]=useState({origin:false,destination:false});
   const [mapCompact,setMapCompact]=useState(false);
   const [mapVisible,setMapVisible]=useState(false);
-  const [quote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
+  const [rawQuote, setQuote] = useState<FareQuote | null>(null), [quoteRevision, setQuoteRevision] = useState(0), [expired, setExpired] = useState(false);
   const quotePlaces = useMemo(() => ({ origin, destination }), [origin, destination]);
+  // Tipos de vehículo activos (moto primero); la cotización mostrada es la del tipo elegido o la del primero disponible.
+  const kinds = (["moto", "car"] as VehicleType[]).filter(k => k === "moto" ? payment?.moto_enabled !== false : payment?.car_enabled === true)
+    .filter(k => !rawQuote?.options || rawQuote.options[k]);
+  const quote = rawQuote ? (rawQuote.options?.[vehicle ?? kinds[0]] ?? rawQuote) : null;
   const fareReady = routeReady && quote !== null && !expired;
   const { message, notify: setMessage } = useNotice(step);
   useEffect(() => {
@@ -315,7 +319,7 @@ export function RideRequest({
               if (!place) { if (kind === "home") onSetupHome(); else onManagePlaces(); return; }
               setOrigin({ label: "", point: null });
               setDestination({ label: place.label, point: { lat: place.latitude, lng: place.longitude } });
-              setMoto(false); setQuote(null); setRouteReady(false); quickHome.current = true; open();
+              setVehicle(null); setQuote(null); setRouteReady(false); quickHome.current = true; open();
             }}>
               <span className="home-place-icon"><AppIcon name={kind} /></span>
               <span className="home-place-text"><strong>{title}</strong><small>{place ? place.label : "Agregar"}</small></span>
@@ -492,26 +496,30 @@ export function RideRequest({
                 {expired && <button className="secondary" onClick={() => { setQuote(null); setQuoteRevision(n => n + 1); }}>Actualizar precio</button>}
                 {step === "choose" ? (
                   <>
-                    <button
-                      className={"moto-option " + (moto ? "is-selected" : "")}
-                      aria-pressed={moto}
-                      onClick={() => setMoto(true)}
-                    >
-                      <span className="service-icon">
-                        <AppIcon name="moto" />
-                      </span>
-                      <span>
-                        <strong>De1na Moto</strong>
-                        <small>Un viaje para ti · 1 pasajero</small>
-                      </span>
-                      <span className="selection-dot" />
-                    </button>
+                    {kinds.map(kind => {
+                      const option = rawQuote?.options?.[kind] ?? (kind === "moto" ? rawQuote : null);
+                      return <button key={kind}
+                        className={"moto-option vehicle-option " + (vehicle === kind ? "is-selected" : "")}
+                        aria-pressed={vehicle === kind}
+                        onClick={() => setVehicle(kind)}
+                      >
+                        <span className="service-icon">
+                          <AppIcon name={kind === "car" ? "car" : "moto"} />
+                        </span>
+                        <span>
+                          <strong>{kind === "car" ? "De1na Carro" : "De1na Moto"}</strong>
+                          <small>{kind === "car" ? "Más cómodo · hasta 4 pasajeros" : "Un viaje para ti · 1 pasajero"}</small>
+                        </span>
+                        {option && <b className="vehicle-price">{usd(option.fare_cents)}</b>}
+                        <span className="selection-dot" />
+                      </button>;
+                    })}
                     <button
                       className="primary"
-                      disabled={!moto || !fareReady}
-                      onClick={() => { if (moto && fareReady) setStep("payment"); }}
+                      disabled={!vehicle || !fareReady}
+                      onClick={() => { if (vehicle && fareReady) setStep("payment"); }}
                     >
-                      Elegir Moto
+                      {vehicle === "car" ? "Elegir Carro" : "Elegir Moto"}
                       <AppIcon name="arrow" />
                     </button>
                   </>

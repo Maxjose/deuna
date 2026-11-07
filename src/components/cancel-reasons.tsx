@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-const DRIVER = ["El pasajero no aparece", "Dirección incorrecta", "Problema con la moto", "Emergencia personal"];
+const DRIVER = ["El pasajero no aparece", "Dirección incorrecta", "Problema con el vehículo", "Emergencia personal"];
 const PASSENGER = ["Ya no lo necesito", "El conductor tarda mucho", "Pedí por error", "Cambié de destino"];
 
 /** Motivo obligatorio de cancelación: opciones rápidas y «Otro» con texto. Devuelve el texto elegido (o "" si falta). */

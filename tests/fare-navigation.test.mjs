@@ -8,7 +8,7 @@ const source=ts.createSourceFile('ride-request.tsx',readFileSync(new URL('../src
 let ready,button;
 function visit(node){
  if(ts.isVariableDeclaration(node)&&node.name.getText(source)==='fareReady')ready=node.initializer;
- if(ts.isJsxElement(node)&&node.openingElement.tagName.getText(source)==='button'&&node.children.some(child=>ts.isJsxText(child)&&child.text.trim()==='Elegir Moto'))button=node;
+ if(ts.isJsxElement(node)&&node.openingElement.tagName.getText(source)==='button'&&node.children.some(child=>child.getText(source).includes('Elegir Moto')))button=node;
  ts.forEachChild(node,visit);
 }
 visit(source);
@@ -23,7 +23,7 @@ test('no permite elegir transporte sin ruta, precio vigente o selección de moto
   [true,{},false,false,false],[true,{},false,true,true],
  ]){
   let step='choose';
-  const context={routeReady,quote,expired,moto,setStep:value=>{step=value;}};
+  const context={routeReady,quote,expired,vehicle:moto?'moto':null,setStep:value=>{step=value;}};
   context.fareReady=evaluate(ready,context);
   const attrs=button.openingElement.attributes.properties;
   const disabled=attrs.find(a=>a.name?.text==='disabled').initializer.expression;

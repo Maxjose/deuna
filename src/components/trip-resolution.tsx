@@ -80,7 +80,7 @@ export function TripPerson({tripId,label,viewerId}:{tripId:string;label:string;v
  const key=participantKey(viewerId,'trip',tripId);
  const person=useSyncExternalStore(useCallback(listener=>subscribeParticipant(key,listener),[key]),useCallback(()=>readParticipant<TripContact>(key),[key]),()=>null);
  useEffect(()=>{void loadTripContact(browserClient(),viewerId,tripId).catch(()=>{});},[viewerId,tripId]);
- return <div className="trip-person"><small>{label}</small><strong>{person?.name||'—'}</strong><p className="reputation">★ {person?(person.rating.count?`${Number(person.rating.average).toFixed(1)} / 5 · ${person.rating.count} valoraciones`:'Sin valoraciones todavía'):'—'}</p>{person?.vehicle&&<p className="trip-vehicle"><AppIcon name="moto"/><span>{person.vehicle.model} · {person.vehicle.color}</span><b>{person.vehicle.plate}</b></p>}</div>;
+ return <div className="trip-person"><small>{label}</small><strong>{person?.name||'—'}</strong><p className="reputation">★ {person?(person.rating.count?`${Number(person.rating.average).toFixed(1)} / 5 · ${person.rating.count} valoraciones`:'Sin valoraciones todavía'):'—'}</p>{person?.vehicle&&<p className="trip-vehicle"><AppIcon name={person.vehicle.type==='car'?'car':'moto'}/><span>{person.vehicle.model}{person.vehicle.year?` ${person.vehicle.year}`:''} · {person.vehicle.color}</span><b>{person.vehicle.plate}</b></p>}</div>;
 }
 export function TripCompletion({refresh,onDone}:{refresh:unknown;onDone:()=>void}){
  const client=useMemo(()=>browserClient(),[]),dialog=useRef<HTMLDialogElement>(null);

@@ -60,7 +60,7 @@ export function AdminRecords({viewerId,section,busy,refresh,onDriver,renderTrip,
       <h2 className="member-name">{person.name||person.email||'Usuario sin nombre'}</h2>
       <p className="team-email">{person.email}</p>{person.phone&&<p>{person.phone}</p>}
       <DriverReputation viewerId={viewerId} personId={person.id}/>
-      <p>{person.role==='driver'?'Conductor · Moto':'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
+      <p>{person.role==='driver'?`Conductor · ${(person as {vehicle_type?:string}).vehicle_type==='car'?'Carro':'Moto'}`:'Pasajero'} · {person.suspended?'Cuenta suspendida':person.role==='driver'?(person.approved?'Aprobado':'Sin habilitación para conducir'):'Cuenta activa'}</p>
       {person.role==='driver'&&<p className="muted">{person.available?'Disponible para viajes':'Desconectado'}</p>}
       {person.role==='driver'&&<AdminDriverVip key={person.id+'vip'} driverId={person.id}/>}
       {person.role==='driver'&&<AdminDriverVehicle key={person.id+'v'} driverId={person.id}/>}

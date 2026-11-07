@@ -57,6 +57,7 @@ type Profile = {
   approved: boolean;
   available: boolean;
   suspended: boolean;
+  vehicle_type?: "moto" | "car";
 };
 type Trip = {
   id: string;
@@ -78,6 +79,7 @@ type Trip = {
   payment_status?: string | null;
   payment_note?: string | null;
   billing_mode?: string | null;
+  vehicle_type?: string | null;
 };
 type Settings = FareConfig & PaymentSettings & {
   id: number;
@@ -156,10 +158,10 @@ export function Dashboard({
   const load = useCallback(async () => {
     const notifyFailure=noticeRef.current;
     const [p, t, s, service] = await Promise.all([
-      client.from("profiles").select("id,role,approved,available,suspended"),
+      client.from("profiles").select("id,role,approved,available,suspended,vehicle_type"),
       client
         .from("trips")
-        .select("id,created_at,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference,payment_status,payment_note,binance_tx,billing_mode")
+        .select("id,created_at,origin,destination,zone,status,passenger_id,driver_id,fare_cents,distance_meters,cancel_requested,payment_method,exchange_rate,payment_reference,payment_status,payment_note,binance_tx,billing_mode,vehicle_type")
         .order("created_at", { ascending: false })
         .limit(100),
       client.from("service_settings").select("*").eq("id", 1).single(),
@@ -388,7 +390,7 @@ export function Dashboard({
   const serviceLabel = !settings ? "Cargando servicio" : !settings.enabled ? "Servicio pausado" : serviceOpen ? "Servicio abierto" : "Fuera de horario";
   const pageTitle =
     page === "account"
-      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",vehicle:"Mi moto",documents:"Documentos",support:"Ayuda y soporte",balance:"Mi saldo",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
+      ? ({overview:"Tu espacio",info:"Tu información",security:"Seguridad",favorites:"Lugares favoritos",payout:"Mis cuentas",vehicle:"Mi vehículo",documents:"Documentos",support:"Ayuda y soporte",balance:"Mi saldo",wallet:"Mi saldo","payment-data":"Mis datos de pago móvil",preferences:"Configuración"}[accountSection] || "Tu espacio")
       : ({history:"Viajes",earnings:subscription&&role==="driver"?"Mi plan":"Ganancias",payments:"Pagos",drivers:"Equipo",users:"Usuarios",settings:"Servicio",places:"Lugares",notifications:"Avisos",support:"Soporte",messages:"Mensajes"} as Record<string,string>)[page] ||
         (role === "driver" ? "Solicitudes" : "Inicio");
   const ownTrips = trips.filter((t) => t.passenger_id === userId || t.driver_id === userId).length;
@@ -482,6 +484,7 @@ export function Dashboard({
         )}
         <div className="row trip-status-row">
           <span className={"pill " + (t.status === "cancelled" ? "cancelled" : "green")}>{labels[t.status]}</span>
+          {t.vehicle_type === "car" && <span className="pill car-pill">Carro</span>}
           {t.payment_method === "test" && <span className="pill test-pill">Prueba</span>}
           <small>#{t.id.slice(0, 6)}</small>
         </div>
@@ -703,7 +706,7 @@ export function Dashboard({
                 </span>
               </article>
               <div className="account-menu">
-                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi moto","moto"],["documents","Documentos","history"],["payout","Mis cuentas","payments"]]:[]),["support","Ayuda y soporte","support"],["preferences","Configuración","settings"]].filter(([section])=>section!=="wallet"||walletAvailable).map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
+                {[["info","Tu información","account"],["security","Seguridad","key"],...(role==="passenger"?[["wallet",balance.amount_cents>0?`Mi saldo · pendiente ${usd(balance.amount_cents)}`:wallet?`Mi saldo · ${usd(wallet.balance_cents)}`:"Mi saldo","wallet"],["favorites","Lugares favoritos","places"],["payment-data","Mis datos de pago móvil","payments"]]:role==="driver"?[["vehicle","Mi vehículo",profile?.vehicle_type==="car"?"car":"moto"],["documents","Documentos","history"],["payout","Mis cuentas","payments"]]:[]),["support","Ayuda y soporte","support"],["preferences","Configuración","settings"]].filter(([section])=>section!=="wallet"||walletAvailable).map(([section,title,icon])=><button key={section} className="secondary account-menu-item" onClick={()=>openSection(section)}><AppIcon name={icon}/><span>{title}</span><AppIcon name="arrow"/></button>)}
               </div>
               <button className="secondary signout" onClick={openSignOut}>Cerrar sesión</button>
               </>}
@@ -757,7 +760,7 @@ export function Dashboard({
             </div>
             <div className="service-panel" role="tabpanel" key={settingsSection}>
             {settingsSection==="payment"&&<div className="settings-grid"><PaymentSettingsForm settings={settings} busy={busy || offline} onSaved={(text) => { setMessage(text); void load(); }} /><PaymentMethodsSettings settings={settings} onSaved={text=>{setMessage(text);void load();}} /><WalletSettings enabled={!!(settings as {wallet_topup_enabled?:boolean}).wallet_topup_enabled} onSaved={text=>{setMessage(text);void load();}} /><TestTripsSettings enabled={settings.test_trips_enabled===true} onSaved={text=>{setMessage(text);void load();}} /></div>}
-            {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} />}
+            {settingsSection==="fares"&&<FareSettings settings={settings} busy={busy || offline} onSave={payload => void act('fares', payload)} onSaved={text=>{setMessage(text);void load();}} />}
             {settingsSection==="commission"&&<div className="settings-grid"><SubscriptionSettings key={String(settings.billing_mode)} settings={settings} busy={busy || offline} onSaved={text=>{setMessage(text);void load();}} />{subscription?<PlanPayments refresh={trips} />:<CommissionSettings settings={settings} busy={busy || offline} />}</div>}
             {settingsSection==="drivers"&&<div className="settings-grid"><AvailabilitySettings /><CancelLimitSettings settings={settings as {driver_cancel_limit?:number;driver_cancel_hours?:number;passenger_cancel_limit?:number;passenger_cancel_hours?:number}} onSaved={text=>{setMessage(text);void load();}} /></div>}
             {settingsSection==="hours"&&<form

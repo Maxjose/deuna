@@ -4,7 +4,7 @@ import { browserClient } from "@/lib/supabase/client";
 import type { FareSettings as Settings } from '@/lib/fare';
 
 /** Tarifas de moto y tarifa nocturna, en recuadros separados (cada uno se guarda por su cuenta). */
-export function FareSettings({ settings, busy, onSave }: { settings: Settings; busy: boolean; onSave: (payload: Record<string, unknown>) => void }) {
+export function FareSettings({ settings, busy, onSave, onSaved }: { settings: Settings; busy: boolean; onSave: (payload: Record<string, unknown>) => void; onSaved?: (text: string) => void }) {
   const fares = { base_cents: settings.base_cents, per_km_cents: settings.per_km_cents, minimum_cents: settings.minimum_cents, rounding_cents: settings.rounding_cents ?? 50 };
   return <div className="settings-grid">
     <form className="trip-card fare-settings" onSubmit={e => {
@@ -28,7 +28,7 @@ export function FareSettings({ settings, busy, onSave }: { settings: Settings; b
       const form = new FormData(e.currentTarget);
       onSave({ ...fares, night_enabled: form.get('night') === 'on', night_start: String(form.get('nightStart') || '20:00'), night_end: String(form.get('nightEnd') || '05:00'), night_percent: Math.round(Number(form.get('nightPercent')) || 0) });
     }}>
-      <h2>🌙 Tarifa nocturna</h2>
+      <h2>🌙 Tarifa nocturna de moto</h2>
       <p className="muted">Durante este horario (hora de Venezuela) el precio del viaje sube el porcentaje indicado, antes del redondeo. Puede cruzar la medianoche, por ejemplo de 20:00 a 05:00.</p>
       <label className="check"><input name="night" type="checkbox" defaultChecked={!!settings.night_enabled} />Aplicar recargo nocturno</label>
       <div className="two">
@@ -38,6 +38,7 @@ export function FareSettings({ settings, busy, onSave }: { settings: Settings; b
       <label>Recargo (%)<input name="nightPercent" type="number" min="0" max="300" step="1" required defaultValue={settings.night_percent ?? 0} /></label>
       <button className="primary" disabled={busy}>Guardar tarifa nocturna</button>
     </form>
+    {onSaved && <VehicleSettings settings={settings as unknown as VehicleSettings} busy={busy} onSaved={onSaved} />}
   </div>;
 }
 
@@ -75,4 +76,63 @@ export function CommissionSettings({ settings, busy }: { settings: Settings; bus
     {msg && <p className="admin-create-notice" role="status">{msg}</p>}
     <button className="primary" disabled={saving || busy}>{saving ? "Guardando…" : "Guardar comisión"}</button>
   </form>;
+}
+
+type VehicleSettings = Record<string, unknown> & { moto_enabled?: boolean; car_enabled?: boolean; car_base_cents?: number; car_per_km_cents?: number | null; car_minimum_cents?: number; car_rounding_cents?: number;
+  car_night_enabled?: boolean; car_night_start?: string; car_night_end?: string; car_night_percent?: number };
+
+/** Servicios activos (moto / carro) y tarifas propias del carro, incluida su tarifa nocturna. */
+export function VehicleSettings({ settings, busy, onSaved }: { settings: VehicleSettings; busy: boolean; onSaved: (text: string) => void }) {
+  const client = useMemo(() => browserClient(), []);
+  const [moto, setMoto] = useState(settings.moto_enabled !== false), [car, setCar] = useState(settings.car_enabled === true);
+  const [saving, setSaving] = useState(""), [err, setErr] = useState(""), [errKind, setErrKind] = useState("");
+  async function save(kind: string, payload: Record<string, unknown>, text: string) {
+    setSaving(kind); setErr(""); setErrKind(kind);
+    const { error } = await client.rpc("admin_vehicle_settings", { payload });
+    setSaving("");
+    if (error) setErr(error.message === "Activa al menos un servicio" ? "Debe quedar al menos un servicio activo." : "No se pudo guardar. Revisa los valores.");
+    else onSaved(text);
+  }
+  const money = (form: FormData, key: string) => Math.round(Number(form.get(key)) * 100);
+  const off = busy || !!saving;
+  return <>
+    <form className="trip-card vehicle-services" onSubmit={e => { e.preventDefault(); void save("services", { moto_enabled: moto, car_enabled: car }, "Servicios actualizados."); }}>
+      <h2>Servicios activos</h2>
+      <p className="muted">Los pasajeros solo ven los tipos activos al pedir un viaje. Útil para probar carros y apagarlos hasta tener conductores.</p>
+      <label className="payment-switch"><input type="checkbox" role="switch" checked={moto} onChange={e => setMoto(e.target.checked)} /><span><strong>De1na Moto</strong><small>{moto ? "Activo" : "Desactivado"}</small></span></label>
+      <label className="payment-switch"><input type="checkbox" role="switch" checked={car} onChange={e => setCar(e.target.checked)} /><span><strong>De1na Carro</strong><small>{car ? (settings.car_per_km_cents ? "Activo" : "Activo · define su precio por km") : "Desactivado"}</small></span></label>
+      {err && errKind === "services" && <p className="payment-error" role="alert">{err}</p>}
+      <button className="primary" disabled={off || (!moto && !car)}>{saving === "services" ? "Guardando…" : "Guardar servicios"}</button>
+    </form>
+    <form className="trip-card fare-settings" onSubmit={e => {
+      e.preventDefault(); const f = new FormData(e.currentTarget);
+      void save("fares", { car_base_cents: money(f, "base"), car_per_km_cents: money(f, "km"), car_minimum_cents: money(f, "minimum"), car_rounding_cents: Number(f.get("rounding")) }, "Tarifas de carro guardadas.");
+    }}>
+      <h2>Tarifas de carro · USD</h2>
+      <p className="muted">Se calculan igual que las de moto, con sus propios valores.</p>
+      <div className="two">
+        <label>Tarifa base (USD)<input name="base" type="number" min="0" max="10000" step="0.01" required defaultValue={(settings.car_base_cents ?? 100) / 100} /></label>
+        <label>Precio por km (USD)<input name="km" type="number" min="0.01" max="10000" step="0.01" required defaultValue={settings.car_per_km_cents ? settings.car_per_km_cents / 100 : ""} placeholder="Define el precio por km" /></label>
+      </div>
+      <label>Tarifa mínima (USD)<input name="minimum" type="number" min="0" max="10000" step="0.01" required defaultValue={(settings.car_minimum_cents ?? 200) / 100} /></label>
+      <label>Redondeo de tarifa<select name="rounding" defaultValue={settings.car_rounding_cents ?? 50}><option value="50">Hacia arriba cada $0.50</option><option value="100">Hacia arriba cada $1.00</option><option value="1">Sin redondeo adicional</option></select></label>
+      {err && errKind === "fares" && <p className="payment-error" role="alert">{err}</p>}
+      <button className="primary" disabled={off}>{saving === "fares" ? "Guardando…" : "Guardar tarifas de carro"}</button>
+    </form>
+    <form className="trip-card night-fare" onSubmit={e => {
+      e.preventDefault(); const f = new FormData(e.currentTarget);
+      void save("night", { car_night_enabled: f.get("night") === "on", car_night_start: String(f.get("nightStart") || "20:00"), car_night_end: String(f.get("nightEnd") || "05:00"), car_night_percent: Math.round(Number(f.get("nightPercent")) || 0) }, "Tarifa nocturna de carro guardada.");
+    }}>
+      <h2>🌙 Tarifa nocturna de carro</h2>
+      <p className="muted">Horario y recargo propios para los viajes en carro (hora de Venezuela).</p>
+      <label className="check"><input name="night" type="checkbox" defaultChecked={!!settings.car_night_enabled} />Aplicar recargo nocturno</label>
+      <div className="two">
+        <label>Inicio<input name="nightStart" type="time" required defaultValue={(settings.car_night_start || "20:00").slice(0, 5)} /></label>
+        <label>Cierre<input name="nightEnd" type="time" required defaultValue={(settings.car_night_end || "05:00").slice(0, 5)} /></label>
+      </div>
+      <label>Recargo (%)<input name="nightPercent" type="number" min="0" max="300" step="1" required defaultValue={settings.car_night_percent ?? 0} /></label>
+      {err && errKind === "night" && <p className="payment-error" role="alert">{err}</p>}
+      <button className="primary" disabled={off}>{saving === "night" ? "Guardando…" : "Guardar tarifa nocturna"}</button>
+    </form>
+  </>;
 }

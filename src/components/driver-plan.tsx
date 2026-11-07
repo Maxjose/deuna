@@ -46,7 +46,7 @@ export function planHeadline(p: PlanState) {
     case "expiring": return { tone: "warn", title: `Vence pronto: ${until}`, text: "Renueva tu plan para no quedarte sin viajes." };
     case "grace": return { tone: "warn", title: "Tu plan venció", text: `Tienes hasta ${p.grace_until ? date(p.grace_until) : "pronto"} para renovar antes de que se pause tu cuenta.` };
     case "expired": return { tone: "bad", title: "Plan vencido", text: "Renueva tu plan para volver a conectarte y recibir viajes." };
-    case "none": return { tone: "bad", title: "Sin plan activo", text: p.trial_used || !p.trial_enabled ? "Elige un plan para empezar a recibir viajes." : "Registra «Mi moto» y «Mis cuentas» en Cuenta para activar tu prueba gratis." };
+    case "none": return { tone: "bad", title: "Sin plan activo", text: p.trial_used || !p.trial_enabled ? "Elige un plan para empezar a recibir viajes." : "Registra «Mi vehículo» y «Mis cuentas» en Cuenta para activar tu prueba gratis." };
     default: return { tone: "ok", title: "", text: "" };
   }
 }

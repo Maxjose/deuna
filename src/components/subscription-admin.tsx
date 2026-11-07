@@ -5,7 +5,7 @@ import { usd } from "@/lib/fare";
 import { bankName, bs, formatPhone } from "@/lib/payments";
 import type { PlanState } from "./driver-plan";
 
-type Settings = { billing_mode?: string; sub_week_cents?: number; sub_month_cents?: number; sub_trial_enabled?: boolean; sub_trial_days?: number; sub_grace_hours?: number; sub_auto_activation?: boolean; sub_whatsapp?: string };
+type Settings = { billing_mode?: string; sub_week_cents?: number; sub_month_cents?: number; sub_car_week_cents?: number; sub_car_month_cents?: number; car_enabled?: boolean; sub_trial_enabled?: boolean; sub_trial_days?: number; sub_grace_hours?: number; sub_auto_activation?: boolean; sub_whatsapp?: string };
 export type PlanOverview = {
   drivers: Record<string, { status: PlanState["status"]; paid_until: string | null; duplicate: boolean }>;
   pending: { id: string; driver_id: string; name: string; plan: string; days: number; amount_cents: number; amount_bs: number | null; method: string; reference: string | null; bank: string | null; phone: string | null; note: string | null; created_at: string }[];
@@ -42,8 +42,11 @@ export function SubscriptionSettings({ settings, busy, onSaved }: { settings: Se
     const payload = { billing_mode: mode, week_cents: money("week"), month_cents: money("month"), trial_enabled: trial, trial_days: Number(f.get("trial_days")),
       grace_hours: Number(f.get("grace")), auto_activation: auto, whatsapp: String(f.get("whatsapp")) };
     if (!(payload.week_cents > 0 && payload.month_cents > 0)) { setErr("Escribe precios mayores que cero."); return; }
+    const car = { sub_car_week_cents: money("car_week"), sub_car_month_cents: money("car_month") };
+    if (!(car.sub_car_week_cents > 0 && car.sub_car_month_cents > 0)) { setErr("Escribe precios mayores que cero."); return; }
     setSaving(true); setErr("");
-    const { error } = await client.rpc("admin_subscription_settings", { payload });
+    let { error } = await client.rpc("admin_subscription_settings", { payload });
+    if (!error) ({ error } = await client.rpc("admin_vehicle_settings", { payload: car }));
     setSaving(false);
     if (error) setErr(error.message === "WhatsApp inválido" ? "Escribe el WhatsApp con 11 dígitos, por ejemplo 0412 6655273." : "No se pudo guardar. Revisa los valores.");
     else onSaved(mode === "subscription" ? "Modelo de suscripción guardado." : "Modelo de comisión guardado.");
@@ -57,8 +60,12 @@ export function SubscriptionSettings({ settings, busy, onSaved }: { settings: Se
     <fieldset className={"commission-fields" + (mode === "subscription" ? "" : " is-off")} disabled={saving || busy}>
       <legend className="sr-only">Planes</legend>
       <div className="settings-pair">
-        <label>Plan semanal (USD)<input name="week" type="number" min="0.5" step="0.01" required defaultValue={(settings.sub_week_cents ?? 600) / 100} /></label>
-        <label>Plan mensual (USD)<input name="month" type="number" min="0.5" step="0.01" required defaultValue={(settings.sub_month_cents ?? 2000) / 100} /></label>
+        <label>Moto · semanal (USD)<input name="week" type="number" min="0.5" step="0.01" required defaultValue={(settings.sub_week_cents ?? 600) / 100} /></label>
+        <label>Moto · mensual (USD)<input name="month" type="number" min="0.5" step="0.01" required defaultValue={(settings.sub_month_cents ?? 2000) / 100} /></label>
+      </div>
+      <div className="settings-pair">
+        <label>Carro · semanal (USD)<input name="car_week" type="number" min="0.5" step="0.01" required defaultValue={(settings.sub_car_week_cents ?? 1000) / 100} /></label>
+        <label>Carro · mensual (USD)<input name="car_month" type="number" min="0.5" step="0.01" required defaultValue={(settings.sub_car_month_cents ?? 3500) / 100} /></label>
       </div>
       <label className="payment-switch"><input type="checkbox" role="switch" checked={trial} onChange={e => setTrial(e.target.checked)} /><span><strong>Prueba gratis</strong><small>Una sola vez por cédula, placa y teléfono, al aprobar al conductor.</small></span></label>
       <div className="settings-pair">
@@ -140,14 +147,31 @@ export function AdminDriverPlan({ driverId }: { driverId: string }) {
   </div>;
 }
 
-/** Ficha del conductor (Información): moto y alerta de cuentas duplicadas. */
+/** Ficha del conductor (Información): tipo y datos del vehículo, y alerta de cuentas duplicadas. */
 export function AdminDriverVehicle({ driverId }: { driverId: string }) {
   const client = useMemo(() => browserClient(), []);
-  const [data, setData] = useState<{ vehicle: { plate: string; model: string; color: string } | null; duplicates: { id: string; email: string }[] } | null>(null);
-  useEffect(() => { let alive = true; void client.rpc("admin_driver_profile", { driver_id: driverId }).then(({ data, error }) => { if (alive && !error) setData(data); }); return () => { alive = false; }; }, [client, driverId]);
+  const [data, setData] = useState<{ vehicle_type: "moto" | "car"; vehicle: { plate: string; model: string; color: string; year?: number | null; type?: "moto" | "car" } | null; duplicates: { id: string; email: string }[] } | null>(null);
+  const [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  const load = useCallback(async () => { const { data, error } = await client.rpc("admin_driver_profile", { driver_id: driverId }); if (!error) setData(data); }, [client, driverId]);
+  useEffect(() => { void load(); }, [load]);
   if (!data) return null;
+  const mismatch = data.vehicle && data.vehicle.type && data.vehicle.type !== data.vehicle_type;
+  async function change(kind: "moto" | "car") {
+    if (!data || kind === data.vehicle_type) return;
+    setBusy(true); setErr("");
+    const { error } = await client.rpc("admin_set_vehicle_type", { driver_id: driverId, kind });
+    setBusy(false);
+    if (error) setErr(error.message === "Esta cuenta tiene un viaje activo" ? "Primero debe terminar su viaje activo." : "No se pudo cambiar el tipo.");
+    else void load();
+  }
   return <>
-    <p className="trip-vehicle">{data.vehicle ? <><span>{data.vehicle.model} · {data.vehicle.color}</span><b>{data.vehicle.plate}</b></> : <span className="muted">Sin moto registrada</span>}</p>
+    <div className="service-tabs vehicle-kind" role="radiogroup" aria-label="Tipo de conductor">
+      {([["moto", "Moto"], ["car", "Carro"]] as const).map(([value, label]) =>
+        <button key={value} type="button" role="radio" aria-checked={data.vehicle_type === value} className={data.vehicle_type === value ? "is-active" : ""} disabled={busy} onClick={() => void change(value)}>{label}</button>)}
+    </div>
+    <p className="trip-vehicle">{data.vehicle ? <><span>{data.vehicle.model}{data.vehicle.year ? ` ${data.vehicle.year}` : ""} · {data.vehicle.color}</span><b>{data.vehicle.plate}</b></> : <span className="muted">Sin vehículo registrado</span>}</p>
+    {mismatch && <p className="payment-error" role="alert">El vehículo registrado es {data.vehicle!.type === "car" ? "un carro" : "una moto"}: el conductor debe actualizar «Mi vehículo».</p>}
+    {err && <p className="payment-error" role="alert">{err}</p>}
     {data.duplicates.length > 0 && <p className="payment-error" role="alert">Su cuenta de cobro coincide con: {data.duplicates.map(d => d.email).join(", ")}.</p>}
   </>;
 }

@@ -1,5 +1,14 @@
 export type FareSettings = { base_cents: number; per_km_cents: number | null; minimum_cents: number; rounding_cents?:number; night_enabled?: boolean; night_start?: string; night_end?: string; night_percent?: number; commission_percent?: number | string; commission_on_cash?: boolean; commission_enabled?: boolean; commission_on_pago_movil?: boolean; commission_on_binance?: boolean; commission_on_wallet?: boolean; commission_promo?: boolean };
-export type FareQuote = { quote: string; signature: string; fare_cents: number; night_percent?: number; distance_meters: number; duration_seconds: number; expires_at: number };
+export type VehicleType = 'moto' | 'car';
+export type FareQuote = { quote: string; signature: string; fare_cents: number; night_percent?: number; distance_meters: number; duration_seconds: number; expires_at: number; vehicle_type?: VehicleType; options?: Partial<Record<VehicleType, FareQuote>> };
+export const VEHICLE_LABEL: Record<VehicleType, string> = { moto: 'Moto', car: 'Carro' };
+/** Tarifas de un tipo de vehículo: el carro usa sus columnas car_* (tarifa, redondeo y nocturna propios). */
+export function vehicleFare(settings: Record<string, unknown>, kind: VehicleType): FareSettings {
+  if (kind === 'moto') return settings as unknown as FareSettings;
+  const s = settings as Record<string, never>;
+  return { base_cents: s.car_base_cents, per_km_cents: s.car_per_km_cents, minimum_cents: s.car_minimum_cents, rounding_cents: s.car_rounding_cents,
+    night_enabled: s.car_night_enabled, night_start: s.car_night_start, night_end: s.car_night_end, night_percent: s.car_night_percent };
+}
 export function fareCents(meters: number, settings: FareSettings, at: Date = new Date()) {
   const rounding=settings.rounding_cents===undefined?1:settings.rounding_cents;
   if (!Number.isFinite(meters) || meters <= 0 || meters > 2000000 ||

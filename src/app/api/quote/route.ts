@@ -2,7 +2,7 @@ import { createHmac, randomUUID } from 'node:crypto';
 import { serverClient } from '@/lib/supabase/server';
 import { validPoint, decodeRoute, type Place } from '@/lib/journey';
 import { destinationLabel } from '@/lib/destination';
-import { fareCents, nightSurcharge } from '@/lib/fare';
+import { fareCents, nightSurcharge, vehicleFare, type VehicleType } from '@/lib/fare';
 const headers = { 'Cache-Control': 'private, no-store' };
 export async function POST(request: Request) {
   const client = await serverClient();
@@ -16,8 +16,10 @@ export async function POST(request: Request) {
     if (!origin?.point || !destination?.point || !validPoint(origin.point) || !validPoint(destination.point) ||
         typeof origin.label !== 'string' || typeof destination.label !== 'string' || origin.label.length > 110 || destination.label.length > 110)
       return Response.json({ error: 'Confirma el punto de encuentro y el destino.' }, { status: 400, headers });
-    const { data: settings } = await client.from('service_settings').select('base_cents,per_km_cents,minimum_cents,rounding_cents,night_enabled,night_start,night_end,night_percent').eq('id', 1).single();
-    if (!settings?.per_km_cents) return Response.json({ error: 'Las tarifas todavía no están configuradas.' }, { status: 409, headers });
+    const { data: settings } = await client.from('service_settings').select('base_cents,per_km_cents,minimum_cents,rounding_cents,night_enabled,night_start,night_end,night_percent,moto_enabled,car_enabled,car_base_cents,car_per_km_cents,car_minimum_cents,car_rounding_cents,car_night_enabled,car_night_start,car_night_end,car_night_percent').eq('id', 1).single();
+    // Tipos activos con tarifa configurada (moto primero).
+    const kinds = (['moto', 'car'] as VehicleType[]).filter(k => (k === 'moto' ? settings?.moto_enabled !== false : settings?.car_enabled === true) && vehicleFare(settings ?? {}, k).per_km_cents);
+    if (!settings || !kinds.length) return Response.json({ error: 'Las tarifas todavía no están configuradas.' }, { status: 409, headers });
     const secret = process.env.FARE_SIGNING_KEY;
     if (!secret) throw Error();
     const from = origin.point, to = destination.point;
@@ -29,11 +31,15 @@ export async function POST(request: Request) {
     const route = body.routes[0];
     if (typeof route.distance !== 'number' || typeof route.duration !== 'number' || !Number.isFinite(route.duration) || route.duration < 0) throw Error();
     const meters = Math.round(route.distance), seconds = Math.round(route.duration);
-    const now = new Date(), cents = fareCents(meters, settings, now), night = nightSurcharge(settings, now);
-    const expires = Math.floor(Date.now() / 1000) + 300;
-    const quote = JSON.stringify({ id: randomUUID(), user_id: user.id, origin: destinationLabel(origin.label, from), destination: destinationLabel(destination.label, to), distance_meters: meters, duration_seconds: seconds, fare_cents: cents, currency: 'USD', expires_at: expires });
-    const signature = createHmac('sha256', secret).update(quote).digest('hex');
-    return Response.json({ geometry, quote, signature, fare_cents: cents, night_percent: night, distance_meters: meters, duration_seconds: seconds, expires_at: expires }, { headers });
+    const now = new Date(), expires = Math.floor(Date.now() / 1000) + 300;
+    const originLabel = destinationLabel(origin.label, from), destination_ = destinationLabel(destination.label, to);
+    // Una cotización firmada por tipo de vehículo, con la misma ruta.
+    const options = Object.fromEntries(kinds.map(kind => {
+      const fares = vehicleFare(settings, kind), cents = fareCents(meters, fares, now), night = nightSurcharge(fares, now);
+      const quote = JSON.stringify({ id: randomUUID(), user_id: user.id, origin: originLabel, destination: destination_, distance_meters: meters, duration_seconds: seconds, fare_cents: cents, currency: 'USD', expires_at: expires, vehicle_type: kind });
+      return [kind, { quote, signature: createHmac('sha256', secret).update(quote).digest('hex'), fare_cents: cents, night_percent: night, distance_meters: meters, duration_seconds: seconds, expires_at: expires, vehicle_type: kind }];
+    }));
+    return Response.json({ geometry, ...options[kinds[0]], options }, { headers });
   } catch {
     return Response.json({ error: 'No pudimos calcular el recorrido y su precio. Vuelve a intentar.' }, { status: 503, headers });
   }

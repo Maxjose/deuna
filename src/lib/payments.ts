@@ -12,6 +12,8 @@ export type PaymentSettings = {
   wallet_topup_enabled?: boolean;
   billing_mode?: 'commission' | 'subscription';
   test_trips_enabled?: boolean;
+  moto_enabled?: boolean;
+  car_enabled?: boolean;
 };
 
 export function rateValue(rate: number | string | null | undefined) {

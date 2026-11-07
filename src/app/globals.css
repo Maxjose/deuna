@@ -3117,3 +3117,8 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
   .plan-sheet[open]::backdrop { opacity: 1; transition: opacity .28s ease-out, overlay .28s allow-discrete, display .28s allow-discrete; }
   @starting-style { .plan-sheet[open]::backdrop { opacity: 0; } }
 }
+.vehicle-option + .vehicle-option { margin-top: 10px; }
+.vehicle-option .vehicle-price { margin-left: auto; font-size: 15px; font-weight: 800; white-space: nowrap; }
+.vehicle-option .vehicle-price + .selection-dot { margin-left: 12px; }
+.pill.car-pill { background: #122033; color: var(--lime); }
+.settings-grid > .vehicle-services { order: -1; }

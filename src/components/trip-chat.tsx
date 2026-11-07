@@ -51,6 +51,6 @@ function quickReplies(driver:boolean,status:string){
   :status==='arrived'?['Ya llegué, te espero aquí','Estoy afuera','¿Te falta mucho?','¿Dónde estás exactamente?']
   :['Ya vamos en camino','Llegamos en unos minutos','¿Te dejo aquí?','Gracias por viajar con De1na 🙌'];
  return status==='assigned'?['¡Gracias! Te espero','Ya estoy en el punto de encuentro','Llego al punto en 5 minutos','¿Cuánto te falta?']
-  :status==='arrived'?['Ya salgo','Dame 2 minutos, por favor','¿Dónde estás exactamente?','No te veo, ¿qué color es tu moto?']
+  :status==='arrived'?['Ya salgo','Dame 2 minutos, por favor','¿Dónde estás exactamente?','No te veo, ¿de qué color es tu vehículo?']
   :['¿Cuánto falta para llegar?','Déjame aquí, por favor','Ve con cuidado, por favor','¡Gracias por el viaje! 🙌'];
 }
