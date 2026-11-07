@@ -208,7 +208,7 @@ export function liveHeadline(live: ReturnType<typeof useTripLiveLocation>, statu
       : live.freshness === "lost"
         ? "Sin señal reciente de tu conductor"
         : status === "arrived"
-          ? "Tu conductor está en el punto de recogida"
+          ? "Tu conductor está en el punto de encuentro"
           : status === "ongoing"
             ? `Llegan a tu destino en aprox. ${eta} min`
             : `Tu conductor llega en aprox. ${eta} min`;

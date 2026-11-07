@@ -76,7 +76,7 @@ export function DriverNavigation({origin,destination,status,busy,onAdvance,onOpe
     <label className="check"><input type="checkbox" checked={awake} onChange={e=>{setAwake(e.target.checked);writePref('awake',e.target.checked);}}/>Mantener pantalla encendida {awake&&<small>{wakeActive?'· Activo':'· No disponible ahora'}</small>}</label>
     <p className="muted driver-nav-note">Mantén esta pantalla abierta. Al bloquear el teléfono o cambiar de app, el GPS puede pausarse.</p>
     {advanceBlocked&&<p className="driver-advance-blocked" role="status">{advanceBlocked}</p>}
-    <button className="primary" disabled={busy||!!advanceBlocked} onClick={onAdvance}>{status==='assigned'?'Ya llegué al destino':status==='arrived'?'Iniciar viaje':'Finalizar viaje'}</button>
+    <button className="primary" disabled={busy||!!advanceBlocked} onClick={onAdvance}>{status==='assigned'?'Ya llegué al punto de encuentro':status==='arrived'?'Iniciar viaje':'Finalizar viaje'}</button>
     {children}
    </footer>
   </dialog>

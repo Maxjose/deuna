@@ -16,7 +16,7 @@ export default function Privacy() {
       <h2>1. Datos que recogemos</h2>
       <ul>
         <li><strong>Cuenta:</strong> correo electrónico, nombre, teléfono de contacto y contraseña (guardada cifrada). Si usas passkeys, una credencial pública de tu dispositivo (nunca tu huella o rostro).</li>
-        <li><strong>Viajes:</strong> punto de recogida y destino, ruta, distancia, precio, estado del viaje, valoraciones, mensajes del chat del viaje y motivos de cancelación.</li>
+        <li><strong>Viajes:</strong> punto de encuentro y destino, ruta, distancia, precio, estado del viaje, valoraciones, mensajes del chat del viaje y motivos de cancelación.</li>
         <li><strong>Ubicación:</strong> para pasajeros, la ubicación que eliges en el mapa. Para conductores, la ubicación precisa del teléfono <strong>solo durante un viaje activo</strong>, también con la app en segundo plano o la pantalla apagada, para que el pasajero vea dónde está su conductor. Se deja de enviar al terminar o cancelar el viaje.</li>
         <li><strong>Pagos:</strong> método elegido (efectivo, pago móvil, Binance Pay o saldo De1na); para pago móvil, banco, teléfono de origen, monto y referencia; para Binance Pay, el ID de la transacción; movimientos de tu saldo De1na. Los conductores registran banco, cédula y teléfono para recibir sus pagos. No guardamos claves bancarias ni datos de tarjetas.</li>
         <li><strong>Dispositivo:</strong> identificador de notificaciones (para enviarte avisos), versión de la app y datos técnicos básicos necesarios para que el servicio funcione.</li>

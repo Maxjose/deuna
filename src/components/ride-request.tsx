@@ -218,7 +218,7 @@ export function RideRequest({
   function locate(goHome = false) {
     const version = ++locationVersion.current;
     if (!navigator.geolocation) {
-      setMessage("Puedes elegir tu recogida en el mapa.");
+      setMessage("Puedes elegir tu punto de encuentro en el mapa.");
       setActive("origin");
       return;
     }
@@ -230,14 +230,14 @@ export function RideRequest({
         setOrigin({ label: "Mi ubicación actual", point: { lat: p.coords.latitude, lng: p.coords.longitude } });
         setLocating(false);
         if(goHome) {
-          if(home && p.coords.latitude===home.latitude && p.coords.longitude===home.longitude){setMessage('La recogida y el destino deben ser diferentes.');return;}
+          if(home && p.coords.latitude===home.latitude && p.coords.longitude===home.longitude){setMessage('El punto de encuentro y el destino deben ser diferentes.');return;}
           setStep('choose');
         }
       },
       () => {
         if (version !== locationVersion.current) return;
         setLocating(false);
-        setMessage("No pudimos obtener tu ubicación. Escribe la recogida o selecciónala en el mapa.");
+        setMessage("No pudimos obtener tu ubicación. Escribe el punto de encuentro o selecciónalo en el mapa.");
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
     );
@@ -277,7 +277,7 @@ export function RideRequest({
   function next() {
     if(!origin.label.trim()||!destination.label.trim()){
       setActive(!origin.label.trim()?'origin':'destination');setMapVisible(true);setMapCompact(false);
-      setMessage('Escribe una referencia para la recogida y el destino.');return;
+      setMessage('Escribe una referencia para el punto de encuentro y el destino.');return;
     }
     if (!destination.point) {
       setActive("destination");
@@ -293,7 +293,7 @@ export function RideRequest({
       origin.point.lat === destination.point.lat &&
       origin.point.lng === destination.point.lng
     ) {
-      setMessage("La recogida y el destino deben ser diferentes.");
+      setMessage("El punto de encuentro y el destino deben ser diferentes.");
       return;
     }
     setMessage("");
@@ -356,10 +356,10 @@ export function RideRequest({
                 <form onSubmit={search} className="journey-addresses">
                   <label className="pickup-address">
                     <span className="address-dot" />
-                    Recogida
+                    Punto de encuentro
                     <span className="address-input">
                     <input
-                      aria-label="Punto de recogida"
+                      aria-label="Punto de encuentro"
                       value={origin.label}
                       onFocus={() => setActive("origin")}
                       onChange={(e) => {
@@ -424,13 +424,13 @@ export function RideRequest({
                   </div>
                     {mapVisible&&<><div className="point-picker-label">
                       Toca el mapa para fijar{" "}
-                      {active === "origin" ? "la recogida" : "el destino"}
+                      {active === "origin" ? "el punto de encuentro" : "el destino"}
                     </div>
                     <div className="journey-picker-map">
                       <JourneyMap
                         nearbyPlaces
                         onPlacePick={place=>selectPlace(place)}
-                        placePickLabel={active==='origin'?'Usar como recogida':'Usar como destino'}
+                        placePickLabel={active==='origin'?'Usar como punto de encuentro':'Usar como destino'}
                         origin={origin.point}
                         destination={destination.point}
                         picking

@@ -94,7 +94,7 @@ const passengerHeadlines: Record<string, string> = {
 const labels: Record<string, string> = {
   searching: "Buscando conductor",
   assigned: "Conductor en camino",
-  arrived: "Conductor en la recogida",
+  arrived: "Conductor en el punto de encuentro",
   ongoing: "Viaje en curso",
   finished: "Viaje finalizado",
   cancelled: "Cancelado",
@@ -494,7 +494,7 @@ export function Dashboard({
           <div>
             <i>●</i>
             <span>
-              <small>RECOGIDA</small>
+              <small>PUNTO DE ENCUENTRO</small>
               {parseStoredPlace(t.origin).label}
             </span>
           </div>
@@ -973,7 +973,7 @@ export function Dashboard({
       <dialog ref={acceptDialog} className="action-sheet" aria-labelledby="accept-title" onClose={()=>setAcceptTrip(null)} onCancel={e=>{if(busy)e.preventDefault();}}>
         <div className="sheet-handle"/>
         <h2 id="accept-title">¿Aceptar este viaje?</h2>
-        {acceptTrip&&<><p><strong>Recogida:</strong> {parseStoredPlace(acceptTrip.origin).label}</p><p><strong>Destino:</strong> {parseStoredPlace(acceptTrip.destination).label}</p>{acceptTrip.fare_cents!=null&&<p><strong>{usd(acceptTrip.fare_cents)}</strong></p>}<TripPaymentNote trip={acceptTrip} viewer="driver" /></>}
+        {acceptTrip&&<><p><strong>Punto de encuentro:</strong> {parseStoredPlace(acceptTrip.origin).label}</p><p><strong>Destino:</strong> {parseStoredPlace(acceptTrip.destination).label}</p>{acceptTrip.fare_cents!=null&&<p><strong>{usd(acceptTrip.fare_cents)}</strong></p>}<TripPaymentNote trip={acceptTrip} viewer="driver" /></>}
         <button className="primary" disabled={busy||offline} onClick={async()=>{if(acceptTrip){const accepted=await act('accept',{id:acceptTrip.id});if(accepted)acceptDialog.current?.close();}}}>{busy?'Aceptando…':'Sí, aceptar viaje'}</button>
         <button className="secondary" disabled={busy} onClick={()=>acceptDialog.current?.close()}>Volver a solicitudes</button>
         <Toast message={message}/>
