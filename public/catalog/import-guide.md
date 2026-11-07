@@ -68,7 +68,7 @@ No uses comas decimales ni coordenadas como texto: `11.087` es válido; `"11,087
 5. Si se interrumpe la conexión, pulsa **Continuar importación** mientras sigas en la pantalla. El mismo bloque lleva un identificador de reintento para no procesarlo dos veces ante una respuesta perdida.
 6. Si cierras o recargas la página, vuelve a subir el archivo. Las parejas estables evitan duplicados, aunque las filas ya cargadas se contabilicen como actualizaciones.
 
-Los lugares activos aparecen primero al buscar recogida o destino. Se buscan nombres, aliases y direcciones ignorando acentos y mayúsculas; también se admiten aproximaciones del nombre. El mapa externo sigue aportando resultados complementarios. Agregar un lugar no agrega calles a la red de rutas: la cotización seguirá comprobando que exista un recorrido por carretera.
+Los lugares activos aparecen primero al buscar un punto de encuentro o un destino. Se buscan nombres, aliases y direcciones ignorando acentos y mayúsculas; también se admiten aproximaciones del nombre. El mapa externo sigue aportando resultados complementarios. Agregar un lugar no agrega calles a la red de rutas: la cotización seguirá comprobando que exista un recorrido por carretera.
 
 ## Validación en tu script o terminal
 

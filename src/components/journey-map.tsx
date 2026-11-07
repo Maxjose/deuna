@@ -184,8 +184,8 @@ export default function JourneyMap({
           iconSize: [32, 32],
           iconAnchor: [16, 16],
         }),
-        title: kind === "origin" ? "Tu punto de recogida" : "Destino del viaje",
-        alt: kind === "origin" ? "Tu punto de recogida" : "Destino del viaje",
+        title: kind === "origin" ? "Tu punto de encuentro" : "Destino del viaje",
+        alt: kind === "origin" ? "Tu punto de encuentro" : "Destino del viaje",
       }).addTo(layer);
     if (origin && !navigation) mark(origin, "origin");
     if (destination) mark(destination, "destination");
@@ -274,7 +274,7 @@ export default function JourneyMap({
         aria-label={
           picking
             ? "Mapa para fijar ubicación"
-            : "Mapa de recogida, destino y ruta"
+            : "Mapa del punto de encuentro, destino y ruta"
         }
       />
       {picking && (

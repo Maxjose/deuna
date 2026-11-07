@@ -105,7 +105,7 @@ export function AdminCancellations({ personId, driver }: { personId: string; dri
  useEffect(() => { void browserClient().rpc('admin_cancellations', { person_id: personId }).then(({ data }) => { if (data) setD(data); }); }, [personId]);
  if (!d) return null;
  const total = driver ? d.as_driver_7d : d.as_passenger_7d;
- const stage = (s: string | null) => s === 'arrived' ? 'en el punto de recogida' : s === 'ongoing' ? 'en curso' : 'antes de llegar';
+ const stage = (s: string | null) => s === 'arrived' ? 'en el punto de encuentro' : s === 'ongoing' ? 'en curso' : 'antes de llegar';
  return <div className="admin-cancellations">
   <div className="row"><h3>Cancelaciones (7 días)</h3><strong className={total >= 3 || d.after_arrival_7d >= 2 ? 'is-warn' : ''}>{total}</strong></div>
   <p className="muted">{d.after_arrival_7d} después de «Llegué»{d.state.blocked_until && new Date(d.state.blocked_until).getTime() > Date.now() ? ` · bloqueado hasta las ${new Date(d.state.blocked_until).toLocaleTimeString('es-VE', { hour: 'numeric', minute: '2-digit' })}` : ''}</p>
