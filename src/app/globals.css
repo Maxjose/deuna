@@ -3122,3 +3122,25 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .vehicle-option .vehicle-price + .selection-dot { margin-left: 12px; }
 .pill.car-pill { background: #122033; color: var(--lime); }
 .settings-grid > .vehicle-services { order: -1; }
+
+/* Equipo: punto de conexión a la izquierda, tipo de vehículo y columna fija para el plan */
+.presence-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; background: #e5484d; box-shadow: 0 0 0 3px #e5484d26; }
+.presence-dot.is-on { background: #46c35b; box-shadow: 0 0 0 3px #46c35b2e; }
+.presence-dot.is-none { background: transparent; box-shadow: none; }
+.team-person .presence-dot { align-self: center; }
+.vehicle-tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #eef1f5; color: #122033; }
+.vehicle-tag svg { width: 14px; height: 14px; }
+.vehicle-tag.is-car { background: #122033; color: var(--lime); }
+.admin-shell[data-admin-theme='dark'] .vehicle-tag:not(.is-car) { background: #ffffff14; color: inherit; }
+.person-badges .plan-badges { margin: 0; }
+.cards.people-list .team-person { grid-template-columns: 10px minmax(0, 1fr) minmax(0, 1.3fr) 210px auto; gap: 6px 16px; padding-left: 18px; }
+.cards.people-list .person-badges { display: flex; justify-content: flex-end; min-width: 0; }
+.cards.people-list .person-badges .plan-badges { flex-wrap: nowrap; }
+.cards:not(.people-list) .team-person { position: relative; }
+.cards:not(.people-list) .team-person .presence-dot { position: absolute; top: 18px; right: 18px; }
+@media (max-width: 900px) {
+  .cards.people-list .team-person { grid-template-columns: 10px minmax(0, 1fr) auto; }
+  .cards.people-list .person-details, .cards.people-list .person-badges { grid-column: 2; }
+  .cards.people-list .team-person > button { grid-column: 3; grid-row: 1 / span 3; }
+  .cards.people-list .presence-dot { grid-row: 1; }
+}
