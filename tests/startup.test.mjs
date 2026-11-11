@@ -73,7 +73,12 @@ test("usuario sin sesi?n: acceso p?blico y rutas protegidas", async () => {
       assert.equal(bytes.readUInt32BE(20), dimension);
     }
 
-    for (const path of ["/", "/dashboard", "/reset-password"]) {
+    const recovery = await fetch('http://127.0.0.1:3187/reset-password', { redirect: 'manual', headers: { 'user-agent': 'Mozilla/5.0 (Linux; Android 14) SamsungBrowser/26.0' } });
+    assert.equal(recovery.status, 200);
+    assert.doesNotMatch(await recovery.text(), /NEXT_REDIRECT/);
+    const callback = await fetch('http://127.0.0.1:3187/auth/callback?next=/reset-password', { redirect: 'manual' });
+    assert.equal(new URL(callback.headers.get('location')).pathname, '/reset-password');
+    for (const path of ["/", "/dashboard"]) {
       const r = await fetch("http://127.0.0.1:3187" + path, {
         redirect: "manual",
       });

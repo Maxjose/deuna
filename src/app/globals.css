@@ -2778,6 +2778,10 @@ body:has(.admin-shell[data-admin-theme='dark']) { background: #0e1722; }
 .email-confirmation-card .eyebrow { color: #587f2c; font-size: 11px; }
 .email-confirmation-note { background: #f5f7f8; padding: 16px; margin: 24px 0; border-radius: 12px; color: #596775; font-size: 13px; line-height: 1.6; }
 .email-confirmation-card > small { color: #587f2c; font-weight: 750; }
+.password-recovery-form { display: grid; gap: 18px; margin: 24px 0; text-align: left; }
+.password-recovery-form label { display: grid; gap: 8px; font-weight: 650; }
+.password-recovery-form input { width: 100%; min-width: 0; background: #f5f7f8; color: #122033; border: 1px solid #cdd6df; }
+.password-recovery-form .primary { min-height: 48px; display: flex; align-items: center; justify-content: center; }
 .support-user-workspace .support-thread { padding: 16px; background: var(--surface); border-radius: 12px; }
 .support-user-workspace .support-thread small { font-size: 12px; }
 .support-center .chat-bubble { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }

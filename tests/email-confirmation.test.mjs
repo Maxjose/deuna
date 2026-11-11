@@ -19,9 +19,25 @@ test('confirmación Android: termina en página pública y nunca intenta abrir l
 test('recuperación conserva su formulario; enlaces vacíos muestran ayuda',async()=>{
  const reset=await callback()('https://www.de1na.app/auth/callback?code=test&next=/reset-password&complete=1');
  assert.equal(reset.url.pathname,'/reset-password');
+ assert.equal(reset.url.searchParams.get('session'),'1');
  const invalid=await callback()('https://www.de1na.app/auth/callback');
  assert.equal(invalid.url.pathname,'/auth/confirmation');
  assert.equal(invalid.url.searchParams.get('error'),'invalid_link');
  const gate=readFileSync(new URL('../src/components/install-gate.tsx',import.meta.url),'utf8');
  assert.ok(gate.includes("'/auth/confirmation'"));
+});
+
+test('recuperación Android nunca exige abrir o instalar la aplicación',async()=>{
+ const implicit=await callback()('https://www.de1na.app/auth/callback?next=/reset-password');
+ assert.equal(implicit.url.pathname,'/reset-password');
+ assert.equal(implicit.url.hash,'');
+ assert.equal(implicit.url.search,'');
+ const legacy=await callback()('https://www.de1na.app/auth/callback?code=test&next=/reset-password');
+ assert.equal(legacy.url.pathname,'/reset-password');
+ const invalid=await callback({code:'bad_code_verifier'})('https://www.de1na.app/auth/callback?code=test&next=/reset-password');
+ assert.equal(invalid.url.pathname,'/reset-password');
+ assert.equal(invalid.url.searchParams.get('error'),'invalid_link');
+ const expired=await callback()('https://www.de1na.app/auth/callback?next=/reset-password&error=access_denied');
+ assert.equal(expired.url.pathname,'/reset-password');
+ assert.equal(expired.url.searchParams.get('error'),'invalid_link');
 });
