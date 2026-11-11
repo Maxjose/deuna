@@ -2,19 +2,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
+import { sendRecoveryEmail } from "@/lib/supabase/recovery";
 import { PasskeyLogin } from "./passkey-login";
 import { Toast, useNotice } from "./toast";
 export function AuthForm({
   configured,
-  reset = false,
 }: {
   configured: boolean;
-  reset?: boolean;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register" | "recover">("login"),
     [busy, setBusy] = useState(false);
-  const { message, notify: setMessage } = useNotice(reset ? "reset" : mode);
+  const { message, notify: setMessage } = useNotice(mode);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -25,12 +24,7 @@ export function AuthForm({
       const client = browserClient(),
         email = String(f.get("email") || ""),
         password = String(f.get("password") || "");
-      if (reset) {
-        const { error } = await client.auth.updateUser({ password });
-        if (error) throw error;
-        router.replace("/dashboard");
-        router.refresh();
-      } else if (mode === "login") {
+      if (mode === "login") {
         const { error } = await client.auth.signInWithPassword({
           email,
           password,
@@ -56,10 +50,7 @@ export function AuthForm({
           "¡Registro exitoso! Verifica tu correo electrónico para validar tu cuenta (revisa también la carpeta de spam).",
         );
       } else {
-        const { error } = await client.auth.resetPasswordForEmail(email, {
-          redirectTo:
-            window.location.origin + "/auth/callback?next=/reset-password",
-        });
+        const { error } = await sendRecoveryEmail(email, window.location.origin);
         if (error) throw error;
         setMessage(
           "Si existe una cuenta con ese correo, recibirás las instrucciones de recuperación.",
@@ -109,9 +100,7 @@ export function AuthForm({
       <section className="auth-form">
         <span className="pill">DE1NA · ACCESO</span>
         <h2>
-          {reset
-            ? "Elige tu nueva contraseña"
-            : mode === "register"
+          {mode === "register"
               ? "Tu próximo viaje empieza aquí"
               : mode === "recover"
                 ? "Recupera tu acceso"
@@ -125,7 +114,6 @@ export function AuthForm({
           </div>
         ) : (
           <form onSubmit={submit}>
-            {!reset && (
               <label>
                 Correo electrónico
                 <input
@@ -136,8 +124,7 @@ export function AuthForm({
                   autoComplete="email"
                 />
               </label>
-            )}
-            {(reset || mode !== "recover") && (
+            {mode !== "recover" && (
               <label>
                 Contraseña
                 <input
@@ -147,7 +134,7 @@ export function AuthForm({
                   minLength={8}
                   maxLength={128}
                   autoComplete={
-                    reset || mode === "register"
+                    mode === "register"
                       ? "new-password"
                       : "current-password"
                   }
@@ -157,21 +144,18 @@ export function AuthForm({
             <div className="auth-actions">
             <button className="primary" disabled={busy} aria-busy={busy}>
               {busy
-                ? <><span className="auth-submit-spinner" aria-hidden="true"/><span className="sr-only">{!reset&&mode==='login'?'Iniciando sesión':'Procesando solicitud'}</span></>
-                : <>{reset
-                  ? "Guardar contraseña"
-                  : mode === "register"
+                ? <><span className="auth-submit-spinner" aria-hidden="true"/><span className="sr-only">{mode==='login'?'Iniciando sesión':'Procesando solicitud'}</span></>
+                : <>{mode === "register"
                     ? "Crear cuenta"
                     : mode === "recover"
                       ? "Enviar instrucciones"
                       : "Iniciar sesión"}{" "}↗</>}
             </button>
-            {!reset && mode === "login" && <PasskeyLogin disabled={busy} onBusyChange={setBusy} />}
+            {mode === "login" && <PasskeyLogin disabled={busy} onBusyChange={setBusy} />}
             </div>
           </form>
         )}
         <Toast message={message} />
-        {!reset && (
           <>
             <button
               className="text"
@@ -194,7 +178,6 @@ export function AuthForm({
               Olvidé mi contraseña
             </button>
           </>
-        )}
         <p className="legal-links">{mode === "register" ? "Al crear tu cuenta aceptas nuestra " : ""}<a href="/privacidad">Política de privacidad</a></p>
       </section>
     </div>
