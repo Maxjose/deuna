@@ -5,12 +5,14 @@ import { browserClient } from "@/lib/supabase/client";
 import { sendRecoveryEmail } from "@/lib/supabase/recovery";
 import { PasskeyLogin } from "./passkey-login";
 import { Toast, useNotice } from "./toast";
+import { authErrorMessage } from "@/lib/auth-error";
 export function AuthForm({
   configured,
 }: {
   configured: boolean;
 }) {
   const router = useRouter();
+  const [confirmationEmail, setConfirmationEmail] = useState('');
   const [mode, setMode] = useState<"login" | "register" | "recover">("login"),
     [busy, setBusy] = useState(false);
   const { message, notify: setMessage } = useNotice(mode);
@@ -46,9 +48,7 @@ export function AuthForm({
           setMessage("Este correo ya está registrado. Inicia sesión o recupera tu contraseña.");
           return;
         }
-        setMessage(
-          "¡Registro exitoso! Verifica tu correo electrónico para validar tu cuenta (revisa también la carpeta de spam).",
-        );
+        setConfirmationEmail(email);
       } else {
         const { error } = await sendRecoveryEmail(email, window.location.origin);
         if (error) throw error;
@@ -57,11 +57,7 @@ export function AuthForm({
         );
       }
     } catch (error) {
-      setMessage(
-        (error as { code?: string } | null)?.code === 'email_not_confirmed'
-          ? 'Tu correo aún no está verificado. Abre el correo de confirmación que te enviamos y pulsa el enlace para activar tu cuenta. Revisa también la carpeta de spam y luego vuelve a iniciar sesión.'
-          : "No pudimos completar la solicitud. Revisa tus datos y la conexión o inténtalo más tarde.",
-      );
+      setMessage(authErrorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -100,7 +96,7 @@ export function AuthForm({
       <section className="auth-form">
         <span className="pill">DE1NA · ACCESO</span>
         <h2>
-          {mode === "register"
+          {mode === 'register' && confirmationEmail ? 'Confirma tu correo' : mode === "register"
               ? "Tu próximo viaje empieza aquí"
               : mode === "recover"
                 ? "Recupera tu acceso"
@@ -111,6 +107,10 @@ export function AuthForm({
           <div className="notice" role="status">
             Estamos preparando la conexión del servicio. El acceso aún no está
             habilitado.
+          </div>
+        ) : mode === 'register' && confirmationEmail ? (
+          <div className="notice" role="status">
+            ¡Registro exitoso! Te enviamos un enlace a <strong>{confirmationEmail}</strong>. Ábrelo para confirmar tu cuenta y luego inicia sesión. Revisa también la carpeta de spam.
           </div>
         ) : (
           <form onSubmit={submit}>
@@ -161,6 +161,7 @@ export function AuthForm({
               className="text"
               onClick={() => {
                 setMode(mode === "login" ? "register" : "login");
+                setConfirmationEmail('');
                 setMessage("");
               }}
             >
@@ -172,6 +173,7 @@ export function AuthForm({
               className="text"
               onClick={() => {
                 setMode("recover");
+                setConfirmationEmail('');
                 setMessage("");
               }}
             >
