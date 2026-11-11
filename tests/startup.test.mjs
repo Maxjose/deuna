@@ -78,7 +78,10 @@ test("usuario sin sesi?n: acceso p?blico y rutas protegidas", async () => {
     assert.doesNotMatch(await recovery.text(), /NEXT_REDIRECT/);
     const callback = await fetch('http://127.0.0.1:3187/auth/callback?next=/reset-password', { redirect: 'manual' });
     assert.equal(new URL(callback.headers.get('location')).pathname, '/reset-password');
-    for (const path of ["/", "/dashboard"]) {
+    const landing = await fetch('http://127.0.0.1:3187/', { redirect: 'manual' });
+    assert.equal(landing.status, 200);
+    assert.doesNotMatch(await landing.text(), /NEXT_REDIRECT/);
+    for (const path of ["/dashboard"]) {
       const r = await fetch("http://127.0.0.1:3187" + path, {
         redirect: "manual",
       });

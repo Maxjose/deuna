@@ -3,6 +3,7 @@ import {useEffect,useState,type ReactNode} from 'react';
 import {installPlatform,requiresInstallation} from '@/lib/install-platform';
 import {detectTwa} from '@/lib/twa';
 import {AppIcon} from './app-icon';
+import {recoveryLanding} from '@/lib/recovery-landing';
 const APK_URL='https://github.com/Maxjose/deuna/releases/download/apk-pruebas/de1na.apk';
 type InstallPrompt=Event&{prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 
@@ -13,6 +14,8 @@ export function InstallGate({children}:{children:ReactNode}){
   const display=window.matchMedia('(display-mode: standalone)'),full=window.matchMedia('(display-mode: fullscreen)');
   const platform=installPlatform(navigator.userAgent,navigator.maxTouchPoints);
   const update=()=>{
+   const recovery=recoveryLanding(window.location.pathname,window.location.hash);
+   if(recovery){window.location.replace(recovery);return;}
    // Páginas públicas (privacidad, eliminar cuenta) siempre accesibles desde el navegador.
    if(['/auth/continue','/auth/confirmation','/reset-password'].includes(window.location.pathname)||['/privacidad','/eliminar-cuenta'].some(path=>window.location.pathname.startsWith(path))){setMode('allowed');return;}
    const standalone=display.matches||full.matches||(navigator as Navigator&{standalone?:boolean}).standalone===true;
@@ -21,8 +24,8 @@ export function InstallGate({children}:{children:ReactNode}){
   const available=(event:Event)=>{if(platform==='desktop')return;event.preventDefault();setPrompt(event as InstallPrompt);};
   const done=()=>{setInstalled(true);setPrompt(null);setManual(false);};
   update();display.addEventListener('change',update);full.addEventListener('change',update);
-  window.addEventListener('beforeinstallprompt',available);window.addEventListener('appinstalled',done);
-  return()=>{display.removeEventListener('change',update);full.removeEventListener('change',update);window.removeEventListener('beforeinstallprompt',available);window.removeEventListener('appinstalled',done);};
+  window.addEventListener('beforeinstallprompt',available);window.addEventListener('appinstalled',done);window.addEventListener('hashchange',update);
+  return()=>{display.removeEventListener('change',update);full.removeEventListener('change',update);window.removeEventListener('beforeinstallprompt',available);window.removeEventListener('appinstalled',done);window.removeEventListener('hashchange',update);};
  },[]);
  if(mode==='checking')return <div className="install-gate-check" role="status" aria-label="Preparando De1na"/>;
  if(mode==='allowed')return children;

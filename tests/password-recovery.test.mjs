@@ -27,6 +27,7 @@ test('recovery email works without PKCE storage from the app', async () => {
 test('only complete recovery fragments can authorize password recovery', () => {
   const { recoveryTokens } = recoveryModule();
   assert.equal(recoveryTokens('#access_token=a&refresh_token=r&type=recovery').access_token, 'a');
+  assert.equal(recoveryTokens('#access_token=a&refresh_token=r').access_token, 'a');
   for (const hash of ['', '#type=recovery', '#access_token=a&type=recovery', '#access_token=a&refresh_token=r&type=signup', '#access_token=a&refresh_token=r&type=recovery&error=access_denied']) {
     assert.equal(recoveryTokens(hash), null);
   }
